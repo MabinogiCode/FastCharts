@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>9.0</LangVersion>
+    <!-- 👈 ajoute ça -->
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\\..\\src\\FastCharts.Wpf\\FastCharts.Wpf.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="DynamicData" Version="8.*" />
+  </ItemGroup>
+</Project>

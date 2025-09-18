@@ -1,0 +1,72 @@
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Visual Studio cache
+.vs/
+
+# Rider / JetBrains
+.idea/
+*.iml
+
+# Compiled binaries
+*.dll
+*.exe
+*.pdb
+*.appx
+*.appxupload
+*.msix
+*.msixupload
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+project.lock.json
+project.fragment.lock.json
+
+# Other generated files
+*.log
+*.tlog
+*.cache
+*.dbmdl
+*.bak
+*.Backup
+*.tmp
+*.temp
+*.obj
+*.pch
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Coverage and test results
+TestResults/
+*.coverage
+*.coveragexml
+*.codecov
+*.opencover.xml
+
+# Local configuration
+*.env
+*.local
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
