@@ -7,55 +7,58 @@ using SkiaSharp;
 namespace FastCharts.Rendering.Skia
 {
     /// <summary>
-    /// Minimal Skia renderer: draws axes (ticks + labels), grid, then the first LineSeries.
-    /// Uses the model's Theme for colors/sizes.
+    /// Skia renderer: draws surface/plot backgrounds (from theme), grid, axes (ticks+labels),
+    /// then all LineSeries using the theme palette. Pixel mapping is derived from VisibleRange.
     /// </summary>
     public sealed class SkiaChartRenderer : IRenderer<SKCanvas>
     {
-
         public void Render(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight)
         {
             if (model == null || canvas == null) return;
-            
-            // Prepare paints from theme
+
             var theme = model.Theme;
 
-            // Clear to transparent so the WPF Border's Background shows through
-            canvas.Clear(new SKColor(theme.SurfaceBackgroundColor.R,
-                theme.SurfaceBackgroundColor.G,
-                theme.SurfaceBackgroundColor.B,
-                theme.SurfaceBackgroundColor.A));
-            
+            // Margins come from the model (centralized layout).
             var m = model.PlotMargins;
             float left   = (float)m.Left;
             float top    = (float)m.Top;
             float right  = (float)m.Right;
             float bottom = (float)m.Bottom;
 
-            // Compute plot area (the inner rectangle where data is drawn)
+            // Fill the entire surface outside the plot (margins).
+            canvas.Clear(new SKColor(
+                theme.SurfaceBackgroundColor.R,
+                theme.SurfaceBackgroundColor.G,
+                theme.SurfaceBackgroundColor.B,
+                theme.SurfaceBackgroundColor.A));
+
+            // Compute plot area size.
             var plotW = (int)System.Math.Max(0, pixelWidth  - (left + right));
-            var plotH = (int)System.Math.Max(0, pixelHeight - (top + bottom));
+            var plotH = (int)System.Math.Max(0, pixelHeight - (top  + bottom));
             if (plotW <= 0 || plotH <= 0)
                 return;
 
-            // Keep scales exact for the *plot* size (not the full control size)
+            // Keep internal scale math in sync with the plot size (if used elsewhere).
             model.UpdateScales(plotW, plotH);
 
-            
-
+            // Fill the plot background.
             canvas.Save();
             canvas.Translate(left, top);
             using (var bg = new SKPaint
-                   {
-                       Style = SKPaintStyle.Fill,
-                       Color = new SKColor(theme.PlotBackgroundColor.R, theme.PlotBackgroundColor.G,
-                           theme.PlotBackgroundColor.B, theme.PlotBackgroundColor.A)
-                   })
+            {
+                Style = SKPaintStyle.Fill,
+                Color = new SKColor(
+                    theme.PlotBackgroundColor.R,
+                    theme.PlotBackgroundColor.G,
+                    theme.PlotBackgroundColor.B,
+                    theme.PlotBackgroundColor.A)
+            })
             {
                 canvas.DrawRect(0, 0, plotW, plotH, bg);
             }
             canvas.Restore();
-            
+
+            // Prepare paints from theme.
             using var axisPaint = new SKPaint
             {
                 IsAntialias = true,
@@ -63,7 +66,6 @@ namespace FastCharts.Rendering.Skia
                 Color = new SKColor(theme.AxisColor.R, theme.AxisColor.G, theme.AxisColor.B, theme.AxisColor.A),
                 StrokeWidth = (float)theme.AxisThickness
             };
-
             using var tickPaint = new SKPaint
             {
                 IsAntialias = true,
@@ -71,14 +73,12 @@ namespace FastCharts.Rendering.Skia
                 Color = axisPaint.Color,
                 StrokeWidth = (float)theme.AxisThickness
             };
-
             using var textPaint = new SKPaint
             {
                 IsAntialias = true,
                 Color = new SKColor(theme.LabelColor.R, theme.LabelColor.G, theme.LabelColor.B, theme.LabelColor.A),
                 TextSize = (float)theme.LabelTextSize
             };
-
             using var gridPaint = new SKPaint
             {
                 IsAntialias = false,
@@ -87,83 +87,79 @@ namespace FastCharts.Rendering.Skia
                 StrokeWidth = (float)theme.GridThickness
             };
 
-            // Axis baselines (in surface coordinates)
-            var x0 = left;
-            var x1 = pixelWidth - right;
-            var yBase = pixelHeight - bottom;
+            // Axis base lines (surface coords).
+            float xBase = left;
+            float yBase = pixelHeight - bottom;
+            float xAxisStart = left;
+            float xAxisEnd   = pixelWidth - right;
+            float yAxisStart = top;
+            float yAxisEnd   = pixelHeight - bottom;
 
-            var y0 = top;
-            var y1 = pixelHeight - bottom;
-            var xBase = left;
+            canvas.DrawLine(xAxisStart, yBase, xAxisEnd, yBase, axisPaint); // X axis
+            canvas.DrawLine(xBase, yAxisStart, xBase, yAxisEnd, axisPaint); // Y axis
 
-            // Draw axis lines
-            canvas.DrawLine(x0, yBase, x1, yBase, axisPaint); // X axis
-            canvas.DrawLine(xBase, y0, xBase, y1, axisPaint); // Y axis
+            // Visible ranges drive all pixel mapping.
+            var xr = model.XAxis.VisibleRange;
+            var yr = model.YAxis.VisibleRange;
+            if (xr.Size <= 0 || yr.Size <= 0) return;
 
-            // Compute ticks (approx. pixel step → data step)
-            var xDataPerPx = model.XAxis.VisibleRange.Size / System.Math.Max(1.0, plotW);
-            var yDataPerPx = model.YAxis.VisibleRange.Size / System.Math.Max(1.0, plotH);
+            // Approximate tick steps in data units based on desired pixel spacing.
+            double xDataPerPx = xr.Size / System.Math.Max(1.0, plotW);
+            double yDataPerPx = yr.Size / System.Math.Max(1.0, plotH);
+            double approxXStepData = 80.0 * xDataPerPx; // ~80 px between x ticks
+            double approxYStepData = 50.0 * yDataPerPx; // ~50 px between y ticks
 
-            var approxXStepData = 80.0 * xDataPerPx; // ~80 px between x ticks
-            var approxYStepData = 50.0 * yDataPerPx; // ~50 px between y ticks
+            var xTicks = model.XAxis.Ticker.GetTicks(xr, approxXStepData);
+            var yTicks = model.YAxis.Ticker.GetTicks(yr, approxYStepData);
 
-            var xTicks = model.XAxis.Ticker.GetTicks(model.XAxis.VisibleRange, approxXStepData);
-            var yTicks = model.YAxis.Ticker.GetTicks(model.YAxis.VisibleRange, approxYStepData);
+            // Local mapping functions: data -> pixels in plot coordinates (origin top-left).
+            float XToPx(double x) => (float)((x - xr.Min) * (plotW / xr.Size));
+            float YToPx(double y) => (float)(plotH - (y - yr.Min) * (plotH / yr.Size)); // invert Y
 
-            // Draw grid inside plot area
+            // Grid inside plot area.
             canvas.Save();
             canvas.Translate(left, top);
-
-            // Vertical grid lines at X ticks
             foreach (var t in xTicks)
             {
-                var x = (float)model.XAxis.Scale.ToPixels(t);
+                var x = XToPx(t);
                 canvas.DrawLine(x + 0.5f, 0, x + 0.5f, plotH, gridPaint);
             }
-
-            // Horizontal grid lines at Y ticks
             foreach (var t in yTicks)
             {
-                var y = (float)model.YAxis.Scale.ToPixels(t);
+                var y = YToPx(t);
                 canvas.DrawLine(0, y + 0.5f, plotW, y + 0.5f, gridPaint);
             }
-
             canvas.Restore();
 
-            // Draw ticks and labels (surface coordinates)
-            var tickLen = (float)theme.TickLength;
+            // Ticks & labels (surface coords).
+            float tickLen = (float)theme.TickLength;
 
-            // X-axis ticks & labels
+            // X-axis ticks/labels
             foreach (var t in xTicks)
             {
-                var px = (float)model.XAxis.Scale.ToPixels(t) + left;
-
-                // tick
+                var px = XToPx(t) + left;
                 canvas.DrawLine(px, yBase, px, yBase + tickLen, tickPaint);
 
-                // label
                 var label = t.ToString(model.XAxis.LabelFormat ?? "G");
-                var w = textPaint.MeasureText(label);
-                // place a bit below the ticks (3px padding)
-                canvas.DrawText(label, px - w / 2f, yBase + tickLen + 3 + textPaint.TextSize, textPaint);
+                var wlab = textPaint.MeasureText(label);
+                canvas.DrawText(label, px - wlab / 2f, yBase + tickLen + 3 + textPaint.TextSize, textPaint);
             }
 
-            // Y-axis ticks & labels
+            // Y-axis ticks/labels
             foreach (var t in yTicks)
             {
-                var py = (float)model.YAxis.Scale.ToPixels(t) + top;
-
-                // tick
+                var py = YToPx(t) + top;
                 canvas.DrawLine(xBase - tickLen, py, xBase, py, tickPaint);
 
-                // label (right-aligned to left of axis, ~6px padding; +4 for baseline tweak)
                 var label = t.ToString(model.YAxis.LabelFormat ?? "G");
-                var w = textPaint.MeasureText(label);
-                canvas.DrawText(label, xBase - tickLen - 6 - w, py + 4, textPaint);
+                var wlab = textPaint.MeasureText(label);
+                canvas.DrawText(label, xBase - tickLen - 6 - wlab, py + 4, textPaint);
             }
 
-            // Draw all LineSeries in the plot area
+            // Draw all LineSeries in the plot area with palette colors.
+            var palette = model.Theme.SeriesPalette;
             int seriesIndex = 0;
+
             canvas.Save();
             canvas.Translate(left, top);
 
@@ -171,8 +167,7 @@ namespace FastCharts.Rendering.Skia
             {
                 if (ls.IsEmpty) { seriesIndex++; continue; }
 
-                // pick color from palette or fallback
-                var palette = model.Theme.SeriesPalette;
+                // Pick color from palette or fallback to PrimarySeriesColor.
                 var c = (palette != null && seriesIndex < palette.Count)
                     ? palette[seriesIndex]
                     : model.Theme.PrimarySeriesColor;
@@ -190,8 +185,8 @@ namespace FastCharts.Rendering.Skia
 
                 foreach (var p in ls.Data)
                 {
-                    var x = (float)model.XAxis.Scale.ToPixels(p.X);
-                    var y = (float)model.YAxis.Scale.ToPixels(p.Y);
+                    var x = XToPx(p.X);
+                    var y = YToPx(p.Y);
                     if (!started) { path.MoveTo(x, y); started = true; }
                     else          { path.LineTo(x, y); }
                 }
