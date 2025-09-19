@@ -6,6 +6,8 @@ using FastCharts.Core.Primitives;
 using System.Collections.ObjectModel;
 using System.Linq;
 
+using FastCharts.Core.Themes.BuiltIn;
+
 namespace FastCharts.Core;
 
 public sealed class ChartModel : IChartModel
@@ -20,6 +22,7 @@ public sealed class ChartModel : IChartModel
         Axes = new ReadOnlyCollection<object>(new object[] { XAxis, YAxis });
     }
 
+    public ITheme Theme { get; set; } = new LightTheme();
     public NumericAxis XAxis { get; }
     public NumericAxis YAxis { get; }
     public IViewport Viewport { get; }
