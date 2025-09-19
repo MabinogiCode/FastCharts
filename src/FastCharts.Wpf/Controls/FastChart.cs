@@ -15,7 +15,9 @@ namespace FastCharts.Wpf.Controls
     [TemplatePart(Name = "PART_Skia", Type = typeof(SKElement))]
     public class FastChart : Control
     {
-        // NEW: depend on abstraction
+        
+        private bool _userChangedView;
+        
         public IRenderer<SkiaSharp.SKCanvas> Renderer { get; set; } = new SkiaChartRenderer();
 
         static FastChart()
@@ -53,6 +55,8 @@ namespace FastCharts.Wpf.Controls
             var ctrl = (FastChart)d;
             ctrl.DetachFromModel(e.OldValue as ChartModel);
             ctrl.AttachToModel(e.NewValue as ChartModel);
+            ctrl._userChangedView = false;                     // reset user state
+            if (ctrl.Model != null) ctrl.Model.AutoFitDataRange();  // fit once on attach
             ctrl.RefreshScalesAndRedraw();
         }
 
@@ -88,7 +92,14 @@ namespace FastCharts.Wpf.Controls
                 _skia.MouseMove += OnSkiaMouseMove;
                 _skia.MouseUp += OnSkiaMouseUp;
                 _skia.MouseLeave += OnSkiaMouseLeave;
+                
+                // Make sure SKElement can receive focus so it gets wheel events
+                _skia.Focusable = true;
+                _skia.Focus();
             }
+            
+            // Also listen at the control level to catch wheel even if SKElement misses it
+            this.PreviewMouseWheel += OnSkiaMouseWheel;
 
             RefreshScalesAndRedraw();
         }
@@ -96,8 +107,16 @@ namespace FastCharts.Wpf.Controls
         private void OnSkiaMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (Model == null) return;
-            if (e.ChangedButton != System.Windows.Input.MouseButton.Left) return;
 
+            if (e.ClickCount == 2)             // optional: double-click to reset
+            {
+                ResetView();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.ChangedButton != System.Windows.Input.MouseButton.Left) return;
+            _userChangedView = true;           
             _isPanning = true;
             _lastMousePos = e.GetPosition(_skia);
             _skia.CaptureMouse();
@@ -110,6 +129,14 @@ namespace FastCharts.Wpf.Controls
                 _isPanning = false;
                 _skia.ReleaseMouseCapture();
             }
+        }
+        
+        public void ResetView()
+        {
+            if (Model == null) return;
+            _userChangedView = false;
+            Model.AutoFitDataRange();
+            RefreshScalesAndRedraw();
         }
 
         private void OnSkiaMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
@@ -145,9 +172,8 @@ namespace FastCharts.Wpf.Controls
         {
             if (Model == null) return;
 
-            // Zoom factor per wheel notch
-            var step = e.Delta > 0 ? 0.9 : 1.1; // <1 = zoom in, >1 = out
-            var pos = e.GetPosition(_skia);
+            _userChangedView = true;           // <-- mark user interaction
+            var step = e.Delta > 0 ? 0.9 : 1.1;
 
             // get plot-relative pixel// MouseWheel (zoom)
             var m = Model.PlotMargins;
@@ -190,10 +216,13 @@ namespace FastCharts.Wpf.Controls
 
             Model.ZoomAt(fx, fy, centerDataX, centerDataY);
             RefreshScalesAndRedraw();
+            e.Handled = true;
         }
 
-        private void OnLoaded(object sender, RoutedEventArgs e)
+        private void OnLoaded(object? sender, RoutedEventArgs e)
         {
+            if (Model != null && !_userChangedView)
+                Model.AutoFitDataRange();                      // first render, if needed
             RefreshScalesAndRedraw();
         }
 
@@ -208,7 +237,7 @@ namespace FastCharts.Wpf.Controls
                 _skia.MouseUp -= OnSkiaMouseUp;
                 _skia.MouseLeave -= OnSkiaMouseLeave;
             }
-
+            this.PreviewMouseWheel -= OnSkiaMouseWheel;
             DetachFromModel(Model);
         }
 
@@ -229,10 +258,10 @@ namespace FastCharts.Wpf.Controls
             model.Series.CollectionChanged -= OnSeriesCollectionChanged;
         }
 
-        private void OnSeriesCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private void OnSeriesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            if (Model == null) return;
-            Model.AutoFitDataRange();
+            if (Model is null) return;
+            if (!_userChangedView) Model.AutoFitDataRange();   // only if user hasn’t interacted
             RefreshScalesAndRedraw();
         }
 
@@ -251,7 +280,9 @@ namespace FastCharts.Wpf.Controls
                     Model.UpdateScales(plotW, plotH);
                 }
             }
+
             _skia?.InvalidateVisual();
+            InvalidateVisual();
         }
 
         private void OnSkiaPaint(object sender, SkiaSharp.Views.Desktop.SKPaintSurfaceEventArgs e)
