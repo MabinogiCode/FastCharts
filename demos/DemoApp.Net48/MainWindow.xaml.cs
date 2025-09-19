@@ -1,16 +1,16 @@
-using System.Windows;
+﻿using System.Windows;
 
 using DemoApp.Net48.ViewModels;
 
-namespace DemoApp
+namespace DemoApp.Net48
 {
     public partial class MainWindow : Window
     {
-
         public MainWindow()
         {
-          DataContext = new MainViewModel();
-          ;
+            InitializeComponent();
+            this.DataContext = new MainViewModel();
         }
     }
 }
+

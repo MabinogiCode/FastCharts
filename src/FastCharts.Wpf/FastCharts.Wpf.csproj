@@ -10,18 +10,26 @@
         <LangVersion>9.0</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="DynamicData" Version="8.*"/>
-        <PackageReference Include="ReactiveUI" Version="19.*"/>
-        <PackageReference Include="System.Reactive" Version="6.*"/>
-        <PackageReference Include="SkiaSharp" Version="2.88.6"/>
-        <PackageReference Include="SkiaSharp.Views.WPF" Version="2.88.6"/>
+        <PackageReference Include="DynamicData" Version="8.*" />
+        <PackageReference Include="ReactiveUI" Version="19.*" />
+        <PackageReference Include="System.Reactive" Version="6.*" />
+        <PackageReference Include="SkiaSharp" Version="2.88.6" />
+        <PackageReference Include="SkiaSharp.Views.WPF" Version="2.88.6" />
     </ItemGroup>
     <ItemGroup>
-        <None Include="..\..\tests\**" Pack="false" Visible="false"/>
-        <None Include="..\..\demos\**" Pack="false" Visible="false"/>
+        <None Include="..\..\tests\**" Pack="false" Visible="false" />
+        <None Include="..\..\demos\**" Pack="false" Visible="false" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj"/>
+        <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj" />
         <ProjectReference Include="..\FastCharts.Rendering.Skia\FastCharts.Rendering.Skia.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <Page Update="Views\FastChart.xaml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Page>
+      <Page Update="Themes\Generic.xaml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Page>
     </ItemGroup>
 </Project>
