@@ -12,11 +12,6 @@ namespace FastCharts.Rendering.Skia
     /// </summary>
     public sealed class SkiaChartRenderer : IRenderer<SKCanvas>
     {
-        // Plot margins (pixels)
-        private const float Left   = 48f;
-        private const float Right  = 16f;
-        private const float Top    = 16f;
-        private const float Bottom = 36f;
 
         public void Render(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight)
         {
@@ -30,10 +25,16 @@ namespace FastCharts.Rendering.Skia
                 theme.SurfaceBackgroundColor.G,
                 theme.SurfaceBackgroundColor.B,
                 theme.SurfaceBackgroundColor.A));
+            
+            var m = model.PlotMargins;
+            float left   = (float)m.Left;
+            float top    = (float)m.Top;
+            float right  = (float)m.Right;
+            float bottom = (float)m.Bottom;
 
             // Compute plot area (the inner rectangle where data is drawn)
-            var plotW = (int)System.Math.Max(0, pixelWidth  - (Left + Right));
-            var plotH = (int)System.Math.Max(0, pixelHeight - (Top + Bottom));
+            var plotW = (int)System.Math.Max(0, pixelWidth  - (left + right));
+            var plotH = (int)System.Math.Max(0, pixelHeight - (top + bottom));
             if (plotW <= 0 || plotH <= 0)
                 return;
 
@@ -43,7 +44,7 @@ namespace FastCharts.Rendering.Skia
             
 
             canvas.Save();
-            canvas.Translate(Left, Top);
+            canvas.Translate(left, top);
             using (var bg = new SKPaint
                    {
                        Style = SKPaintStyle.Fill,
@@ -87,13 +88,13 @@ namespace FastCharts.Rendering.Skia
             };
 
             // Axis baselines (in surface coordinates)
-            var x0 = Left;
-            var x1 = pixelWidth - Right;
-            var yBase = pixelHeight - Bottom;
+            var x0 = left;
+            var x1 = pixelWidth - right;
+            var yBase = pixelHeight - bottom;
 
-            var y0 = Top;
-            var y1 = pixelHeight - Bottom;
-            var xBase = Left;
+            var y0 = top;
+            var y1 = pixelHeight - bottom;
+            var xBase = left;
 
             // Draw axis lines
             canvas.DrawLine(x0, yBase, x1, yBase, axisPaint); // X axis
@@ -111,7 +112,7 @@ namespace FastCharts.Rendering.Skia
 
             // Draw grid inside plot area
             canvas.Save();
-            canvas.Translate(Left, Top);
+            canvas.Translate(left, top);
 
             // Vertical grid lines at X ticks
             foreach (var t in xTicks)
@@ -135,7 +136,7 @@ namespace FastCharts.Rendering.Skia
             // X-axis ticks & labels
             foreach (var t in xTicks)
             {
-                var px = (float)model.XAxis.Scale.ToPixels(t) + Left;
+                var px = (float)model.XAxis.Scale.ToPixels(t) + left;
 
                 // tick
                 canvas.DrawLine(px, yBase, px, yBase + tickLen, tickPaint);
@@ -150,7 +151,7 @@ namespace FastCharts.Rendering.Skia
             // Y-axis ticks & labels
             foreach (var t in yTicks)
             {
-                var py = (float)model.YAxis.Scale.ToPixels(t) + Top;
+                var py = (float)model.YAxis.Scale.ToPixels(t) + top;
 
                 // tick
                 canvas.DrawLine(xBase - tickLen, py, xBase, py, tickPaint);
@@ -164,7 +165,7 @@ namespace FastCharts.Rendering.Skia
             // Draw all LineSeries in the plot area
             int seriesIndex = 0;
             canvas.Save();
-            canvas.Translate(Left, Top);
+            canvas.Translate(left, top);
 
             foreach (var ls in model.Series.OfType<LineSeries>())
             {
