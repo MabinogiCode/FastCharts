@@ -15,5 +15,8 @@ public interface ITheme
     double LabelTextSize { get; }
 
     ColorRgba PrimarySeriesColor { get; }
-    IReadOnlyList<ColorRgba> SeriesPalette { get; } // NEW
+    IReadOnlyList<ColorRgba> SeriesPalette { get; } 
+    ColorRgba PlotBackgroundColor { get; }
+    
+    ColorRgba SurfaceBackgroundColor { get; }
 }
