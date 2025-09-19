@@ -21,13 +21,13 @@ jobs:
             6.0.x
 
       - name: Restore
-        run: dotnet restore FastCharts.sln
+        run: dotnet restore FastChartsSolution.sln
 
       - name: Build
-        run: dotnet build FastCharts.sln --configuration Release --no-restore /warnaserror- 
+        run: dotnet build FastChartsSolution.sln --configuration Release --no-restore /warnaserror- 
 
       - name: Test
-        run: dotnet test FastCharts.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test FastChartsSolution.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
 
       - name: Report coverage summary
         if: always()
