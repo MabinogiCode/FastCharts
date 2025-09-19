@@ -1,1 +1,11 @@
-using System.Windows; namespace DemoApp{ public partial class App : Application{} }
+using System.Windows;
+namespace DemoApp
+{
+    public partial class App : Application
+    {
+        public App()
+        {
+
+        }
+    }
+}
