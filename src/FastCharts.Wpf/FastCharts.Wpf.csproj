@@ -21,7 +21,7 @@
         <None Include="..\..\demos\**" Pack="false" Visible="false"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\FastCharts.Core\FastCharts.Core.csproj"/>
-        <ProjectReference Include="..\..\FastCharts.Rendering.Skia\FastCharts.Rendering.Skia.csproj" />
+        <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj"/>
+        <ProjectReference Include="..\FastCharts.Rendering.Skia\FastCharts.Rendering.Skia.csproj" />
     </ItemGroup>
 </Project>
