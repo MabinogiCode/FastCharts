@@ -21,9 +21,15 @@ namespace FastCharts.Rendering.Skia
         public void Render(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight)
         {
             if (model == null || canvas == null) return;
+            
+            // Prepare paints from theme
+            var theme = model.Theme;
 
             // Clear to transparent so the WPF Border's Background shows through
-            canvas.Clear(SKColors.Transparent);
+            canvas.Clear(new SKColor(theme.SurfaceBackgroundColor.R,
+                theme.SurfaceBackgroundColor.G,
+                theme.SurfaceBackgroundColor.B,
+                theme.SurfaceBackgroundColor.A));
 
             // Compute plot area (the inner rectangle where data is drawn)
             var plotW = (int)System.Math.Max(0, pixelWidth  - (Left + Right));
@@ -34,9 +40,21 @@ namespace FastCharts.Rendering.Skia
             // Keep scales exact for the *plot* size (not the full control size)
             model.UpdateScales(plotW, plotH);
 
-            // Prepare paints from theme
-            var theme = model.Theme;
+            
 
+            canvas.Save();
+            canvas.Translate(Left, Top);
+            using (var bg = new SKPaint
+                   {
+                       Style = SKPaintStyle.Fill,
+                       Color = new SKColor(theme.PlotBackgroundColor.R, theme.PlotBackgroundColor.G,
+                           theme.PlotBackgroundColor.B, theme.PlotBackgroundColor.A)
+                   })
+            {
+                canvas.DrawRect(0, 0, plotW, plotH, bg);
+            }
+            canvas.Restore();
+            
             using var axisPaint = new SKPaint
             {
                 IsAntialias = true,

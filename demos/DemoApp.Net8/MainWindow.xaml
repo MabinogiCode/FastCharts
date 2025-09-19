@@ -8,6 +8,5 @@
         Title="MainWindow" Height="450" Width="800">
     <controls:FastChart
         Margin="16"
-        Background="#111111"
         Model="{Binding Chart}" />
 </Window>

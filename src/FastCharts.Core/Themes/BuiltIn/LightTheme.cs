@@ -26,4 +26,7 @@ public sealed class LightTheme : ITheme
         new(155, 120, 255), // purple
         new(255, 200,  60), // yellow
     };
+    
+    public ColorRgba PlotBackgroundColor => new(255, 255, 255); // white
+    public ColorRgba SurfaceBackgroundColor => new(255, 255, 255);
 }
