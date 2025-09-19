@@ -25,4 +25,28 @@ public sealed class NumericAxis : IAxis<double>
     {
         Scale = new LinearScale(VisibleRange.Min, VisibleRange.Max, pixelMin, pixelMax);
     }
+    
+    /// <summary>
+    /// Updates the visible range. Guards against NaN, inverted or zero-length ranges.
+    /// </summary>
+    public void SetVisibleRange(double min, double max)
+    {
+        if (double.IsNaN(min) || double.IsNaN(max))
+            return;
+
+        if (min > max)
+        {
+            var t = min; min = max; max = t;
+        }
+
+        // Avoid zero-length range (bad for scales)
+        if (min == max)
+        {
+            var eps = (min == 0d) ? 1e-6 : System.Math.Abs(min) * 1e-6;
+            min -= eps;
+            max += eps;
+        }
+
+        VisibleRange = new FRange(min, max);
+    }
 }

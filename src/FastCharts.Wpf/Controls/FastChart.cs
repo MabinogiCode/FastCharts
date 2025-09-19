@@ -1,11 +1,14 @@
-﻿using System.Collections.Specialized;
+﻿using System;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
+
 using FastCharts.Core;
 using FastCharts.Core.Abstractions;
 
 using SkiaSharp.Views.WPF;
-using FastCharts.Rendering.Skia;        // NEW
+
+using FastCharts.Rendering.Skia;
 
 namespace FastCharts.Wpf.Controls
 {
@@ -14,7 +17,7 @@ namespace FastCharts.Wpf.Controls
     {
         // NEW: depend on abstraction
         public IRenderer<SkiaSharp.SKCanvas> Renderer { get; set; } = new SkiaChartRenderer();
-        
+
         static FastChart()
         {
             DefaultStyleKeyProperty.OverrideMetadata(
@@ -54,37 +57,165 @@ namespace FastCharts.Wpf.Controls
         }
 
         private SKElement _skia;
-        private readonly SkiaChartRenderer _renderer = new SkiaChartRenderer(); // NEW
+
+        private bool _isPanning;
+        private Point _lastMousePos;
 
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
             if (_skia != null)
+            {
                 _skia.PaintSurface -= OnSkiaPaint;
+                _skia.MouseWheel -= OnSkiaMouseWheel;
+                _skia.MouseDown -= OnSkiaMouseDown;
+                _skia.MouseMove -= OnSkiaMouseMove;
+                _skia.MouseUp -= OnSkiaMouseUp;
+                _skia.MouseLeave -= OnSkiaMouseLeave;
+            }
 
             _skia = GetTemplateChild("PART_Skia") as SKElement;
 
             if (_skia != null)
             {
-                _skia.IgnorePixelScaling = false; // respect DPI
+                _skia.IgnorePixelScaling = false;
                 _skia.PaintSurface += OnSkiaPaint;
+
+                // interactivity
+                _skia.MouseWheel += OnSkiaMouseWheel;
+                _skia.MouseDown += OnSkiaMouseDown;
+                _skia.MouseMove += OnSkiaMouseMove;
+                _skia.MouseUp += OnSkiaMouseUp;
+                _skia.MouseLeave += OnSkiaMouseLeave;
             }
 
             RefreshScalesAndRedraw();
         }
 
-        private void OnLoaded(object sender, RoutedEventArgs e) { RefreshScalesAndRedraw(); }
+        private void OnSkiaMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (Model == null) return;
+            if (e.ChangedButton != System.Windows.Input.MouseButton.Left) return;
+
+            _isPanning = true;
+            _lastMousePos = e.GetPosition(_skia);
+            _skia.CaptureMouse();
+        }
+
+        private void OnSkiaMouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == System.Windows.Input.MouseButton.Left)
+            {
+                _isPanning = false;
+                _skia.ReleaseMouseCapture();
+            }
+        }
+
+        private void OnSkiaMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            _isPanning = false;
+            _skia.ReleaseMouseCapture();
+        }
+
+        private void OnSkiaMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!_isPanning || Model == null) return;
+
+            var pos = e.GetPosition(_skia);
+            var dx = pos.X - _lastMousePos.X;
+            var dy = pos.Y - _lastMousePos.Y;
+            _lastMousePos = pos;
+
+            // convert pixel delta -> data delta using current visible ranges
+            var m = Model.PlotMargins;
+            var plotW = Math.Max(1.0, _skia.ActualWidth  - (m.Left + m.Right));
+            var plotH = Math.Max(1.0, _skia.ActualHeight - (m.Top  + m.Bottom));
+            var xr = Model.XAxis.VisibleRange;
+            var yr = Model.YAxis.VisibleRange;
+
+            var deltaDataX = -dx * (xr.Size / plotW); // drag right -> pan right visually
+            var deltaDataY = dy * (yr.Size / plotH); // pixel Y grows downward
+
+            Model.Pan(deltaDataX, deltaDataY);
+            RefreshScalesAndRedraw();
+        }
+
+        private void OnSkiaMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if (Model == null) return;
+
+            // Zoom factor per wheel notch
+            var step = e.Delta > 0 ? 0.9 : 1.1; // <1 = zoom in, >1 = out
+            var pos = e.GetPosition(_skia);
+
+            // get plot-relative pixel// MouseWheel (zoom)
+            var m = Model.PlotMargins;
+            var px = e.GetPosition(_skia).X - m.Left;
+            var py = e.GetPosition(_skia).Y - m.Top;
+            var plotW = Math.Max(1.0, _skia.ActualWidth  - (m.Left + m.Right));
+            var plotH = Math.Max(1.0, _skia.ActualHeight - (m.Top  + m.Bottom));
+            px = Math.Max(0, Math.Min(plotW, px));
+            py = Math.Max(0, Math.Min(plotH, py));
+
+            // clamp to plot
+            px = Math.Max(0, Math.Min(plotW, px));
+            py = Math.Max(0, Math.Min(plotH, py));
+
+            // pixel -> data conversion via visible ranges
+            var xr = Model.XAxis.VisibleRange;
+            var yr = Model.YAxis.VisibleRange;
+
+            var centerDataX = xr.Min + (px / plotW) * xr.Size;
+            var centerDataY = yr.Max - (py / plotH) * yr.Size; // top->max mapping
+
+            // modifiers: Shift = X only, Alt = Y only, Ctrl = both
+            bool alt = (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) != 0;
+            bool ctrl = (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) != 0;
+
+            double fx = 1.0, fy = 1.0;
+            if (ctrl)
+            {
+                fx = step;
+                fy = step;
+            }
+            else if (alt)
+            {
+                fy = step;
+            }
+            else /* default or shift */
+            {
+                fx = step;
+            }
+
+            Model.ZoomAt(fx, fy, centerDataX, centerDataY);
+            RefreshScalesAndRedraw();
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            RefreshScalesAndRedraw();
+        }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
             if (_skia != null)
+            {
                 _skia.PaintSurface -= OnSkiaPaint;
+                _skia.MouseWheel -= OnSkiaMouseWheel;
+                _skia.MouseDown -= OnSkiaMouseDown;
+                _skia.MouseMove -= OnSkiaMouseMove;
+                _skia.MouseUp -= OnSkiaMouseUp;
+                _skia.MouseLeave -= OnSkiaMouseLeave;
+            }
 
             DetachFromModel(Model);
         }
 
-        private void OnSizeChanged(object sender, SizeChangedEventArgs e) { RefreshScalesAndRedraw(); }
+        private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            RefreshScalesAndRedraw();
+        }
 
         private void AttachToModel(ChartModel model)
         {
@@ -109,21 +240,28 @@ namespace FastCharts.Wpf.Controls
         {
             if (Model != null)
             {
-                // Ensure ranges and scales are sane before painting
-                Model.AutoFitDataRange();
+                var m = Model.PlotMargins;
                 var w = ActualWidth;
                 var h = ActualHeight;
-                if (!double.IsNaN(w) && !double.IsNaN(h) && w > 0 && h > 0)
-                    Model.UpdateScales(w, h);
-            }
 
+                if (!double.IsNaN(w) && !double.IsNaN(h) && w > 0 && h > 0)
+                {
+                    var plotW = Math.Max(1.0, w - (m.Left + m.Right));
+                    var plotH = Math.Max(1.0, h - (m.Top  + m.Bottom));
+                    Model.UpdateScales(plotW, plotH);
+                }
+            }
             _skia?.InvalidateVisual();
-            InvalidateVisual();
         }
 
         private void OnSkiaPaint(object sender, SkiaSharp.Views.Desktop.SKPaintSurfaceEventArgs e)
         {
-            if (Model == null) { e.Surface.Canvas.Clear(); return; }
+            if (Model == null)
+            {
+                e.Surface.Canvas.Clear();
+                return;
+            }
+
             Renderer.Render(Model, e.Surface.Canvas, e.Info.Width, e.Info.Height); // via interface
         }
     }
