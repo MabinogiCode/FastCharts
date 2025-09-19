@@ -27,4 +27,7 @@ public sealed class DarkTheme : ITheme
         new(155, 120, 255), // purple
         new(255, 200,  60), // yellow
     };
+    
+    public ColorRgba PlotBackgroundColor => new(18, 18, 18); // near-black
+    public ColorRgba SurfaceBackgroundColor => new(18, 18, 18);
 }
