@@ -1,6 +1,7 @@
-
 using System.Linq;
+
 using FastCharts.Wpf.Downsampling;
+
 using Xunit;
 
 public class DownsamplerTests
