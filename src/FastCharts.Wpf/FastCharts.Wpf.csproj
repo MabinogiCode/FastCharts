@@ -3,6 +3,7 @@
         <TargetFrameworks>net48;net6.0-windows10.0.19041.0;net8.0-windows10.0.19041.0</TargetFrameworks>
         <UseWPF>true</UseWPF>
         <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
@@ -21,5 +22,6 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\FastCharts.Core\FastCharts.Core.csproj"/>
+        <ProjectReference Include="..\..\FastCharts.Rendering.Skia\FastCharts.Rendering.Skia.csproj" />
     </ItemGroup>
 </Project>
