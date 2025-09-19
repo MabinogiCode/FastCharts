@@ -32,6 +32,8 @@ public sealed class ChartModel : IChartModel
     // IChartModel (kept loose for now)
     IReadOnlyList<object> IChartModel.Axes => Axes;
     IReadOnlyList<object> IChartModel.Series => Series;
+    
+    public Margins PlotMargins { get; set; } = new Margins(48, 16, 16, 36);
 
     public void AddSeries(object series)
     {
@@ -83,5 +85,34 @@ public sealed class ChartModel : IChartModel
         XAxis.DataRange = new FRange(xMin, xMax);
         YAxis.DataRange = new FRange(yMin, yMax);
         Viewport.SetVisible(XAxis.DataRange, YAxis.DataRange);
+    }
+    
+    public void ZoomAt(double factorX, double factorY, double centerDataX, double centerDataY)
+    {
+        // factor < 1 => zoom in; factor > 1 => zoom out
+        var xr = XAxis.VisibleRange;
+        var yr = YAxis.VisibleRange;
+
+        var newSizeX = xr.Size * factorX;
+        var newSizeY = yr.Size * factorY;
+
+        // keep the center point fixed
+        var newMinX = centerDataX - (centerDataX - xr.Min) * factorX;
+        var newMaxX = newMinX + newSizeX;
+
+        var newMinY = centerDataY - (centerDataY - yr.Min) * factorY;
+        var newMaxY = newMinY + newSizeY;
+
+        XAxis.SetVisibleRange(newMinX, newMaxX);
+        YAxis.SetVisibleRange(newMinY, newMaxY);
+    }
+
+    public void Pan(double deltaDataX, double deltaDataY)
+    {
+        var xr = XAxis.VisibleRange;
+        var yr = YAxis.VisibleRange;
+
+        XAxis.SetVisibleRange(xr.Min + deltaDataX, xr.Max + deltaDataX);
+        YAxis.SetVisibleRange(yr.Min + deltaDataY, yr.Max + deltaDataY);
     }
 }
