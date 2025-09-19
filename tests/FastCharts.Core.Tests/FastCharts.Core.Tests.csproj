@@ -17,6 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj" />
+        <ProjectReference Include="..\..\src\FastCharts.Core\FastCharts.Core.csproj" />
     </ItemGroup>
 </Project>
