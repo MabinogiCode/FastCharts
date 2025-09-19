@@ -2,14 +2,20 @@ name: .NET CI
 
 on:
   push:
-    branches: [ main, develop, feature/**, feat/**, fix/**, refactor/**, chore/** ]
+    branches: [ main, develop ]
+    tags:
+      - 'v*.*.*'      # optional: allow release/tag builds
   pull_request:
     branches: [ main, develop ]
+
+# optional: cancel older runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-test:
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +34,7 @@ jobs:
         run: dotnet build FastChartsSolution.sln --configuration Release --no-restore /p:EnableWindowsTargeting=true /p:TreatWarningsAsErrors=false
 
       - name: Test
-        run: dotnet test FastChartsSolution.sln --configuration Release --no-build /p:EnableWindowsTargeting=true --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test FastChartsSolution.sln --configuration Release /p:EnableWindowsTargeting=true --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
         if: always()
