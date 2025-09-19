@@ -1,0 +1,44 @@
+name: .NET CI
+
+on:
+  push:
+    branches: [ main, develop, feature/**, feat/**, fix/**, refactor/**, chore/** ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            6.0.x
+
+      - name: Restore
+        run: dotnet restore FastCharts.sln
+
+      - name: Build
+        run: dotnet build FastCharts.sln --configuration Release --no-restore /warnaserror- 
+
+      - name: Test
+        run: dotnet test FastCharts.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
+
+      - name: Report coverage summary
+        if: always()
+        run: |
+          echo "Tests completed. TRX and coverage artifacts are available in the job summary."
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            **/TestResults/*.trx
+            **/TestResults/**/coverage.cobertura.xml
