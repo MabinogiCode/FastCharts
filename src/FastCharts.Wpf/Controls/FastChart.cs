@@ -1,8 +1,9 @@
 ﻿using System.Collections.Specialized;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using FastCharts.Core;
+using FastCharts.Core.Abstractions;
+
 using SkiaSharp.Views.WPF;
 using FastCharts.Rendering.Skia;        // NEW
 
@@ -11,6 +12,9 @@ namespace FastCharts.Wpf.Controls
     [TemplatePart(Name = "PART_Skia", Type = typeof(SKElement))]
     public class FastChart : Control
     {
+        // NEW: depend on abstraction
+        public IRenderer<SkiaSharp.SKCanvas> Renderer { get; set; } = new SkiaChartRenderer();
+        
         static FastChart()
         {
             DefaultStyleKeyProperty.OverrideMetadata(
@@ -120,7 +124,7 @@ namespace FastCharts.Wpf.Controls
         private void OnSkiaPaint(object sender, SkiaSharp.Views.Desktop.SKPaintSurfaceEventArgs e)
         {
             if (Model == null) { e.Surface.Canvas.Clear(); return; }
-            _renderer.Render(Model, e.Surface.Canvas, e.Info.Width, e.Info.Height); // NEW
+            Renderer.Render(Model, e.Surface.Canvas, e.Info.Width, e.Info.Height); // via interface
         }
     }
 }
