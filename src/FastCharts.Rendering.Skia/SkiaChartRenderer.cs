@@ -143,45 +143,44 @@ namespace FastCharts.Rendering.Skia
                 canvas.DrawText(label, xBase - tickLen - 6 - w, py + 4, textPaint);
             }
 
-            // Draw the first LineSeries in the plot area
-            var ls = model.Series.OfType<LineSeries>().FirstOrDefault();
-            if (ls == null || ls.IsEmpty) return;
-
-            using var seriesPaint = new SKPaint
-            {
-                IsAntialias = true,
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = (float)ls.StrokeThickness,
-                Color = new SKColor(
-                    model.Theme.PrimarySeriesColor.R,
-                    model.Theme.PrimarySeriesColor.G,
-                    model.Theme.PrimarySeriesColor.B,
-                    model.Theme.PrimarySeriesColor.A)
-            };
-
-            using var path = new SKPath();
-            bool started = false;
-
+            // Draw all LineSeries in the plot area
+            int seriesIndex = 0;
             canvas.Save();
             canvas.Translate(Left, Top);
 
-            foreach (var p in ls.Data)
+            foreach (var ls in model.Series.OfType<LineSeries>())
             {
-                var x = (float)model.XAxis.Scale.ToPixels(p.X);
-                var y = (float)model.YAxis.Scale.ToPixels(p.Y);
+                if (ls.IsEmpty) { seriesIndex++; continue; }
 
-                if (!started)
+                // pick color from palette or fallback
+                var palette = model.Theme.SeriesPalette;
+                var c = (palette != null && seriesIndex < palette.Count)
+                    ? palette[seriesIndex]
+                    : model.Theme.PrimarySeriesColor;
+
+                using var seriesPaint = new SKPaint
                 {
-                    path.MoveTo(x, y);
-                    started = true;
-                }
-                else
+                    IsAntialias = true,
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = (float)ls.StrokeThickness,
+                    Color = new SKColor(c.R, c.G, c.B, c.A)
+                };
+
+                using var path = new SKPath();
+                bool started = false;
+
+                foreach (var p in ls.Data)
                 {
-                    path.LineTo(x, y);
+                    var x = (float)model.XAxis.Scale.ToPixels(p.X);
+                    var y = (float)model.YAxis.Scale.ToPixels(p.Y);
+                    if (!started) { path.MoveTo(x, y); started = true; }
+                    else          { path.LineTo(x, y); }
                 }
+
+                canvas.DrawPath(path, seriesPaint);
+                seriesIndex++;
             }
 
-            canvas.DrawPath(path, seriesPaint);
             canvas.Restore();
         }
     }

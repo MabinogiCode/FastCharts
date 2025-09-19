@@ -1,4 +1,6 @@
-﻿using FastCharts.Core.Abstractions;
+﻿using System.Collections.Generic;
+
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Themes.BuiltIn;
@@ -13,4 +15,15 @@ public sealed class LightTheme : ITheme
     public double TickLength => 5;
     public double LabelTextSize => 12;
     public ColorRgba PrimarySeriesColor => new(51, 153, 255, 255); // blue
+    
+    public IReadOnlyList<ColorRgba> SeriesPalette => _palette;
+    private static readonly ColorRgba[] _palette =
+    {
+        new( 51, 153, 255), // blue
+        new(255, 128,  64), // orange
+        new( 60, 180,  90), // green
+        new(220,  70, 140), // pink
+        new(155, 120, 255), // purple
+        new(255, 200,  60), // yellow
+    };
 }

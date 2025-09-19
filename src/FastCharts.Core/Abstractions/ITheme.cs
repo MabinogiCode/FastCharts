@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Abstractions;
@@ -11,5 +13,7 @@ public interface ITheme
     double GridThickness { get; }
     double TickLength { get; }
     double LabelTextSize { get; }
+
     ColorRgba PrimarySeriesColor { get; }
+    IReadOnlyList<ColorRgba> SeriesPalette { get; } // NEW
 }
