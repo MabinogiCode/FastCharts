@@ -162,20 +162,22 @@ namespace FastCharts.Rendering.Skia
                     float px = PixelMapper.X(t, model.XAxis, plotRect);
                     canvas.DrawLine(px, yBase, px, yBase + tickLen, tickPaint);
 
-                    var label = t.ToString(model.XAxis.LabelFormat ?? "G");
-                    float wlab = textPaint.MeasureText(label);
-                    canvas.DrawText(label, px - wlab / 2f, yBase + tickLen + 3 + textPaint.TextSize, textPaint);
+                    var xf = model.XAxis.NumberFormatter;
+                    var xLabel = xf != null ? xf.Format(t) : t.ToString(model.XAxis.LabelFormat ?? "G");
+                    float xWidth = textPaint.MeasureText(xLabel);
+                    canvas.DrawText(xLabel, px - xWidth / 2f, yBase + tickLen + 3 + textPaint.TextSize, textPaint);
                 }
 
                 // Y-axis ticks + labels
                 foreach (var t in yTicks)
                 {
-                    float py = PixelMapper.Y(t, model.YAxis, plotRect);
+                    var py = PixelMapper.Y(t, model.YAxis, plotRect);
                     canvas.DrawLine(xBase - tickLen, py, xBase, py, tickPaint);
 
-                    var label = t.ToString(model.YAxis.LabelFormat ?? "G");
-                    float wlab = textPaint.MeasureText(label);
-                    canvas.DrawText(label, xBase - tickLen - 6 - wlab, py + 4, textPaint);
+                    var yf = model.YAxis.NumberFormatter;
+                    var yLabel = yf != null ? yf.Format(t) : t.ToString(model.YAxis.LabelFormat ?? "G");
+                    var yWidth = textPaint.MeasureText(yLabel);
+                    canvas.DrawText(yLabel, xBase - tickLen - 6 - yWidth, py + 4, textPaint);
                 }
 
                 // 11) Plot border on top
