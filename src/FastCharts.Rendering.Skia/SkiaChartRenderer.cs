@@ -1,8 +1,11 @@
 using System.Linq;
+
 using FastCharts.Core;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Series;
+
 using SkiaSharp;
+
 using FastCharts.Rendering.Skia.Rendering; // PixelMapper
 
 namespace FastCharts.Rendering.Skia
@@ -21,13 +24,13 @@ namespace FastCharts.Rendering.Skia
 
             // 1) Compute plot rect from margins (in surface coords)
             var m = model.PlotMargins;
-            float left   = (float)m.Left;
-            float top    = (float)m.Top;
-            float right  = (float)m.Right;
+            float left = (float)m.Left;
+            float top = (float)m.Top;
+            float right = (float)m.Right;
             float bottom = (float)m.Bottom;
 
-            float plotW = (float)System.Math.Max(0, pixelWidth  - (left + right));
-            float plotH = (float)System.Math.Max(0, pixelHeight - (top  + bottom));
+            float plotW = (float)System.Math.Max(0, pixelWidth - (left + right));
+            float plotH = (float)System.Math.Max(0, pixelHeight - (top + bottom));
             if (plotW <= 0 || plotH <= 0)
             {
                 canvas.Clear(new SKColor(
@@ -52,35 +55,49 @@ namespace FastCharts.Rendering.Skia
 
             // 4) Fill plot background
             using (var bg = new SKPaint
-            {
-                Style = SKPaintStyle.Fill,
-                Color = new SKColor(
-                    theme.PlotBackgroundColor.R,
-                    theme.PlotBackgroundColor.G,
-                    theme.PlotBackgroundColor.B,
-                    theme.PlotBackgroundColor.A)
-            })
+                   {
+                       Style = SKPaintStyle.Fill,
+                       Color = new SKColor(
+                           theme.PlotBackgroundColor.R,
+                           theme.PlotBackgroundColor.G,
+                           theme.PlotBackgroundColor.B,
+                           theme.PlotBackgroundColor.A)
+                   })
             {
                 canvas.DrawRect(plotRect, bg);
             }
 
             // 5) Prepare paints
-            var axisColor  = new SKColor(theme.AxisColor.R,   theme.AxisColor.G,   theme.AxisColor.B,   theme.AxisColor.A);
-            var gridColor  = new SKColor(theme.GridColor.R,   theme.GridColor.G,   theme.GridColor.B,   theme.GridColor.A);
-            var labelColor = new SKColor(theme.LabelColor.R,  theme.LabelColor.G,  theme.LabelColor.B,  theme.LabelColor.A);
+            var axisColor = new SKColor(theme.AxisColor.R, theme.AxisColor.G, theme.AxisColor.B, theme.AxisColor.A);
+            var gridColor = new SKColor(theme.GridColor.R, theme.GridColor.G, theme.GridColor.B, theme.GridColor.A);
+            var labelColor = new SKColor(theme.LabelColor.R, theme.LabelColor.G, theme.LabelColor.B,
+                theme.LabelColor.A);
 
-            using (var axisPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = axisColor, StrokeWidth = (float)theme.AxisThickness })
-            using (var tickPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = axisColor, StrokeWidth = (float)theme.AxisThickness })
-            using (var textPaint = new SKPaint { IsAntialias = true, Color = labelColor, TextSize = (float)theme.LabelTextSize })
-            using (var gridPaint = new SKPaint { IsAntialias = false, Style = SKPaintStyle.Stroke, Color = gridColor, StrokeWidth = (float)theme.GridThickness })
+            using (var axisPaint = new SKPaint
+                   {
+                       IsAntialias = true, Style = SKPaintStyle.Stroke, Color = axisColor,
+                       StrokeWidth = (float)theme.AxisThickness
+                   })
+            using (var tickPaint = new SKPaint
+                   {
+                       IsAntialias = true, Style = SKPaintStyle.Stroke, Color = axisColor,
+                       StrokeWidth = (float)theme.AxisThickness
+                   })
+            using (var textPaint = new SKPaint
+                       { IsAntialias = true, Color = labelColor, TextSize = (float)theme.LabelTextSize })
+            using (var gridPaint = new SKPaint
+                   {
+                       IsAntialias = false, Style = SKPaintStyle.Stroke, Color = gridColor,
+                       StrokeWidth = (float)theme.GridThickness
+                   })
             {
                 // 6) Axis base lines (surface coords)
                 float xBase = plotRect.Left;
                 float yBase = plotRect.Bottom;
                 float xAxisStart = plotRect.Left;
-                float xAxisEnd   = plotRect.Right;
+                float xAxisEnd = plotRect.Right;
                 float yAxisStart = plotRect.Top;
-                float yAxisEnd   = plotRect.Bottom;
+                float yAxisEnd = plotRect.Bottom;
 
                 canvas.DrawLine(xAxisStart, yBase, xAxisEnd, yBase, axisPaint); // X axis
                 canvas.DrawLine(xBase, yAxisStart, xBase, yAxisEnd, axisPaint); // Y axis
@@ -109,6 +126,7 @@ namespace FastCharts.Rendering.Skia
                     float px = PixelMapper.X(t, model.XAxis, plotRect);
                     canvas.DrawLine(px, plotRect.Top, px, plotRect.Bottom, gridPaint);
                 }
+
                 // Grid (horizontals)
                 foreach (var t in yTicks)
                 {
@@ -122,19 +140,23 @@ namespace FastCharts.Rendering.Skia
 
                 foreach (var ls in model.Series.OfType<LineSeries>())
                 {
-                    if (ls.IsEmpty) { seriesIndex++; continue; }
+                    if (ls.IsEmpty)
+                    {
+                        seriesIndex++;
+                        continue;
+                    }
 
                     var c = (palette != null && seriesIndex < palette.Count)
                         ? palette[seriesIndex]
                         : model.Theme.PrimarySeriesColor;
 
                     using (var seriesPaint = new SKPaint
-                    {
-                        IsAntialias = true,
-                        Style = SKPaintStyle.Stroke,
-                        StrokeWidth = (float)ls.StrokeThickness,
-                        Color = new SKColor(c.R, c.G, c.B, c.A)
-                    })
+                           {
+                               IsAntialias = true,
+                               Style = SKPaintStyle.Stroke,
+                               StrokeWidth = (float)ls.StrokeThickness,
+                               Color = new SKColor(c.R, c.G, c.B, c.A)
+                           })
                     using (var path = new SKPath())
                     {
                         bool started = false;
@@ -142,9 +164,17 @@ namespace FastCharts.Rendering.Skia
                         {
                             float px = PixelMapper.X(p.X, model.XAxis, plotRect);
                             float py = PixelMapper.Y(p.Y, model.YAxis, plotRect);
-                            if (!started) { path.MoveTo(px, py); started = true; }
-                            else          { path.LineTo(px, py); }
+                            if (!started)
+                            {
+                                path.MoveTo(px, py);
+                                started = true;
+                            }
+                            else
+                            {
+                                path.LineTo(px, py);
+                            }
                         }
+
                         canvas.DrawPath(path, seriesPaint);
                     }
 
@@ -184,6 +214,82 @@ namespace FastCharts.Rendering.Skia
                 using (var border = new SKPaint { Color = axisColor, Style = SKPaintStyle.Stroke, StrokeWidth = 1 })
                 {
                     canvas.DrawRect(plotRect, border);
+                }
+
+                // 12) Overlay: crosshair + tooltip (if any)
+                var st = model.InteractionState;
+                if (st != null && st.ShowCrosshair)
+                {
+                    // Clamp cursor to plot rect
+                    float cx = (float)st.PixelX;
+                    float cy = (float)st.PixelY;
+                    if (cx < plotRect.Left) cx = plotRect.Left;
+                    else if (cx > plotRect.Right) cx = plotRect.Right;
+                    if (cy < plotRect.Top) cy = plotRect.Top;
+                    else if (cy > plotRect.Bottom) cy = plotRect.Bottom;
+
+                    using (var cross = new SKPaint
+                           {
+                               Color = new SKColor(0, 0, 0, 80), IsAntialias = false, Style = SKPaintStyle.Stroke,
+                               StrokeWidth = 1
+                           })
+                    using (var tipBg = new SKPaint
+                           {
+                               Color = new SKColor(255, 255, 255, 230), IsAntialias = true, Style = SKPaintStyle.Fill
+                           })
+                    using (var tipBd = new SKPaint
+                           {
+                               Color = new SKColor(0, 0, 0, 120), IsAntialias = true, Style = SKPaintStyle.Stroke,
+                               StrokeWidth = 1
+                           })
+                    using (var tipTx = new SKPaint
+                           {
+                               Color = new SKColor(30, 30, 30, 255), IsAntialias = true,
+                               TextSize = (float)model.Theme.LabelTextSize
+                           })
+                    {
+                        // Crosshair lines (clipped to plot)
+                        canvas.Save();
+                        canvas.ClipRect(plotRect);
+                        canvas.DrawLine(plotRect.Left, cy, plotRect.Right, cy, cross);
+                        canvas.DrawLine(cx, plotRect.Top, cx, plotRect.Bottom, cross);
+                        canvas.Restore();
+
+                        // Tooltip (optional)
+                        if (!string.IsNullOrEmpty(st.TooltipText))
+                        {
+                            var lines = st.TooltipText.Split('\n');
+                            float maxW = 0;
+                            for (int i = 0; i < lines.Length; i++)
+                            {
+                                float w = tipTx.MeasureText(lines[i]);
+                                if (w > maxW) maxW = w;
+                            }
+
+                            float lineH = tipTx.TextSize + 2;
+                            float pad = 6;
+                            float boxW = maxW + pad * 2;
+                            float boxH = lineH * lines.Length + pad * 2;
+
+                            // Position the tooltip near the cursor (inside the plot when possible)
+                            float bx = cx + 12;
+                            float by = cy - boxH - 12;
+                            if (bx + boxW > plotRect.Right) bx = plotRect.Right - boxW - 1;
+                            if (by < plotRect.Top) by = cy + 12;
+
+                            var rect = new SKRect(bx, by, bx + boxW, by + boxH);
+                            canvas.DrawRect(rect, tipBg);
+                            canvas.DrawRect(rect, tipBd);
+
+                            float tx = bx + pad;
+                            float ty = by + pad + tipTx.TextSize;
+                            for (int i = 0; i < lines.Length; i++)
+                            {
+                                canvas.DrawText(lines[i], tx, ty, tipTx);
+                                ty += lineH;
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -6,6 +6,7 @@ using FastCharts.Core.Primitives;
 using System.Collections.ObjectModel;
 using System.Linq;
 
+using FastCharts.Core.Interaction;
 using FastCharts.Core.Themes.BuiltIn;
 
 namespace FastCharts.Core;
@@ -34,6 +35,12 @@ public sealed class ChartModel : IChartModel
     IReadOnlyList<object> IChartModel.Series => Series;
     
     public Margins PlotMargins { get; set; } = new Margins(48, 16, 16, 36);
+    
+    /// <summary>Ordered list of behaviors attached to this model.</summary>
+    public IList<IBehavior> Behaviors { get; } = new List<IBehavior>();
+
+    /// <summary>Shared interaction state that renderers may read to draw overlays.</summary>
+    public InteractionState InteractionState { get; set; }
 
     public void AddSeries(object series)
     {

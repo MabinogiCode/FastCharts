@@ -5,7 +5,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using FastCharts.Core;              // ChartModel
 using FastCharts.Core.Primitives;   // FRange
-using FastCharts.Core.Axes;         // IAxis<T>
+using FastCharts.Core.Axes;
+using FastCharts.Core.Interaction;
+using FastCharts.Core.Interaction.Behaviors; // IAxis<T>
 using FastCharts.Rendering.Skia;    // SkiaChartRenderer (renderer par défaut)
 using SkiaSharp;                    // SKCanvas
 using SkiaSharp.Views.WPF;
@@ -112,6 +114,11 @@ namespace FastCharts.Wpf.Controls
             if (!_userChangedView)
                 Model.AutoFitDataRange();
 
+            if (Model.Behaviors.Count == 0)
+            {
+                Model.Behaviors.Add(new CrosshairBehavior());
+            }
+
             Redraw();
         }
 
@@ -197,7 +204,17 @@ namespace FastCharts.Wpf.Controls
                 Model.XAxis.SetVisibleRange(vx.Min + dxData, vx.Max + dxData);
                 Model.YAxis.SetVisibleRange(vy.Min + dyData, vy.Max + dyData);
 
-                Redraw();
+                UpdateDataCoordsForTooltip(pos.X, pos.Y);
+                var ev = new InteractionEvent(
+                    PointerEventType.Move,
+                    PointerButton.None,
+                    new PointerModifiers { Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
+                        Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
+                        Alt = Keyboard.IsKeyDown(Key.LeftAlt)   || Keyboard.IsKeyDown(Key.RightAlt) },
+                    pos.X, pos.Y);
+
+                if (RouteToBehaviors(ev))
+                    Redraw();
             }
 
             _lastMousePos = pos;
@@ -221,6 +238,9 @@ namespace FastCharts.Wpf.Controls
                 _skia.ReleaseMouseCapture();
                 Mouse.OverrideCursor = null;
             }
+            var ev = new InteractionEvent(PointerEventType.Leave, PointerButton.None, new PointerModifiers(), _lastMousePos.X, _lastMousePos.Y);
+            if (RouteToBehaviors(ev))
+                Redraw();
         }
 
         private void OnSkiaMouseWheel(object sender, MouseWheelEventArgs e)
@@ -286,6 +306,42 @@ namespace FastCharts.Wpf.Controls
         {
             if (_skia != null)
                 _skia.InvalidateVisual();
+        }
+        
+        private bool RouteToBehaviors(InteractionEvent ev)
+        {
+            if (Model == null || Model.Behaviors == null) return false;
+            bool handled = false;
+            for (int i = 0; i < Model.Behaviors.Count; i++)
+                handled |= Model.Behaviors[i].OnEvent(Model, ev);
+            return handled;
+        }
+
+        private void UpdateDataCoordsForTooltip(double pixelX, double pixelY)
+        {
+            if (Model == null) return;
+
+            // Convert SURFACE pixels to DATA using VisibleRange and plotRect (same logic as renderer)
+            var m = Model.PlotMargins;
+            double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
+
+            double plotW = _skia.ActualWidth  - (left + right);
+            double plotH = _skia.ActualHeight - (top  + bottom);
+            if (plotW <= 0 || plotH <= 0) return;
+
+            double px = pixelX - left; if (px < 0) px = 0; else if (px > plotW) px = plotW;
+            double py = pixelY - top;  if (py < 0) py = 0; else if (py > plotH) py = plotH;
+
+            var xr = Model.XAxis.VisibleRange;
+            var yr = Model.YAxis.VisibleRange;
+            double x = xr.Min + (px / plotW) * (xr.Max - xr.Min);
+            double y = yr.Max - (py / plotH) * (yr.Max - yr.Min);
+
+            if (Model.InteractionState == null)
+                Model.InteractionState = new InteractionState();
+
+            Model.InteractionState.DataX = x;
+            Model.InteractionState.DataY = y;
         }
     }
 }
