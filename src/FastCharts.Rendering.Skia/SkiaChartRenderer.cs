@@ -3,6 +3,7 @@ using FastCharts.Core;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Series;
 using SkiaSharp;
+using FastCharts.Rendering.Skia.Rendering; // PixelMapper
 
 namespace FastCharts.Rendering.Skia
 {
@@ -18,32 +19,38 @@ namespace FastCharts.Rendering.Skia
 
             var theme = model.Theme;
 
-            // Margins come from the model (centralized layout).
+            // 1) Compute plot rect from margins (in surface coords)
             var m = model.PlotMargins;
             float left   = (float)m.Left;
             float top    = (float)m.Top;
             float right  = (float)m.Right;
             float bottom = (float)m.Bottom;
 
-            // Fill the entire surface outside the plot (margins).
+            float plotW = (float)System.Math.Max(0, pixelWidth  - (left + right));
+            float plotH = (float)System.Math.Max(0, pixelHeight - (top  + bottom));
+            if (plotW <= 0 || plotH <= 0)
+            {
+                canvas.Clear(new SKColor(
+                    theme.SurfaceBackgroundColor.R,
+                    theme.SurfaceBackgroundColor.G,
+                    theme.SurfaceBackgroundColor.B,
+                    theme.SurfaceBackgroundColor.A));
+                return;
+            }
+
+            var plotRect = new SKRect(left, top, left + plotW, top + plotH);
+
+            // 2) Clear surface background (outside plot)
             canvas.Clear(new SKColor(
                 theme.SurfaceBackgroundColor.R,
                 theme.SurfaceBackgroundColor.G,
                 theme.SurfaceBackgroundColor.B,
                 theme.SurfaceBackgroundColor.A));
 
-            // Compute plot area size.
-            var plotW = (int)System.Math.Max(0, pixelWidth  - (left + right));
-            var plotH = (int)System.Math.Max(0, pixelHeight - (top  + bottom));
-            if (plotW <= 0 || plotH <= 0)
-                return;
+            // 3) Sync internal scales (if used elsewhere)
+            model.UpdateScales((int)plotW, (int)plotH);
 
-            // Keep internal scale math in sync with the plot size (if used elsewhere).
-            model.UpdateScales(plotW, plotH);
-
-            // Fill the plot background.
-            canvas.Save();
-            canvas.Translate(left, top);
+            // 4) Fill plot background
             using (var bg = new SKPaint
             {
                 Style = SKPaintStyle.Fill,
@@ -54,148 +61,129 @@ namespace FastCharts.Rendering.Skia
                     theme.PlotBackgroundColor.A)
             })
             {
-                canvas.DrawRect(0, 0, plotW, plotH, bg);
-            }
-            canvas.Restore();
-
-            // Prepare paints from theme.
-            using var axisPaint = new SKPaint
-            {
-                IsAntialias = true,
-                Style = SKPaintStyle.Stroke,
-                Color = new SKColor(theme.AxisColor.R, theme.AxisColor.G, theme.AxisColor.B, theme.AxisColor.A),
-                StrokeWidth = (float)theme.AxisThickness
-            };
-            using var tickPaint = new SKPaint
-            {
-                IsAntialias = true,
-                Style = SKPaintStyle.Stroke,
-                Color = axisPaint.Color,
-                StrokeWidth = (float)theme.AxisThickness
-            };
-            using var textPaint = new SKPaint
-            {
-                IsAntialias = true,
-                Color = new SKColor(theme.LabelColor.R, theme.LabelColor.G, theme.LabelColor.B, theme.LabelColor.A),
-                TextSize = (float)theme.LabelTextSize
-            };
-            using var gridPaint = new SKPaint
-            {
-                IsAntialias = false,
-                Style = SKPaintStyle.Stroke,
-                Color = new SKColor(theme.GridColor.R, theme.GridColor.G, theme.GridColor.B, theme.GridColor.A),
-                StrokeWidth = (float)theme.GridThickness
-            };
-
-            // Axis base lines (surface coords).
-            float xBase = left;
-            float yBase = pixelHeight - bottom;
-            float xAxisStart = left;
-            float xAxisEnd   = pixelWidth - right;
-            float yAxisStart = top;
-            float yAxisEnd   = pixelHeight - bottom;
-
-            canvas.DrawLine(xAxisStart, yBase, xAxisEnd, yBase, axisPaint); // X axis
-            canvas.DrawLine(xBase, yAxisStart, xBase, yAxisEnd, axisPaint); // Y axis
-
-            // Visible ranges drive all pixel mapping.
-            var xr = model.XAxis.VisibleRange;
-            var yr = model.YAxis.VisibleRange;
-            if (xr.Size <= 0 || yr.Size <= 0) return;
-
-            // Approximate tick steps in data units based on desired pixel spacing.
-            double xDataPerPx = xr.Size / System.Math.Max(1.0, plotW);
-            double yDataPerPx = yr.Size / System.Math.Max(1.0, plotH);
-            double approxXStepData = 80.0 * xDataPerPx; // ~80 px between x ticks
-            double approxYStepData = 50.0 * yDataPerPx; // ~50 px between y ticks
-
-            var xTicks = model.XAxis.Ticker.GetTicks(xr, approxXStepData);
-            var yTicks = model.YAxis.Ticker.GetTicks(yr, approxYStepData);
-
-            // Local mapping functions: data -> pixels in plot coordinates (origin top-left).
-            float XToPx(double x) => (float)((x - xr.Min) * (plotW / xr.Size));
-            float YToPx(double y) => (float)(plotH - (y - yr.Min) * (plotH / yr.Size)); // invert Y
-
-            // Grid inside plot area.
-            canvas.Save();
-            canvas.Translate(left, top);
-            foreach (var t in xTicks)
-            {
-                var x = XToPx(t);
-                canvas.DrawLine(x + 0.5f, 0, x + 0.5f, plotH, gridPaint);
-            }
-            foreach (var t in yTicks)
-            {
-                var y = YToPx(t);
-                canvas.DrawLine(0, y + 0.5f, plotW, y + 0.5f, gridPaint);
-            }
-            canvas.Restore();
-
-            // Ticks & labels (surface coords).
-            float tickLen = (float)theme.TickLength;
-
-            // X-axis ticks/labels
-            foreach (var t in xTicks)
-            {
-                var px = XToPx(t) + left;
-                canvas.DrawLine(px, yBase, px, yBase + tickLen, tickPaint);
-
-                var label = t.ToString(model.XAxis.LabelFormat ?? "G");
-                var wlab = textPaint.MeasureText(label);
-                canvas.DrawText(label, px - wlab / 2f, yBase + tickLen + 3 + textPaint.TextSize, textPaint);
+                canvas.DrawRect(plotRect, bg);
             }
 
-            // Y-axis ticks/labels
-            foreach (var t in yTicks)
+            // 5) Prepare paints
+            var axisColor  = new SKColor(theme.AxisColor.R,   theme.AxisColor.G,   theme.AxisColor.B,   theme.AxisColor.A);
+            var gridColor  = new SKColor(theme.GridColor.R,   theme.GridColor.G,   theme.GridColor.B,   theme.GridColor.A);
+            var labelColor = new SKColor(theme.LabelColor.R,  theme.LabelColor.G,  theme.LabelColor.B,  theme.LabelColor.A);
+
+            using (var axisPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = axisColor, StrokeWidth = (float)theme.AxisThickness })
+            using (var tickPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = axisColor, StrokeWidth = (float)theme.AxisThickness })
+            using (var textPaint = new SKPaint { IsAntialias = true, Color = labelColor, TextSize = (float)theme.LabelTextSize })
+            using (var gridPaint = new SKPaint { IsAntialias = false, Style = SKPaintStyle.Stroke, Color = gridColor, StrokeWidth = (float)theme.GridThickness })
             {
-                var py = YToPx(t) + top;
-                canvas.DrawLine(xBase - tickLen, py, xBase, py, tickPaint);
+                // 6) Axis base lines (surface coords)
+                float xBase = plotRect.Left;
+                float yBase = plotRect.Bottom;
+                float xAxisStart = plotRect.Left;
+                float xAxisEnd   = plotRect.Right;
+                float yAxisStart = plotRect.Top;
+                float yAxisEnd   = plotRect.Bottom;
 
-                var label = t.ToString(model.YAxis.LabelFormat ?? "G");
-                var wlab = textPaint.MeasureText(label);
-                canvas.DrawText(label, xBase - tickLen - 6 - wlab, py + 4, textPaint);
-            }
+                canvas.DrawLine(xAxisStart, yBase, xAxisEnd, yBase, axisPaint); // X axis
+                canvas.DrawLine(xBase, yAxisStart, xBase, yAxisEnd, axisPaint); // Y axis
 
-            // Draw all LineSeries in the plot area with palette colors.
-            var palette = model.Theme.SeriesPalette;
-            int seriesIndex = 0;
+                // 7) Visible ranges (guard)
+                var xr = model.XAxis.VisibleRange;
+                var yr = model.YAxis.VisibleRange;
+                if (xr.Size <= 0 || yr.Size <= 0) return;
 
-            canvas.Save();
-            canvas.Translate(left, top);
+                // 8) Tick generation (approx pixel spacing → data step)
+                double xDataPerPx = xr.Size / System.Math.Max(1.0, plotW);
+                double yDataPerPx = yr.Size / System.Math.Max(1.0, plotH);
+                double approxXStepData = 80.0 * xDataPerPx; // ~80 px between X ticks
+                double approxYStepData = 50.0 * yDataPerPx; // ~50 px between Y ticks
 
-            foreach (var ls in model.Series.OfType<LineSeries>())
-            {
-                if (ls.IsEmpty) { seriesIndex++; continue; }
+                var xTicks = model.XAxis.Ticker.GetTicks(xr, approxXStepData);
+                var yTicks = model.YAxis.Ticker.GetTicks(yr, approxYStepData);
 
-                // Pick color from palette or fallback to PrimarySeriesColor.
-                var c = (palette != null && seriesIndex < palette.Count)
-                    ? palette[seriesIndex]
-                    : model.Theme.PrimarySeriesColor;
+                // 9) GRID + SERIES clipped to plotRect
+                canvas.Save();
+                canvas.ClipRect(plotRect);
 
-                using var seriesPaint = new SKPaint
+                // Grid (verticals)
+                foreach (var t in xTicks)
                 {
-                    IsAntialias = true,
-                    Style = SKPaintStyle.Stroke,
-                    StrokeWidth = (float)ls.StrokeThickness,
-                    Color = new SKColor(c.R, c.G, c.B, c.A)
-                };
-
-                using var path = new SKPath();
-                bool started = false;
-
-                foreach (var p in ls.Data)
+                    float px = PixelMapper.X(t, model.XAxis, plotRect);
+                    canvas.DrawLine(px, plotRect.Top, px, plotRect.Bottom, gridPaint);
+                }
+                // Grid (horizontals)
+                foreach (var t in yTicks)
                 {
-                    var x = XToPx(p.X);
-                    var y = YToPx(p.Y);
-                    if (!started) { path.MoveTo(x, y); started = true; }
-                    else          { path.LineTo(x, y); }
+                    float py = PixelMapper.Y(t, model.YAxis, plotRect);
+                    canvas.DrawLine(plotRect.Left, py, plotRect.Right, py, gridPaint);
                 }
 
-                canvas.DrawPath(path, seriesPaint);
-                seriesIndex++;
-            }
+                // Series (LineSeries)
+                var palette = model.Theme.SeriesPalette;
+                int seriesIndex = 0;
 
-            canvas.Restore();
+                foreach (var ls in model.Series.OfType<LineSeries>())
+                {
+                    if (ls.IsEmpty) { seriesIndex++; continue; }
+
+                    var c = (palette != null && seriesIndex < palette.Count)
+                        ? palette[seriesIndex]
+                        : model.Theme.PrimarySeriesColor;
+
+                    using (var seriesPaint = new SKPaint
+                    {
+                        IsAntialias = true,
+                        Style = SKPaintStyle.Stroke,
+                        StrokeWidth = (float)ls.StrokeThickness,
+                        Color = new SKColor(c.R, c.G, c.B, c.A)
+                    })
+                    using (var path = new SKPath())
+                    {
+                        bool started = false;
+                        foreach (var p in ls.Data)
+                        {
+                            float px = PixelMapper.X(p.X, model.XAxis, plotRect);
+                            float py = PixelMapper.Y(p.Y, model.YAxis, plotRect);
+                            if (!started) { path.MoveTo(px, py); started = true; }
+                            else          { path.LineTo(px, py); }
+                        }
+                        canvas.DrawPath(path, seriesPaint);
+                    }
+
+                    seriesIndex++;
+                }
+
+                canvas.Restore(); // end clip
+
+                // 10) Ticks & labels (outside clip)
+                float tickLen = (float)theme.TickLength;
+
+                // X-axis ticks + labels
+                foreach (var t in xTicks)
+                {
+                    float px = PixelMapper.X(t, model.XAxis, plotRect);
+                    canvas.DrawLine(px, yBase, px, yBase + tickLen, tickPaint);
+
+                    var label = t.ToString(model.XAxis.LabelFormat ?? "G");
+                    float wlab = textPaint.MeasureText(label);
+                    canvas.DrawText(label, px - wlab / 2f, yBase + tickLen + 3 + textPaint.TextSize, textPaint);
+                }
+
+                // Y-axis ticks + labels
+                foreach (var t in yTicks)
+                {
+                    float py = PixelMapper.Y(t, model.YAxis, plotRect);
+                    canvas.DrawLine(xBase - tickLen, py, xBase, py, tickPaint);
+
+                    var label = t.ToString(model.YAxis.LabelFormat ?? "G");
+                    float wlab = textPaint.MeasureText(label);
+                    canvas.DrawText(label, xBase - tickLen - 6 - wlab, py + 4, textPaint);
+                }
+
+                // 11) Plot border on top
+                using (var border = new SKPaint { Color = axisColor, Style = SKPaintStyle.Stroke, StrokeWidth = 1 })
+                {
+                    canvas.DrawRect(plotRect, border);
+                }
+            }
         }
     }
 }
