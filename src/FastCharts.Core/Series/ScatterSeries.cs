@@ -3,35 +3,40 @@ using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Series
 {
-    /// <summary>
-    /// Scatter series: renders discrete markers at data points.
-    /// Inherits LineSeries to integrate seamlessly with the existing series collection.
-    /// The line path is intentionally NOT drawn by the renderer for this derived type.
-    /// </summary>
-    public sealed class ScatterSeries : LineSeries
+    public sealed class ScatterSeries : SeriesBase
     {
+        public IList<PointD> Data { get; }
+
         /// <summary>
-        /// Marker diameter in pixels (renderer may interpret as size).
+        /// Marker diameter in pixels.
         /// </summary>
         public double MarkerSize { get; set; }
 
         /// <summary>
-        /// Marker shape (Circle/Square/Triangle).
+        /// Marker shape.
         /// </summary>
         public MarkerShape MarkerShape { get; set; }
 
-        public ScatterSeries()
-            : base(new List<PointD>())
+        public override bool IsEmpty
         {
-            this.MarkerSize = 5.0;
-            this.MarkerShape = MarkerShape.Circle;
+            get
+            {
+                return Data == null || Data.Count == 0;
+            }
+        }
+
+        public ScatterSeries()
+        {
+            Data = new List<PointD>();
+            MarkerSize = 5.0;
+            MarkerShape = MarkerShape.Circle;
         }
 
         public ScatterSeries(IEnumerable<PointD> points)
-            : base(points)
         {
-            this.MarkerSize = 5.0;
-            this.MarkerShape = MarkerShape.Circle;
+            Data = new List<PointD>(points);
+            MarkerSize = 5.0;
+            MarkerShape = MarkerShape.Circle;
         }
     }
 }
