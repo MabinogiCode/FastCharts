@@ -143,15 +143,18 @@ namespace FastCharts.Rendering.Skia
                 // --- 1) AREA (fill + outline) ---
                 foreach (var ls in model.Series.OfType<LineSeries>())
                 {
-                    if (ls.IsEmpty)
+                    if (ls.IsEmpty || ls.IsEmpty)
                     {
                         seriesIndex++;
                         continue;
                     }
 
-                    var c = (palette != null && seriesIndex < palette.Count)
-                        ? palette[seriesIndex]
-                        : model.Theme.PrimarySeriesColor;
+                    int index = seriesIndex;
+                    if (ls.PaletteIndex.HasValue)
+                    {
+                        index = ls.PaletteIndex.Value;
+                    }
+                    var c = (palette != null && index < palette.Count) ? palette[index] : model.Theme.PrimarySeriesColor;
 
                     var area = ls as AreaSeries;
                     if (area != null)
