@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Series;
 
-public sealed class LineSeries : ISeries<PointD>
+public class LineSeries : ISeries<PointD>
 {
     private readonly IReadOnlyList<PointD> _data;
 

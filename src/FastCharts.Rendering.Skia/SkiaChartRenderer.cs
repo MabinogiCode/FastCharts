@@ -2,6 +2,7 @@ using System.Linq;
 
 using FastCharts.Core;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 
 using SkiaSharp;
@@ -134,7 +135,7 @@ namespace FastCharts.Rendering.Skia
                     canvas.DrawLine(plotRect.Left, py, plotRect.Right, py, gridPaint);
                 }
 
-                // Series (LineSeries)
+                // Series (LineSeries + AreaSeries)
                 var palette = model.Theme.SeriesPalette;
                 int seriesIndex = 0;
 
@@ -150,6 +151,75 @@ namespace FastCharts.Rendering.Skia
                         ? palette[seriesIndex]
                         : model.Theme.PrimarySeriesColor;
 
+                    // === AREA FILL (if AreaSeries) ===
+                    var area = ls as AreaSeries;
+                    if (area != null)
+                    {
+                        // Build a closed path: baseline -> points -> back to baseline
+                        using (var fillPath = new SKPath())
+                        {
+                            bool started = false;
+
+                            // Start from the first data point projected to baseline
+                            // We will move to (x0, yBaselinePx), then lines along data, then back down to baseline at xEnd.
+                            double baseline = area.Baseline;
+
+                            double firstX = 0.0;
+                            bool hasFirstX = false;
+
+                            foreach (var p in area.Data)
+                            {
+                                float px = PixelMapper.X(p.X, model.XAxis, plotRect);
+                                float pyBaseline = PixelMapper.Y(baseline, model.YAxis, plotRect);
+
+                                if (!started)
+                                {
+                                    fillPath.MoveTo(px, pyBaseline);
+                                    started = true;
+                                    firstX = p.X;
+                                    hasFirstX = true;
+                                }
+
+                                float py = PixelMapper.Y(p.Y, model.YAxis, plotRect);
+                                fillPath.LineTo(px, py);
+                            }
+
+                            // Close path back to baseline at the last X
+                            // If we have at least one point, the current path end is at (xN, yN).
+                            // We add a vertical line to baseline, then close back to the start (x0, baseline).
+                            if (started && hasFirstX)
+                            {
+                                // Last point's X is already at path end; get it by peeking last data item
+                                var last = default(PointD);
+                                foreach (var p in area.Data)
+                                {
+                                    last = p;
+                                }
+
+                                float lastPx = PixelMapper.X(last.X, model.XAxis, plotRect);
+                                float basePy = PixelMapper.Y(baseline, model.YAxis, plotRect);
+
+                                fillPath.LineTo(lastPx, basePy);
+                                fillPath.Close();
+
+                                // Compute fill color with opacity
+                                byte alpha = (byte)(System.Math.Max(0.0, System.Math.Min(1.0, area.FillOpacity)) * c.A);
+                                var fillColor = new SKColor(c.R, c.G, c.B, alpha);
+
+                                using (var fillPaint = new SKPaint
+                                       {
+                                           IsAntialias = true,
+                                           Style = SKPaintStyle.Fill,
+                                           Color = fillColor
+                                       })
+                                {
+                                    canvas.DrawPath(fillPath, fillPaint);
+                                }
+                            }
+                        }
+                    }
+
+                    // === LINE OUTLINE (for both LineSeries and AreaSeries) ===
                     using (var seriesPaint = new SKPaint
                            {
                                IsAntialias = true,
@@ -164,6 +234,7 @@ namespace FastCharts.Rendering.Skia
                         {
                             float px = PixelMapper.X(p.X, model.XAxis, plotRect);
                             float py = PixelMapper.Y(p.Y, model.YAxis, plotRect);
+
                             if (!started)
                             {
                                 path.MoveTo(px, py);
@@ -180,6 +251,7 @@ namespace FastCharts.Rendering.Skia
 
                     seriesIndex++;
                 }
+
 
                 canvas.Restore(); // end clip
 
