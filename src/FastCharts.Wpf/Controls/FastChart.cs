@@ -1,15 +1,12 @@
-﻿// src/FastCharts.Wpf/Controls/FastChart.cs
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using FastCharts.Core;              // ChartModel
 using FastCharts.Core.Primitives;   // FRange
-using FastCharts.Core.Axes;
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Interaction.Behaviors; // IAxis<T>
 using FastCharts.Rendering.Skia;    // SkiaChartRenderer (renderer par défaut)
-using SkiaSharp;                    // SKCanvas
 using SkiaSharp.Views.WPF;
 using SkiaSharp.Views.Desktop;      // SKPaintSurfaceEventArgs
 
@@ -25,7 +22,7 @@ namespace FastCharts.Wpf.Controls
     {
         private const string PartSkia = "PART_Skia";
 
-        private SKElement _skia;
+        private SKElement? _skia;
         private bool _isPanning;
         private Point _lastMousePos;
         private bool _userChangedView;
@@ -33,21 +30,12 @@ namespace FastCharts.Wpf.Controls
         // Default renderer instance (Skia)
         private readonly SkiaChartRenderer _renderer = new SkiaChartRenderer();
 
-        /// <summary>
-        /// Optional hook to override rendering.
-        /// If set, it will be called on PaintSurface. If it returns true, default Skia rendering is skipped.
-        /// Signature: (model, canvas, width, height) => rendered?
-        /// </summary>
-        public Func<ChartModel, SKCanvas, int, int, bool> RenderOverride { get; set; }
-
         static FastChart()
         {
             DefaultStyleKeyProperty.OverrideMetadata(
                 typeof(FastChart),
                 new FrameworkPropertyMetadata(typeof(FastChart)));
         }
-
-        #region Dependency Properties
 
         public static readonly DependencyProperty ModelProperty =
             DependencyProperty.Register(
@@ -68,8 +56,6 @@ namespace FastCharts.Wpf.Controls
             chart._userChangedView = false; // allow initial AutoFit
             if (chart._skia != null) chart._skia.InvalidateVisual();
         }
-
-        #endregion
 
         public override void OnApplyTemplate()
         {
@@ -109,8 +95,6 @@ namespace FastCharts.Wpf.Controls
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            if (Model == null) return;
-
             if (!_userChangedView)
                 Model.AutoFitDataRange();
 
@@ -122,54 +106,30 @@ namespace FastCharts.Wpf.Controls
             Redraw();
         }
 
-        private void OnSkiaPaintSurface(object sender, SKPaintSurfaceEventArgs e)
+        private void OnSkiaPaintSurface(object? sender, SKPaintSurfaceEventArgs e)
         {
             var canvas = e.Surface.Canvas;
-
-            if (Model == null)
-            {
-                canvas.Clear(SKColors.White);
-                return;
-            }
-
-            // 1) Optional external renderer
-            var hook = RenderOverride;
-            if (hook != null)
-            {
-                try
-                {
-                    bool handled = hook(Model, canvas, e.Info.Width, e.Info.Height);
-                    if (handled) return;
-                }
-                catch
-                {
-                    // Swallow hook exceptions to avoid breaking the control
-                }
-            }
-
-            // 2) Default Skia renderer
             _renderer.Render(Model, canvas, e.Info.Width, e.Info.Height);
         }
 
-        #region Interaction (Pan / Zoom)
-
         private void OnSkiaMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (Model == null) return;
-
             if (e.ChangedButton == MouseButton.Left)
             {
                 _userChangedView = true;
                 _isPanning = true;
                 _lastMousePos = e.GetPosition(_skia);
-                _skia.CaptureMouse();
+                _skia?.CaptureMouse();
                 Mouse.OverrideCursor = Cursors.SizeAll;
             }
         }
 
         private void OnSkiaMouseMove(object sender, MouseEventArgs e)
         {
-            if (Model == null || !_isPanning) return;
+            if (!_isPanning || _skia == null)
+            {
+                return;
+            }
 
             var pos = e.GetPosition(_skia);
 
@@ -222,7 +182,7 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (_isPanning)
+            if (_isPanning && _skia != null)
             {
                 _isPanning = false;
                 _skia.ReleaseMouseCapture();
@@ -232,7 +192,7 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseLeave(object sender, MouseEventArgs e)
         {
-            if (_isPanning)
+            if (_isPanning && _skia != null)
             {
                 _isPanning = false;
                 _skia.ReleaseMouseCapture();
@@ -245,8 +205,10 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (Model == null) return;
-
+            if (_skia == null)
+            {
+                return;
+            }
             _userChangedView = true;
 
             // Zoom factor (<1 = zoom in, >1 = zoom out)
@@ -290,8 +252,17 @@ namespace FastCharts.Wpf.Controls
             double newMaxY = anchorY + (vy.Max - anchorY) * factor;
 
             // Avoid degenerate windows
-            if (newMaxX == newMinX) { newMinX -= 0.5; newMaxX += 0.5; }
-            if (newMaxY == newMinY) { newMinY -= 0.5; newMaxY += 0.5; }
+            if (Math.Abs(newMaxX - newMinX) < double.Epsilon)
+            {
+                newMinX -= 0.5; 
+                newMaxX += 0.5;
+            }
+
+            if (Math.Abs(newMaxY - newMinY) < double.Epsilon)
+            {
+                newMinY -= 0.5; 
+                newMaxY += 0.5;
+            }
 
             Model.XAxis.SetVisibleRange(newMinX, newMaxX);
             Model.YAxis.SetVisibleRange(newMinY, newMaxY);
@@ -299,8 +270,6 @@ namespace FastCharts.Wpf.Controls
             Redraw();
             e.Handled = true;
         }
-
-        #endregion
 
         private void Redraw()
         {
@@ -310,17 +279,22 @@ namespace FastCharts.Wpf.Controls
         
         private bool RouteToBehaviors(InteractionEvent ev)
         {
-            if (Model == null || Model.Behaviors == null) return false;
             bool handled = false;
             for (int i = 0; i < Model.Behaviors.Count; i++)
+            {
                 handled |= Model.Behaviors[i].OnEvent(Model, ev);
+            }
+
             return handled;
         }
 
         private void UpdateDataCoordsForTooltip(double pixelX, double pixelY)
         {
-            if (Model == null) return;
-
+            if (_skia == null)
+            {
+                return;
+            }
+            
             // Convert SURFACE pixels to DATA using VisibleRange and plotRect (same logic as renderer)
             var m = Model.PlotMargins;
             double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;

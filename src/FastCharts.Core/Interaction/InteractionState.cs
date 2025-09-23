@@ -16,6 +16,6 @@
         public double? DataY { get; set; }
 
         // Optional text to show near the cursor
-        public string TooltipText { get; set; }
+        public string? TooltipText { get; set; }
     }
 }
