@@ -19,7 +19,7 @@ public sealed class MainViewModel
             .Select(i => new PointD(i, Math.Sin(i * Math.PI / 20.0)))
             .ToArray();
 
-        Chart.AddSeries(new LineSeries(points));
+        Chart.AddSeries(new ScatterSeries(points));
         Chart.UpdateScales(800, 400); // nominal size; real renderer will update on arrange
     }
 }

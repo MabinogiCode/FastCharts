@@ -1,4 +1,6 @@
-﻿using FastCharts.Core.Abstractions;
+﻿using System;
+
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Axes.Ticks;
 using FastCharts.Core.Formatting;
 using FastCharts.Core.Primitives;
@@ -24,7 +26,7 @@ public sealed class NumericAxis : IAxis<double>
     public string? LabelFormat { get; set; } = "G";
     
     /// <summary>Optional number formatter for tick labels. If null, renderers fall back to LabelFormat/G.</summary>
-    public INumberFormatter NumberFormatter { get; set; }
+    public INumberFormatter? NumberFormatter { get; set; }
 
     public void UpdateScale(double pixelMin, double pixelMax)
     {
@@ -45,7 +47,7 @@ public sealed class NumericAxis : IAxis<double>
         }
 
         // Avoid zero-length range (bad for scales)
-        if (min == max)
+        if (Math.Abs(min - max) < double.Epsilon)
         {
             var eps = (min == 0d) ? 1e-6 : System.Math.Abs(min) * 1e-6;
             min -= eps;

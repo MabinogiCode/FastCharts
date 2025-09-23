@@ -40,7 +40,7 @@ public sealed class ChartModel : IChartModel
     public IList<IBehavior> Behaviors { get; } = new List<IBehavior>();
 
     /// <summary>Shared interaction state that renderers may read to draw overlays.</summary>
-    public InteractionState InteractionState { get; set; }
+    public InteractionState? InteractionState { get; set; }
 
     public void AddSeries(object series)
     {
