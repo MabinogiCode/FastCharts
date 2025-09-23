@@ -135,10 +135,12 @@ namespace FastCharts.Rendering.Skia
                     canvas.DrawLine(plotRect.Left, py, plotRect.Right, py, gridPaint);
                 }
 
-                // Series (LineSeries + AreaSeries)
+                // Series rendering (Area -> Scatter -> Plain Lines), clipped to plotRect above.
+
                 var palette = model.Theme.SeriesPalette;
                 int seriesIndex = 0;
 
+                // --- 1) AREA (fill + outline) ---
                 foreach (var ls in model.Series.OfType<LineSeries>())
                 {
                     if (ls.IsEmpty)
@@ -151,17 +153,13 @@ namespace FastCharts.Rendering.Skia
                         ? palette[seriesIndex]
                         : model.Theme.PrimarySeriesColor;
 
-                    // === AREA FILL (if AreaSeries) ===
                     var area = ls as AreaSeries;
                     if (area != null)
                     {
-                        // Build a closed path: baseline -> points -> back to baseline
+                        // Build closed path baseline -> points -> baseline
                         using (var fillPath = new SKPath())
                         {
                             bool started = false;
-
-                            // Start from the first data point projected to baseline
-                            // We will move to (x0, yBaselinePx), then lines along data, then back down to baseline at xEnd.
                             double baseline = area.Baseline;
 
                             double firstX = 0.0;
@@ -170,11 +168,11 @@ namespace FastCharts.Rendering.Skia
                             foreach (var p in area.Data)
                             {
                                 float px = PixelMapper.X(p.X, model.XAxis, plotRect);
-                                float pyBaseline = PixelMapper.Y(baseline, model.YAxis, plotRect);
+                                float pyBase = PixelMapper.Y(baseline, model.YAxis, plotRect);
 
                                 if (!started)
                                 {
-                                    fillPath.MoveTo(px, pyBaseline);
+                                    fillPath.MoveTo(px, pyBase);
                                     started = true;
                                     firstX = p.X;
                                     hasFirstX = true;
@@ -184,13 +182,10 @@ namespace FastCharts.Rendering.Skia
                                 fillPath.LineTo(px, py);
                             }
 
-                            // Close path back to baseline at the last X
-                            // If we have at least one point, the current path end is at (xN, yN).
-                            // We add a vertical line to baseline, then close back to the start (x0, baseline).
                             if (started && hasFirstX)
                             {
-                                // Last point's X is already at path end; get it by peeking last data item
-                                var last = default(PointD);
+                                // Close to baseline at last X
+                                var last = default(FastCharts.Core.Primitives.PointD);
                                 foreach (var p in area.Data)
                                 {
                                     last = p;
@@ -202,7 +197,6 @@ namespace FastCharts.Rendering.Skia
                                 fillPath.LineTo(lastPx, basePy);
                                 fillPath.Close();
 
-                                // Compute fill color with opacity
                                 byte alpha = (byte)(System.Math.Max(0.0, System.Math.Min(1.0, area.FillOpacity)) * c.A);
                                 var fillColor = new SKColor(c.R, c.G, c.B, alpha);
 
@@ -219,7 +213,92 @@ namespace FastCharts.Rendering.Skia
                         }
                     }
 
-                    // === LINE OUTLINE (for both LineSeries and AreaSeries) ===
+                    // Line outline for AreaSeries will be drawn in the "plain lines" pass below (shared code path).
+                    seriesIndex++;
+                }
+
+                // --- 2) SCATTER (markers only, no line) ---
+                seriesIndex = 0;
+                foreach (var ss in model.Series.OfType<ScatterSeries>())
+                {
+                    if (ss.IsEmpty)
+                    {
+                        seriesIndex++;
+                        continue;
+                    }
+
+                    var c = (palette != null && seriesIndex < palette.Count)
+                        ? palette[seriesIndex]
+                        : model.Theme.PrimarySeriesColor;
+
+                    using (var markerPaint = new SKPaint
+                           {
+                               IsAntialias = true,
+                               Style = SKPaintStyle.Fill,
+                               Color = new SKColor(c.R, c.G, c.B, c.A)
+                           })
+                    {
+                        float size = (float)ss.MarkerSize;
+                        if (size < 1f)
+                        {
+                            size = 1f;
+                        }
+
+                        float half = size * 0.5f;
+
+                        foreach (var p in ss.Data)
+                        {
+                            float px = PixelMapper.X(p.X, model.XAxis, plotRect);
+                            float py = PixelMapper.Y(p.Y, model.YAxis, plotRect);
+
+                            // Draw selected marker shape
+                            if (ss.MarkerShape == FastCharts.Core.Series.MarkerShape.Circle)
+                            {
+                                canvas.DrawCircle(px, py, half, markerPaint);
+                            }
+                            else if (ss.MarkerShape == FastCharts.Core.Series.MarkerShape.Square)
+                            {
+                                var r = new SKRect(px - half, py - half, px + half, py + half);
+                                canvas.DrawRect(r, markerPaint);
+                            }
+                            else // Triangle
+                            {
+                                using (var path = new SKPath())
+                                {
+                                    // Up-pointing triangle
+                                    path.MoveTo(px, py - half);
+                                    path.LineTo(px - half, py + half);
+                                    path.LineTo(px + half, py + half);
+                                    path.Close();
+                                    canvas.DrawPath(path, markerPaint);
+                                }
+                            }
+                        }
+                    }
+
+                    seriesIndex++;
+                }
+
+                // --- 3) PLAIN LINES (exclude Area & Scatter) ---
+                seriesIndex = 0;
+                foreach (var ls in model.Series.OfType<LineSeries>())
+                {
+                    if (ls is AreaSeries || ls is ScatterSeries)
+                    {
+                        seriesIndex++;
+                        continue;
+                    }
+
+                    if (ls.IsEmpty)
+                    {
+                        seriesIndex++;
+                        continue;
+                    }
+
+                    var c = (palette != null && seriesIndex < palette.Count)
+                        ? palette[seriesIndex]
+                        : model.Theme.PrimarySeriesColor;
+
                     using (var seriesPaint = new SKPaint
                            {
                                IsAntialias = true,
@@ -230,6 +309,7 @@ namespace FastCharts.Rendering.Skia
                     using (var path = new SKPath())
                     {
                         bool started = false;
+
                         foreach (var p in ls.Data)
                         {
                             float px = PixelMapper.X(p.X, model.XAxis, plotRect);
@@ -251,7 +331,6 @@ namespace FastCharts.Rendering.Skia
 
                     seriesIndex++;
                 }
-
 
                 canvas.Restore(); // end clip
 
@@ -330,35 +409,38 @@ namespace FastCharts.Rendering.Skia
                         // Tooltip (optional)
                         if (!string.IsNullOrEmpty(st.TooltipText))
                         {
-                            var lines = st.TooltipText.Split('\n');
-                            float maxW = 0;
-                            for (int i = 0; i < lines.Length; i++)
+                            var lines = st.TooltipText?.Split('\n');
+                            if (lines != null && lines.Length > 0)
                             {
-                                float w = tipTx.MeasureText(lines[i]);
-                                if (w > maxW) maxW = w;
-                            }
+                                float maxW = 0;
+                                for (int i = 0; i < lines.Length; i++)
+                                {
+                                    float w = tipTx.MeasureText(lines[i]);
+                                    if (w > maxW) maxW = w;
+                                }
 
-                            float lineH = tipTx.TextSize + 2;
-                            float pad = 6;
-                            float boxW = maxW + pad * 2;
-                            float boxH = lineH * lines.Length + pad * 2;
+                                float lineH = tipTx.TextSize + 2;
+                                float pad = 6;
+                                float boxW = maxW + pad * 2;
+                                float boxH = lineH * lines.Length + pad * 2;
 
-                            // Position the tooltip near the cursor (inside the plot when possible)
-                            float bx = cx + 12;
-                            float by = cy - boxH - 12;
-                            if (bx + boxW > plotRect.Right) bx = plotRect.Right - boxW - 1;
-                            if (by < plotRect.Top) by = cy + 12;
+                                // Position the tooltip near the cursor (inside the plot when possible)
+                                float bx = cx + 12;
+                                float by = cy - boxH - 12;
+                                if (bx + boxW > plotRect.Right) bx = plotRect.Right - boxW - 1;
+                                if (by < plotRect.Top) by = cy + 12;
 
-                            var rect = new SKRect(bx, by, bx + boxW, by + boxH);
-                            canvas.DrawRect(rect, tipBg);
-                            canvas.DrawRect(rect, tipBd);
+                                var rect = new SKRect(bx, by, bx + boxW, by + boxH);
+                                canvas.DrawRect(rect, tipBg);
+                                canvas.DrawRect(rect, tipBd);
 
-                            float tx = bx + pad;
-                            float ty = by + pad + tipTx.TextSize;
-                            for (int i = 0; i < lines.Length; i++)
-                            {
-                                canvas.DrawText(lines[i], tx, ty, tipTx);
-                                ty += lineH;
+                                float tx = bx + pad;
+                                float ty = by + pad + tipTx.TextSize;
+                                for (int i = 0; i < lines.Length; i++)
+                                {
+                                    canvas.DrawText(lines[i], tx, ty, tipTx);
+                                    ty += lineH;
+                                }                                
                             }
                         }
                     }
