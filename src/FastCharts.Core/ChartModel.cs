@@ -9,6 +9,7 @@ using System.Linq;
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Themes.BuiltIn;
 using FastCharts.Core.Legend; // added
+using FastCharts.Core.Series;
 
 namespace FastCharts.Core;
 
@@ -20,8 +21,8 @@ public sealed class ChartModel : IChartModel
         YAxis = new NumericAxis();
         Viewport = new Interactivity.Viewport(new FRange(0, 1), new FRange(0, 1));
 
-        Series = new ObservableCollection<object>();
-        Axes = new ReadOnlyCollection<object>(new object[] { XAxis, YAxis });
+        Series = new ObservableCollection<SeriesBase>();
+        Axes = new ReadOnlyCollection<NumericAxis>(new[] { XAxis, YAxis });
         Legend = new LegendModel();
     }
 
@@ -29,12 +30,12 @@ public sealed class ChartModel : IChartModel
     public NumericAxis XAxis { get; }
     public NumericAxis YAxis { get; }
     public IViewport Viewport { get; }
-    public ObservableCollection<object> Series { get; }
-    public IReadOnlyList<object> Axes { get; }
+    public ObservableCollection<SeriesBase> Series { get; }
+    public IReadOnlyList<NumericAxis> Axes { get; }
 
     // IChartModel (kept loose for now)
-    IReadOnlyList<object> IChartModel.Axes => Axes;
-    IReadOnlyList<object> IChartModel.Series => Series;
+    IReadOnlyList<NumericAxis> IChartModel.Axes => Axes;
+    IReadOnlyList<SeriesBase> IChartModel.Series => Series;
     
     public Margins PlotMargins { get; set; } = new Margins(48, 16, 16, 36);
     
@@ -47,7 +48,7 @@ public sealed class ChartModel : IChartModel
     /// <summary>Shared interaction state that renderers may read to draw overlays.</summary>
     public InteractionState? InteractionState { get; set; }
 
-    public void AddSeries(object series)
+    public void AddSeries(SeriesBase series)
     {
         Series.Add(series);
         Legend.SyncFromSeries(Series); // keep legend updated
@@ -79,14 +80,29 @@ public sealed class ChartModel : IChartModel
 
         foreach (var s in Series)
         {
-            if (s is Series.LineSeries ls && !ls.IsEmpty)
+            if (s is LineSeries ls && !ls.IsEmpty)
             {
                 xs.Add(ls.GetXRange());
                 ys.Add(ls.GetYRange());
             }
+            else if (s is ScatterSeries sc && !sc.IsEmpty)
+            {
+                xs.Add(sc.GetXRange());
+                ys.Add(sc.GetYRange());
+            }
+            else if (s is BandSeries bs && !bs.IsEmpty)
+            {
+                // Band series X range from its points, Y from min(low) to max(high)
+                var minX = bs.Data.Min(p => p.X);
+                var maxX = bs.Data.Max(p => p.X);
+                var minY = bs.Data.Min(p => p.YLow);
+                var maxY = bs.Data.Max(p => p.YHigh);
+                xs.Add(new FRange(minX, maxX));
+                ys.Add(new FRange(minY, maxY));
+            }
         }
 
-        if (xs.Count == 0 || ys.Count == 0) return;
+        if (xs.Count == 0 || ys.Count == 0) { return; }
 
         var xMin = xs.Min(r => r.Min);
         var xMax = xs.Max(r => r.Max);

@@ -313,7 +313,7 @@ namespace FastCharts.Rendering.Skia
                 seriesIndex = 0;
                 foreach (var ss in model.Series.OfType<ScatterSeries>())
                 {
-                    if (ss.IsEmpty)
+                    if (ss.IsEmpty || !ss.IsVisible)
                     {
                         seriesIndex++;
                         continue;
@@ -331,11 +331,7 @@ namespace FastCharts.Rendering.Skia
                            })
                     {
                         float size = (float)ss.MarkerSize;
-                        if (size < 1f)
-                        {
-                            size = 1f;
-                        }
-
+                        if (size < 1f) { size = 1f; }
                         float half = size * 0.5f;
 
                         foreach (var p in ss.Data)
@@ -343,7 +339,6 @@ namespace FastCharts.Rendering.Skia
                             float px = PixelMapper.X(p.X, model.XAxis, plotRect);
                             float py = PixelMapper.Y(p.Y, model.YAxis, plotRect);
 
-                            // Draw selected marker shape
                             if (ss.MarkerShape == FastCharts.Core.Series.MarkerShape.Circle)
                             {
                                 canvas.DrawCircle(px, py, half, markerPaint);
@@ -357,7 +352,6 @@ namespace FastCharts.Rendering.Skia
                             {
                                 using (var path = new SKPath())
                                 {
-                                    // Up-pointing triangle
                                     path.MoveTo(px, py - half);
                                     path.LineTo(px - half, py + half);
                                     path.LineTo(px + half, py + half);
