@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -163,6 +163,8 @@ namespace FastCharts.Wpf.Controls
 
                 Model.XAxis.SetVisibleRange(vx.Min + dxData, vx.Max + dxData);
                 Model.YAxis.SetVisibleRange(vy.Min + dyData, vy.Max + dyData);
+                // keep viewport in sync so renderer UpdateScales does not overwrite user ranges
+                Model.Viewport.SetVisible(Model.XAxis.VisibleRange, Model.YAxis.VisibleRange);
 
                 UpdateDataCoordsForTooltip(pos.X, pos.Y);
                 var ev = new InteractionEvent(
@@ -174,7 +176,9 @@ namespace FastCharts.Wpf.Controls
                     pos.X, pos.Y);
 
                 if (RouteToBehaviors(ev))
+                {
                     Redraw();
+                }
             }
 
             _lastMousePos = pos;
@@ -266,6 +270,7 @@ namespace FastCharts.Wpf.Controls
 
             Model.XAxis.SetVisibleRange(newMinX, newMaxX);
             Model.YAxis.SetVisibleRange(newMinY, newMaxY);
+            Model.Viewport.SetVisible(Model.XAxis.VisibleRange, Model.YAxis.VisibleRange);
 
             Redraw();
             e.Handled = true;

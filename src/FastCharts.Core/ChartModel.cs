@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Axes;
@@ -58,6 +58,13 @@ public sealed class ChartModel : IChartModel
 
     public void UpdateScales(double widthPx, double heightPx)
     {
+        // Keep viewport authoritative only if axes not manually diverged.
+        // If user code changed axis VisibleRange directly (panning/zoom), sync viewport first.
+        if (XAxis.VisibleRange.Min != Viewport.X.Min || XAxis.VisibleRange.Max != Viewport.X.Max ||
+            YAxis.VisibleRange.Min != Viewport.Y.Min || YAxis.VisibleRange.Max != Viewport.Y.Max)
+        {
+            Viewport.SetVisible(XAxis.VisibleRange, YAxis.VisibleRange);
+        }
         XAxis.VisibleRange = Viewport.X;
         YAxis.VisibleRange = Viewport.Y;
         XAxis.UpdateScale(0, widthPx);
