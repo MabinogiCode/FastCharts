@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -73,7 +73,9 @@ namespace FastCharts.Wpf.Controls
 
             _skia = GetTemplateChild(PartSkia) as SKElement;
             if (_skia == null)
+            {
                 return;
+            }
 
             _skia.PaintSurface += OnSkiaPaintSurface;
             _skia.MouseDown    += OnSkiaMouseDown;
@@ -96,7 +98,9 @@ namespace FastCharts.Wpf.Controls
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             if (!_userChangedView)
+            {
                 Model.AutoFitDataRange();
+            }
 
             if (Model.Behaviors.Count == 0)
             {
@@ -139,17 +143,16 @@ namespace FastCharts.Wpf.Controls
 
             double plotW = _skia.ActualWidth  - (left + right);
             double plotH = _skia.ActualHeight - (top  + bottom);
-            if (plotW < 0) plotW = 0;
-            if (plotH < 0) plotH = 0;
+            if (plotW < 0) { plotW = 0; }
+            if (plotH < 0) { plotH = 0; }
 
             // Pixel deltas
             double dxPx = (pos.X - _lastMousePos.X);
             double dyPx = (pos.Y - _lastMousePos.Y);
 
-            // Visible ranges
+            // Visible ranges (from axes which mirror the viewport)
             FRange vx = Model.XAxis.VisibleRange;
             FRange vy = Model.YAxis.VisibleRange;
-
             double spanX = vx.Max - vx.Min;
             double spanY = vy.Max - vy.Min;
 
@@ -161,20 +164,29 @@ namespace FastCharts.Wpf.Controls
             {
                 _userChangedView = true;
 
-                Model.XAxis.SetVisibleRange(vx.Min + dxData, vx.Max + dxData);
-                Model.YAxis.SetVisibleRange(vy.Min + dyData, vy.Max + dyData);
+                // Use viewport pan to keep axis/scale sync consistent.
+                Model.Viewport.Pan(dxData, dyData);
 
                 UpdateDataCoordsForTooltip(pos.X, pos.Y);
                 var ev = new InteractionEvent(
                     PointerEventType.Move,
                     PointerButton.None,
-                    new PointerModifiers { Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
+                    new PointerModifiers
+                    {
+                        Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
                         Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
-                        Alt = Keyboard.IsKeyDown(Key.LeftAlt)   || Keyboard.IsKeyDown(Key.RightAlt) },
+                        Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
+                    },
                     pos.X, pos.Y);
 
                 if (RouteToBehaviors(ev))
+                {
                     Redraw();
+                }
+                else
+                {
+                    Redraw(); // need redraw anyway for pan
+                }
             }
 
             _lastMousePos = pos;
@@ -200,7 +212,9 @@ namespace FastCharts.Wpf.Controls
             }
             var ev = new InteractionEvent(PointerEventType.Leave, PointerButton.None, new PointerModifiers(), _lastMousePos.X, _lastMousePos.Y);
             if (RouteToBehaviors(ev))
+            {
                 Redraw();
+            }
         }
 
         private void OnSkiaMouseWheel(object sender, MouseWheelEventArgs e)
@@ -211,8 +225,9 @@ namespace FastCharts.Wpf.Controls
             }
             _userChangedView = true;
 
-            // Zoom factor (<1 = zoom in, >1 = zoom out)
-            double factor = (e.Delta > 0) ? 0.9 : 1.1;
+            // Current factor (<1 = zoom in) but Viewport.Zoom expects scale > 1 to shrink (contract) => invert mapping.
+            bool zoomIn = e.Delta > 0;
+            double scaleContract = zoomIn ? 1.1 : 0.9; // >1 contract, <1 expand
 
             // Cursor position (prefer sender if available)
             Point pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(_skia);
@@ -223,17 +238,16 @@ namespace FastCharts.Wpf.Controls
 
             double plotW = _skia.ActualWidth  - (left + right);
             double plotH = _skia.ActualHeight - (top  + bottom);
-            if (plotW < 0) plotW = 0;
-            if (plotH < 0) plotH = 0;
+            if (plotW < 0) { plotW = 0; }
+            if (plotH < 0) { plotH = 0; }
 
-            // Plot-relative pixels (manual clamp for net48)
-            double px = pos.X - left; if (px < 0) px = 0; else if (px > plotW) px = plotW;
-            double py = pos.Y - top;  if (py < 0) py = 0; else if (py > plotH) py = plotH;
+            // Plot-relative pixels
+            double px = pos.X - left; if (px < 0) { px = 0; } else if (px > plotW) { px = plotW; }
+            double py = pos.Y - top;  if (py < 0) { py = 0; } else if (py > plotH) { py = plotH; }
 
             // Visible ranges
             FRange vx = Model.XAxis.VisibleRange;
             FRange vy = Model.YAxis.VisibleRange;
-
             double spanX = vx.Max - vx.Min;
             double spanY = vy.Max - vy.Min;
 
@@ -245,27 +259,8 @@ namespace FastCharts.Wpf.Controls
             double anchorX = vx.Min + rx * spanX;
             double anchorY = vy.Max - ry * spanY;
 
-            // New window around anchor
-            double newMinX = anchorX + (vx.Min - anchorX) * factor;
-            double newMaxX = anchorX + (vx.Max - anchorX) * factor;
-            double newMinY = anchorY + (vy.Min - anchorY) * factor;
-            double newMaxY = anchorY + (vy.Max - anchorY) * factor;
-
-            // Avoid degenerate windows
-            if (Math.Abs(newMaxX - newMinX) < double.Epsilon)
-            {
-                newMinX -= 0.5; 
-                newMaxX += 0.5;
-            }
-
-            if (Math.Abs(newMaxY - newMinY) < double.Epsilon)
-            {
-                newMinY -= 0.5; 
-                newMaxY += 0.5;
-            }
-
-            Model.XAxis.SetVisibleRange(newMinX, newMaxX);
-            Model.YAxis.SetVisibleRange(newMinY, newMaxY);
+            // Apply zoom on viewport
+            Model.Viewport.Zoom(scaleContract, scaleContract, new PointD(anchorX, anchorY));
 
             Redraw();
             e.Handled = true;
@@ -274,7 +269,9 @@ namespace FastCharts.Wpf.Controls
         private void Redraw()
         {
             if (_skia != null)
+            {
                 _skia.InvalidateVisual();
+            }
         }
         
         private bool RouteToBehaviors(InteractionEvent ev)
@@ -301,10 +298,10 @@ namespace FastCharts.Wpf.Controls
 
             double plotW = _skia.ActualWidth  - (left + right);
             double plotH = _skia.ActualHeight - (top  + bottom);
-            if (plotW <= 0 || plotH <= 0) return;
+            if (plotW <= 0 || plotH <= 0) { return; }
 
-            double px = pixelX - left; if (px < 0) px = 0; else if (px > plotW) px = plotW;
-            double py = pixelY - top;  if (py < 0) py = 0; else if (py > plotH) py = plotH;
+            double px = pixelX - left; if (px < 0) { px = 0; } else if (px > plotW) { px = plotW; }
+            double py = pixelY - top;  if (py < 0) { py = 0; } else if (py > plotH) { py = plotH; }
 
             var xr = Model.XAxis.VisibleRange;
             var yr = Model.YAxis.VisibleRange;
@@ -312,7 +309,9 @@ namespace FastCharts.Wpf.Controls
             double y = yr.Max - (py / plotH) * (yr.Max - yr.Min);
 
             if (Model.InteractionState == null)
+            {
                 Model.InteractionState = new InteractionState();
+            }
 
             Model.InteractionState.DataX = x;
             Model.InteractionState.DataY = y;

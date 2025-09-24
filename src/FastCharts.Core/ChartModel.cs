@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Axes;
@@ -8,6 +8,7 @@ using System.Linq;
 
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Themes.BuiltIn;
+using FastCharts.Core.Legend; // added
 
 namespace FastCharts.Core;
 
@@ -21,6 +22,7 @@ public sealed class ChartModel : IChartModel
 
         Series = new ObservableCollection<object>();
         Axes = new ReadOnlyCollection<object>(new object[] { XAxis, YAxis });
+        Legend = new LegendModel();
     }
 
     public ITheme Theme { get; set; } = new LightTheme();
@@ -36,6 +38,9 @@ public sealed class ChartModel : IChartModel
     
     public Margins PlotMargins { get; set; } = new Margins(48, 16, 16, 36);
     
+    /// <summary>Legend model describing series entries.</summary>
+    public LegendModel Legend { get; }
+    
     /// <summary>Ordered list of behaviors attached to this model.</summary>
     public IList<IBehavior> Behaviors { get; } = new List<IBehavior>();
 
@@ -45,12 +50,14 @@ public sealed class ChartModel : IChartModel
     public void AddSeries(object series)
     {
         Series.Add(series);
+        Legend.SyncFromSeries(Series); // keep legend updated
         AutoFitDataRange();
     }
 
     public void ClearSeries()
     {
         Series.Clear();
+        Legend.SyncFromSeries(Series);
         XAxis.DataRange = new FRange(0, 1);
         YAxis.DataRange = new FRange(0, 1);
         Viewport.SetVisible(XAxis.DataRange, YAxis.DataRange);
