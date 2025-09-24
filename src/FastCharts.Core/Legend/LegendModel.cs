@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using FastCharts.Core.Series;
 
 namespace FastCharts.Core.Legend
 {
@@ -11,19 +12,18 @@ namespace FastCharts.Core.Legend
     {
         public ObservableCollection<LegendItem> Items { get; } = new ObservableCollection<LegendItem>();
 
-        public void SyncFromSeries(IReadOnlyList<object> seriesList)
+        public void SyncFromSeries(IReadOnlyList<SeriesBase> seriesList)
         {
-            // Simple full rebuild (optimize later if needed)
             Items.Clear();
             for (int i = 0; i < seriesList.Count; i++)
             {
                 var s = seriesList[i];
-                string title = (s as FastCharts.Core.Series.SeriesBase)?.Title ?? $"Series {i+1}";
+                string title = s.Title ?? $"Series {i + 1}";
                 Items.Add(new LegendItem(title, s, i));
             }
         }
 
-        public LegendItem? FindBySeries(object s)
+        public LegendItem? FindBySeries(SeriesBase s)
         {
             return Items.FirstOrDefault(it => ReferenceEquals(it.SeriesReference, s));
         }
