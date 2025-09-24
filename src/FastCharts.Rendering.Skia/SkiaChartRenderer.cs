@@ -4,6 +4,7 @@ using FastCharts.Core;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
+using FastCharts.Core.Legend; // added
 
 using SkiaSharp;
 
@@ -19,7 +20,7 @@ namespace FastCharts.Rendering.Skia
     {
         public void Render(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight)
         {
-            if (model == null || canvas == null) return;
+            if (model == null || canvas == null) { return; }
 
             var theme = model.Theme;
 
@@ -106,7 +107,7 @@ namespace FastCharts.Rendering.Skia
                 // 7) Visible ranges (guard)
                 var xr = model.XAxis.VisibleRange;
                 var yr = model.YAxis.VisibleRange;
-                if (xr.Size <= 0 || yr.Size <= 0) return;
+                if (xr.Size <= 0 || yr.Size <= 0) { return; }
 
                 // 8) Tick generation (approx pixel spacing → data step)
                 double xDataPerPx = xr.Size / System.Math.Max(1.0, plotW);
@@ -458,6 +459,60 @@ namespace FastCharts.Rendering.Skia
                     canvas.DrawRect(plotRect, border);
                 }
 
+                // 11.5) Legend (simple top-right layout) if items exist
+                if (model.Legend.Items.Count > 0)
+                {
+                    float padding = 6f;
+                    float swatch = 12f;
+                    float gap = 6f;
+                    float lineH = textPaint.TextSize + 4f;
+
+                    // Measure width
+                    float maxText = 0f;
+                    foreach (var item in model.Legend.Items)
+                    {
+                        float w = textPaint.MeasureText(item.Title ?? string.Empty);
+                        if (w > maxText) { maxText = w; }
+                    }
+                    float boxW = padding * 2 + swatch + gap + maxText;
+                    float boxH = padding * 2 + lineH * model.Legend.Items.Count;
+
+                    float bx = pixelWidth - boxW - 8f; // 8px margin from right
+                    float by = 8f; // top margin
+
+                    var legendRect = new SKRect(bx, by, bx + boxW, by + boxH);
+
+                    // Choose legend background that contrasts with labelColor
+                    double lum = (0.2126 * labelColor.Red + 0.7152 * labelColor.Green + 0.0722 * labelColor.Blue) / 255.0;
+                    // If labels are light (lum > 0.55) -> dark box; else light box
+                    SKColor legendBgColor = lum > 0.55
+                        ? new SKColor(20, 20, 20, 210)
+                        : new SKColor(255, 255, 255, 210);
+                    SKColor legendBorderColor = lum > 0.55
+                        ? new SKColor(90, 90, 90, 230)
+                        : new SKColor(0, 0, 0, 140);
+
+                    using (var lgBg = new SKPaint { Color = legendBgColor, Style = SKPaintStyle.Fill, IsAntialias = true })
+                    using (var lgBd = new SKPaint { Color = legendBorderColor, Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true })
+                    using (var swPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true })
+                    {
+                        canvas.DrawRect(legendRect, lgBg);
+                        canvas.DrawRect(legendRect, lgBd);
+
+                        float y = by + padding + textPaint.TextSize; // baseline
+                        foreach (var item in model.Legend.Items)
+                        {
+                            var color = ResolveSeriesColor(model, item.SeriesReference, palette);
+                            swPaint.Color = new SKColor(color.R, color.G, color.B, color.A);
+                            // square swatch
+                            var sr = new SKRect(bx + padding, y - textPaint.TextSize + 2, bx + padding + swatch, y - textPaint.TextSize + 2 + swatch);
+                            canvas.DrawRect(sr, swPaint);
+                            canvas.DrawText(item.Title ?? string.Empty, sr.Right + gap, y, textPaint);
+                            y += lineH;
+                        }
+                    }
+                }
+
                 // 12) Overlay: crosshair + tooltip (if any)
                 var st = model.InteractionState;
                 if (st != null && st.ShowCrosshair)
@@ -465,10 +520,10 @@ namespace FastCharts.Rendering.Skia
                     // Clamp cursor to plot rect
                     float cx = (float)st.PixelX;
                     float cy = (float)st.PixelY;
-                    if (cx < plotRect.Left) cx = plotRect.Left;
-                    else if (cx > plotRect.Right) cx = plotRect.Right;
-                    if (cy < plotRect.Top) cy = plotRect.Top;
-                    else if (cy > plotRect.Bottom) cy = plotRect.Bottom;
+                    if (cx < plotRect.Left) { cx = plotRect.Left; }
+                    else if (cx > plotRect.Right) { cx = plotRect.Right; }
+                    if (cy < plotRect.Top) { cy = plotRect.Top; }
+                    else if (cy > plotRect.Bottom) { cy = plotRect.Bottom; }
 
                     using (var cross = new SKPaint
                            {
@@ -507,7 +562,7 @@ namespace FastCharts.Rendering.Skia
                                 for (int i = 0; i < lines.Length; i++)
                                 {
                                     float w = tipTx.MeasureText(lines[i]);
-                                    if (w > maxW) maxW = w;
+                                    if (w > maxW) { maxW = w; }
                                 }
 
                                 float lineH = tipTx.TextSize + 2;
@@ -518,8 +573,8 @@ namespace FastCharts.Rendering.Skia
                                 // Position the tooltip near the cursor (inside the plot when possible)
                                 float bx = cx + 12;
                                 float by = cy - boxH - 12;
-                                if (bx + boxW > plotRect.Right) bx = plotRect.Right - boxW - 1;
-                                if (by < plotRect.Top) by = cy + 12;
+                                if (bx + boxW > plotRect.Right) { bx = plotRect.Right - boxW - 1; }
+                                if (by < plotRect.Top) { by = cy + 12; }
 
                                 var rect = new SKRect(bx, by, bx + boxW, by + boxH);
                                 canvas.DrawRect(rect, tipBg);
@@ -537,6 +592,42 @@ namespace FastCharts.Rendering.Skia
                     }
                 }
             }
+        }
+
+        private static FastCharts.Core.Primitives.ColorRgba ResolveSeriesColor(ChartModel model, object seriesRef, System.Collections.Generic.IReadOnlyList<FastCharts.Core.Primitives.ColorRgba> palette)
+        {
+            // Palette selection mimics renderer passes. This is heuristic and may diverge if rendering logic changes.
+            var primary = model.Theme.PrimarySeriesColor;
+            if (palette == null || palette.Count == 0)
+            {
+                return primary;
+            }
+
+            if (seriesRef is BandSeries band)
+            {
+                int idx = model.Series.OfType<BandSeries>().ToList().IndexOf(band);
+                if (band.PaletteIndex.HasValue) { idx = band.PaletteIndex.Value; }
+                return idx >= 0 && idx < palette.Count ? palette[idx] : primary;
+            }
+            if (seriesRef is ScatterSeries sc)
+            {
+                int idx = model.Series.OfType<ScatterSeries>().ToList().IndexOf(sc);
+                if (sc.PaletteIndex.HasValue) { idx = sc.PaletteIndex.Value; }
+                return idx >= 0 && idx < palette.Count ? palette[idx] : primary;
+            }
+            if (seriesRef is AreaSeries area)
+            {
+                int idx = model.Series.OfType<LineSeries>().ToList().IndexOf(area);
+                if (area.PaletteIndex.HasValue) { idx = area.PaletteIndex.Value; }
+                return idx >= 0 && idx < palette.Count ? palette[idx] : primary;
+            }
+            if (seriesRef is LineSeries ls)
+            {
+                int idx = model.Series.OfType<LineSeries>().ToList().IndexOf(ls);
+                if (ls.PaletteIndex.HasValue) { idx = ls.PaletteIndex.Value; }
+                return idx >= 0 && idx < palette.Count ? palette[idx] : primary;
+            }
+            return primary;
         }
     }
 }
