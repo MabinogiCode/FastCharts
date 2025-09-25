@@ -24,5 +24,10 @@ namespace FastCharts.Core.Interaction
         public double SelY1 { get; set; }
         public double SelX2 { get; set; }
         public double SelY2 { get; set; }
+
+        // Nearest-point highlight (in DATA space)
+        public bool ShowNearest { get; set; }
+        public double NearestDataX { get; set; }
+        public double NearestDataY { get; set; }
     }
 }
