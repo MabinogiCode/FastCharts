@@ -86,24 +86,32 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, alpha) };
                 using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, bs.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
 
+                int groupCount = bs.GroupCount.GetValueOrDefault(1);
+                int groupIndex = bs.GroupIndex.GetValueOrDefault(0);
+                if (groupCount < 1) groupCount = 1;
+                if (groupIndex < 0) groupIndex = 0;
+                if (groupIndex >= groupCount) groupIndex = groupCount - 1;
+                const double innerGap = 0.9; // ratio of slot occupied by the bar
+
                 ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);
                 for (int i = 0; i < bs.Data.Count; i++)
                 {
                     var p = bs.Data[i];
-                    double wData = bs.GetWidthFor(i);
-                    double half = wData * 0.5;
-                    float xCenter = PixelMapper.X(p.X, model.XAxis, pr);
-                    float xL = PixelMapper.X(p.X - half, model.XAxis, pr);
-                    float xR = PixelMapper.X(p.X + half, model.XAxis, pr);
+                    double bandW = bs.GetWidthFor(i);
+                    double slotW = bandW / groupCount;
+                    double effW = slotW * innerGap;
+
+                    double groupOffsetFromCenter = ((groupIndex + 0.5) - (groupCount * 0.5)) * slotW;
+
+                    float xL = PixelMapper.X(p.X + groupOffsetFromCenter - effW * 0.5, model.XAxis, pr);
+                    float xR = PixelMapper.X(p.X + groupOffsetFromCenter + effW * 0.5, model.XAxis, pr);
+
                     float y0 = PixelMapper.Y(bs.Baseline, model.YAxis, pr);
                     float y1 = PixelMapper.Y(p.Y, model.YAxis, pr);
                     var rect = SKRect.Create(System.Math.Min(xL, xR), System.Math.Min(y0, y1), System.Math.Abs(xR - xL), System.Math.Abs(y1 - y0));
                     if (rect.Width <= 0 || rect.Height <= 0) continue;
                     ctx.Canvas.DrawRect(rect, fillPaint);
-                    if (strokePaint.StrokeWidth > 0.5f)
-                    {
-                        ctx.Canvas.DrawRect(rect, strokePaint);
-                    }
+                    if (strokePaint.StrokeWidth > 0.5f) ctx.Canvas.DrawRect(rect, strokePaint);
                 }
                 ctx.Canvas.Restore();
                 barIndex++;
