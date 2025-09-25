@@ -6,6 +6,6 @@ namespace FastCharts.Core.Abstractions;
 
 public interface IChartModel
 {
-    IReadOnlyList<NumericAxis> Axes { get; }
+    IReadOnlyList<AxisBase> Axes { get; }
     IReadOnlyList<SeriesBase> Series { get; }
 }

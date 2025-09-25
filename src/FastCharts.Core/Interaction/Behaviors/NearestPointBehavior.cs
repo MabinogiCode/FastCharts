@@ -78,6 +78,46 @@ namespace FastCharts.Core.Interaction.Behaviors
                         }
                     }
                 }
+                else if (s is BandSeries bs)
+                {
+                    foreach (var p in bs.Data)
+                    {
+                        double tX = (p.X - xr.Min) / spanX; if (tX < 0) tX = 0; else if (tX > 1) tX = 1;
+                        double px = left + tX * plotW;
+
+                        // High and low edge pixels
+                        double tYh = (p.YHigh - yr.Min) / spanY; if (tYh < 0) tYh = 0; else if (tYh > 1) tYh = 1;
+                        double pyh = top + (1 - tYh) * plotH;
+                        double tYl = (p.YLow - yr.Min) / spanY;  if (tYl < 0) tYl = 0; else if (tYl > 1) tYl = 1;
+                        double pyl = top + (1 - tYl) * plotH;
+
+                        // If cursor is vertically inside the band at this X and horizontally close to this X,
+                        // snap using vertical distance only (better UX for ribbons).
+                        double minY = pyh < pyl ? pyh : pyl;
+                        double maxY = pyh > pyl ? pyh : pyl;
+                        double dxAbs = px > cx ? px - cx : cx - px;
+                        if (cy >= minY && cy <= maxY && dxAbs <= MaxPixelDistance * 1.5)
+                        {
+                            double dvh = pyh > cy ? pyh - cy : cy - pyh;
+                            double dvl = pyl > cy ? pyl - cy : cy - pyl;
+                            double d2edge = dvh < dvl ? (dvh * dvh) : (dvl * dvl);
+                            if (d2edge < bestD2)
+                            {
+                                bestD2 = d2edge;
+                                if (dvh < dvl) { bestX = p.X; bestY = p.YHigh; }
+                                else { bestX = p.X; bestY = p.YLow; }
+                            }
+                        }
+                        else
+                        {
+                            // Fallback: 2D distance to both edges
+                            double dxh = px - cx, dyh = pyh - cy; double d2h = dxh * dxh + dyh * dyh;
+                            if (d2h < bestD2) { bestD2 = d2h; bestX = p.X; bestY = p.YHigh; }
+                            double dxl = px - cx, dyl = pyl - cy; double d2l = dxl * dxl + dyl * dyl;
+                            if (d2l < bestD2) { bestD2 = d2l; bestX = p.X; bestY = p.YLow; }
+                        }
+                    }
+                }
             }
 
             if (double.IsInfinity(bestD2))
