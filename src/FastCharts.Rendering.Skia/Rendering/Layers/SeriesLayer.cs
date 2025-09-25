@@ -16,7 +16,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             int areaIndex = 0;
             foreach (var ls in model.Series.OfType<LineSeries>())
             {
-                if (ls is not AreaSeries area || area.IsEmpty) { areaIndex++; continue; }
+                if (ls is not AreaSeries area || area.IsEmpty || !area.IsVisible) { areaIndex++; continue; }
                 int idx = area.PaletteIndex ?? areaIndex;
                 var c = (palette != null && idx < palette.Count) ? palette[idx] : model.Theme.PrimarySeriesColor;
                 using var path = new SKPath();
@@ -46,7 +46,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             int bandIndex = 0;
             foreach (var bs in model.Series.OfType<BandSeries>())
             {
-                if (bs.IsEmpty) { bandIndex++; continue; }
+                if (bs.IsEmpty || !bs.IsVisible) { bandIndex++; continue; }
                 var c = (palette != null && bandIndex < palette.Count) ? palette[bandIndex] : model.Theme.PrimarySeriesColor;
                 byte alpha = (byte)(System.Math.Max(0, System.Math.Min(1, bs.FillOpacity)) * c.A);
                 using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, alpha) };

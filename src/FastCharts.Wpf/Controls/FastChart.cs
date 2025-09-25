@@ -107,6 +107,7 @@ namespace FastCharts.Wpf.Controls
                 Model.Behaviors.Add(new CrosshairBehavior());
                 Model.Behaviors.Add(new ZoomRectBehavior());
                 Model.Behaviors.Add(new NearestPointBehavior());
+                Model.Behaviors.Add(new LegendToggleBehavior());
             }
 
             Redraw();
