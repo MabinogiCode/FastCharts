@@ -12,6 +12,11 @@ namespace FastCharts.Core.Legend
     {
         public ObservableCollection<LegendItem> Items { get; } = new ObservableCollection<LegendItem>();
 
+        /// <summary>
+        /// Controls whether the legend should be rendered. When false, renderers skip drawing it, but series remain unaffected.
+        /// </summary>
+        public bool IsVisible { get; set; } = true;
+
         public void SyncFromSeries(IReadOnlyList<SeriesBase> seriesList)
         {
             Items.Clear();

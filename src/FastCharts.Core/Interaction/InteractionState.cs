@@ -29,5 +29,17 @@ namespace FastCharts.Core.Interaction
         public bool ShowNearest { get; set; }
         public double NearestDataX { get; set; }
         public double NearestDataY { get; set; }
+
+        // Legend hit test rectangles (SURFACE pixels)
+        public System.Collections.Generic.List<LegendHit> LegendHits { get; set; } = new System.Collections.Generic.List<LegendHit>();
+    }
+
+    public sealed class LegendHit
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public object SeriesReference { get; set; }
     }
 }
