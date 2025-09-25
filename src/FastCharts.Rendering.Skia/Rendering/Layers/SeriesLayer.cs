@@ -111,11 +111,48 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 scatterIndex++;
             }
 
+            // STEP-LINE (render before plain lines to respect palette indices akin to LineSeries order)
+            int stepIndex = 0;
+            foreach (var s in model.Series.OfType<StepLineSeries>())
+            {
+                if (s.IsEmpty || !s.IsVisible) { stepIndex++; continue; }
+                var c = (palette != null && stepIndex < palette.Count) ? palette[stepIndex] : model.Theme.PrimarySeriesColor;
+                using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)s.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
+                using var path = new SKPath(); bool started = false;
+                for (int i = 0; i < s.Data.Count; i++)
+                {
+                    var p = s.Data[i];
+                    float x = PixelMapper.X(p.X, model.XAxis, pr);
+                    float y = PixelMapper.Y(p.Y, model.YAxis, pr);
+                    if (!started)
+                    {
+                        path.MoveTo(x, y); started = true; continue;
+                    }
+                    var prev = s.Data[i - 1];
+                    float xPrev = PixelMapper.X(prev.X, model.XAxis, pr);
+                    float yPrev = PixelMapper.Y(prev.Y, model.YAxis, pr);
+                    if (s.Mode == StepMode.Before)
+                    {
+                        // horizontal from prev to p.X, then vertical to p.Y
+                        path.LineTo(x, yPrev);
+                        path.LineTo(x, y);
+                    }
+                    else
+                    {
+                        // vertical from prev to p.Y, then horizontal to p.X
+                        path.LineTo(xPrev, y);
+                        path.LineTo(x, y);
+                    }
+                }
+                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawPath(path, sp); ctx.Canvas.Restore();
+                stepIndex++;
+            }
+
             // LINES (plain)
             int lineIndex = 0;
             foreach (var ls in model.Series.OfType<LineSeries>())
             {
-                if (ls is AreaSeries || ls is ScatterSeries) { lineIndex++; continue; }
+                if (ls is AreaSeries || ls is ScatterSeries || ls is StepLineSeries) { lineIndex++; continue; }
                 if (ls.IsEmpty || !ls.IsVisible) { lineIndex++; continue; }
                 var c = (palette != null && lineIndex < palette.Count) ? palette[lineIndex] : model.Theme.PrimarySeriesColor;
                 using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)ls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
