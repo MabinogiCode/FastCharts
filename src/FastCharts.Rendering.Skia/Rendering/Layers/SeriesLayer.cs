@@ -76,7 +76,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 bandIndex++;
             }
 
-            // BAR/COLUMN
+            // BAR/COLUMN (grouped)
             int barIndex = 0;
             foreach (var bs in model.Series.OfType<BarSeries>())
             {
@@ -87,10 +87,10 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, bs.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
 
                 int groupCount = bs.GroupCount.GetValueOrDefault(1);
-                int groupIndex = bs.GroupIndex.GetValueOrDefault(0);
+                int groupIndex2 = bs.GroupIndex.GetValueOrDefault(0);
                 if (groupCount < 1) groupCount = 1;
-                if (groupIndex < 0) groupIndex = 0;
-                if (groupIndex >= groupCount) groupIndex = groupCount - 1;
+                if (groupIndex2 < 0) groupIndex2 = 0;
+                if (groupIndex2 >= groupCount) groupIndex2 = groupCount - 1;
                 const double innerGap = 0.9; // ratio of slot occupied by the bar
 
                 ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);
@@ -101,7 +101,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     double slotW = bandW / groupCount;
                     double effW = slotW * innerGap;
 
-                    double groupOffsetFromCenter = ((groupIndex + 0.5) - (groupCount * 0.5)) * slotW;
+                    double groupOffsetFromCenter = ((groupIndex2 + 0.5) - (groupCount * 0.5)) * slotW;
 
                     float xL = PixelMapper.X(p.X + groupOffsetFromCenter - effW * 0.5, model.XAxis, pr);
                     float xR = PixelMapper.X(p.X + groupOffsetFromCenter + effW * 0.5, model.XAxis, pr);
@@ -115,6 +115,67 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 }
                 ctx.Canvas.Restore();
                 barIndex++;
+            }
+
+            // STACKED BAR (with optional grouping)
+            int sbarIndex = 0;
+            foreach (var sbs in model.Series.OfType<StackedBarSeries>())
+            {
+                if (sbs.IsEmpty || !sbs.IsVisible) { sbarIndex++; continue; }
+                int groupCount = sbs.GroupCount.GetValueOrDefault(1);
+                int groupIndex = sbs.GroupIndex.GetValueOrDefault(0);
+                if (groupCount < 1) groupCount = 1;
+                if (groupIndex < 0) groupIndex = 0;
+                if (groupIndex >= groupCount) groupIndex = groupCount - 1;
+                const double innerGap = 0.9;
+
+                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);
+                for (int i = 0; i < sbs.Data.Count; i++)
+                {
+                    var p = sbs.Data[i];
+                    double bandW = sbs.GetWidthFor(i);
+                    double slotW = bandW / groupCount;
+                    double effW = slotW * innerGap;
+                    double groupOffset = ((groupIndex + 0.5) - (groupCount * 0.5)) * slotW;
+
+                    float xL = PixelMapper.X(p.X + groupOffset - effW * 0.5, model.XAxis, pr);
+                    float xR = PixelMapper.X(p.X + groupOffset + effW * 0.5, model.XAxis, pr);
+
+                    // stack segments
+                    double accPos = sbs.Baseline;
+                    double accNeg = sbs.Baseline;
+                    if (p.Values != null && p.Values.Length > 0)
+                    {
+                        for (int seg = 0; seg < p.Values.Length; seg++)
+                        {
+                            double v = p.Values[seg];
+                            double yStart, yEnd;
+                            if (v >= 0)
+                            {
+                                yStart = accPos; yEnd = accPos + v; accPos = yEnd;
+                            }
+                            else
+                            {
+                                yStart = accNeg; yEnd = accNeg + v; accNeg = yEnd;
+                            }
+
+                            // color per segment: cycle palette
+                            var col = (palette != null && palette.Count > 0) ? palette[(seg) % palette.Count] : model.Theme.PrimarySeriesColor;
+                            byte alpha = (byte)(System.Math.Max(0, System.Math.Min(1, sbs.FillOpacity)) * col.A);
+                            using var fillSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(col.R, col.G, col.B, alpha) };
+                            using var strokeSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, sbs.StrokeThickness), Color = new SKColor(col.R, col.G, col.B, col.A) };
+
+                            float y0 = PixelMapper.Y(yStart, model.YAxis, pr);
+                            float y1 = PixelMapper.Y(yEnd, model.YAxis, pr);
+                            var rect = SKRect.Create(System.Math.Min(xL, xR), System.Math.Min(y0, y1), System.Math.Abs(xR - xL), System.Math.Abs(y1 - y0));
+                            if (rect.Width <= 0 || rect.Height <= 0) continue;
+                            ctx.Canvas.DrawRect(rect, fillSeg);
+                            if (strokeSeg.StrokeWidth > 0.5f) ctx.Canvas.DrawRect(rect, strokeSeg);
+                        }
+                    }
+                }
+                ctx.Canvas.Restore();
+                sbarIndex++;
             }
 
             // SCATTER
@@ -152,35 +213,33 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 scatterIndex++;
             }
 
-            // STEP-LINE (render before plain lines to respect palette indices akin to LineSeries order)
+            // STEP-LINE
             int stepIndex = 0;
             foreach (var s in model.Series.OfType<StepLineSeries>())
             {
                 if (s.IsEmpty || !s.IsVisible) { stepIndex++; continue; }
                 var c = (palette != null && stepIndex < palette.Count) ? palette[stepIndex] : model.Theme.PrimarySeriesColor;
                 using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)s.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
-                using var path = new SKPath(); bool started = false;
+                using var path = new SKPath(); bool started2 = false;
                 for (int i = 0; i < s.Data.Count; i++)
                 {
                     var p = s.Data[i];
                     float x = PixelMapper.X(p.X, model.XAxis, pr);
                     float y = PixelMapper.Y(p.Y, model.YAxis, pr);
-                    if (!started)
+                    if (!started2)
                     {
-                        path.MoveTo(x, y); started = true; continue;
+                        path.MoveTo(x, y); started2 = true; continue;
                     }
                     var prev = s.Data[i - 1];
                     float xPrev = PixelMapper.X(prev.X, model.XAxis, pr);
                     float yPrev = PixelMapper.Y(prev.Y, model.YAxis, pr);
                     if (s.Mode == StepMode.Before)
                     {
-                        // horizontal from prev to p.X, then vertical to p.Y
                         path.LineTo(x, yPrev);
                         path.LineTo(x, y);
                     }
                     else
                     {
-                        // vertical from prev to p.Y, then horizontal to p.X
                         path.LineTo(xPrev, y);
                         path.LineTo(x, y);
                     }
@@ -189,7 +248,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 stepIndex++;
             }
 
-            // LINES (plain)
+            // LINES
             int lineIndex = 0;
             foreach (var ls in model.Series.OfType<LineSeries>())
             {
@@ -197,15 +256,15 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 if (ls.IsEmpty || !ls.IsVisible) { lineIndex++; continue; }
                 var c = (palette != null && lineIndex < palette.Count) ? palette[lineIndex] : model.Theme.PrimarySeriesColor;
                 using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)ls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
-                using var path = new SKPath(); bool startedLine = false;
+                using var path2 = new SKPath(); bool startedLine = false;
                 foreach (var p in ls.Data)
                 {
                     float px = PixelMapper.X(p.X, model.XAxis, pr);
                     float py = PixelMapper.Y(p.Y, model.YAxis, pr);
-                    if (!startedLine) { path.MoveTo(px, py); startedLine = true; }
-                    else { path.LineTo(px, py); }
+                    if (!startedLine) { path2.MoveTo(px, py); startedLine = true; }
+                    else { path2.LineTo(px, py); }
                 }
-                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawPath(path, sp); ctx.Canvas.Restore();
+                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawPath(path2, sp); ctx.Canvas.Restore();
                 lineIndex++;
             }
         }

@@ -57,6 +57,20 @@ namespace DemoApp.Net48.ViewModels
             Chart.AddSeries(new BarSeries(barsA) { Title = "Bars A", GroupCount = 2, GroupIndex = 0, FillOpacity = 0.7 });
             Chart.AddSeries(new BarSeries(barsB) { Title = "Bars B", GroupCount = 2, GroupIndex = 1, FillOpacity = 0.7 });
 
+            // Grouped stacked bars
+            int sbBuckets = 8;
+            var sbXs = Enumerable.Range(0, sbBuckets).Select(i => start.AddDays(1 + i * 1.5)).ToArray();
+            var stackA = sbXs.Select((x, i) => new StackedBarPoint(
+                x.ToOADate(),
+                new[] { (Math.Sin(i * 0.5) + 1.1) * 0.4, (Math.Cos(i * 0.6) + 1.1) * 0.3, (Math.Sin(i * 0.7) + 1.1) * 0.2 }
+            )).ToArray();
+            var stackB = sbXs.Select((x, i) => new StackedBarPoint(
+                x.ToOADate(),
+                new[] { (Math.Cos(i * 0.5) + 1.1) * 0.35, (Math.Sin(i * 0.6) + 1.1) * 0.25, (Math.Cos(i * 0.4) + 1.1) * 0.2 }
+            )).ToArray();
+            Chart.AddSeries(new StackedBarSeries(stackA) { Title = "Stack A", GroupCount = 2, GroupIndex = 0, FillOpacity = 0.8 });
+            Chart.AddSeries(new StackedBarSeries(stackB) { Title = "Stack B", GroupCount = 2, GroupIndex = 1, FillOpacity = 0.8 });
+
             Chart.UpdateScales(800, 400); // nominal size; real renderer will update on arrange
         }
     }

@@ -54,7 +54,7 @@ public sealed class MainViewModel
         var scatter = new ScatterSeries(scatterPts) { Title = "Scatter: samples", MarkerSize = 4.0, MarkerShape = MarkerShape.Circle };
         Chart.AddSeries(scatter);
 
-        // Add grouped BarSeries over daily buckets (10 buckets)
+        // Grouped BarSeries over daily buckets (10 buckets)
         int buckets = 10;
         var bucketXs = Enumerable.Range(0, buckets)
             .Select(i => start.AddDays(1 + i))
@@ -65,6 +65,22 @@ public sealed class MainViewModel
         var barSeriesB = new BarSeries(barsB) { Title = "Bars B", GroupCount = 2, GroupIndex = 1, FillOpacity = 0.7 };
         Chart.AddSeries(barSeriesA);
         Chart.AddSeries(barSeriesB);
+
+        // Stacked bars: two stacked series grouped side-by-side
+        int sbBuckets = 8;
+        var sbXs = Enumerable.Range(0, sbBuckets).Select(i => start.AddDays(1 + i * 1.5)).ToArray();
+        var stackA = sbXs.Select((x, i) => new StackedBarPoint(
+            x.ToOADate(),
+            new[] { (Math.Sin(i * 0.5) + 1.1) * 0.4, (Math.Cos(i * 0.6) + 1.1) * 0.3, (Math.Sin(i * 0.7) + 1.1) * 0.2 }
+        )).ToArray();
+        var stackB = sbXs.Select((x, i) => new StackedBarPoint(
+            x.ToOADate(),
+            new[] { (Math.Cos(i * 0.5) + 1.1) * 0.35, (Math.Sin(i * 0.6) + 1.1) * 0.25, (Math.Cos(i * 0.4) + 1.1) * 0.2 }
+        )).ToArray();
+        var sba = new StackedBarSeries(stackA) { Title = "Stack A", GroupCount = 2, GroupIndex = 0, FillOpacity = 0.8 };
+        var sbb = new StackedBarSeries(stackB) { Title = "Stack B", GroupCount = 2, GroupIndex = 1, FillOpacity = 0.8 };
+        Chart.AddSeries(sba);
+        Chart.AddSeries(sbb);
 
         Chart.UpdateScales(800, 400);
     }
