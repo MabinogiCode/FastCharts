@@ -1,5 +1,7 @@
 using SkiaSharp;
 using System.Linq;
+using FastCharts.Core.Axes;
+using System;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers
 {
@@ -31,12 +33,35 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             var yTicks = model.YAxis.Ticker.GetTicks(yr, approxYStepData);
 
             float tickLen = (float)theme.TickLength;
+            bool xIsDate = model.XAxis is DateTimeAxis;
             foreach (var t in xTicks)
             {
                 float px = PixelMapper.X(t, model.XAxis, pr);
                 c.DrawLine(px, yBase, px, yBase + tickLen, paints.Tick);
-                var xf = model.XAxis.NumberFormatter;
-                var lbl = xf != null ? xf.Format(t) : t.ToString(model.XAxis.LabelFormat ?? "G");
+                string lbl;
+                if (xIsDate)
+                {
+                    var dx = (DateTimeAxis)((object)model.XAxis);
+                    var fmt = dx.DateTimeFormatter;
+                    if (fmt != null)
+                    {
+                        double spanDays = xr.Size;
+                        if (fmt is FastCharts.Core.Formatting.AdaptiveDateTimeFormatter ad)
+                        {
+                            ad.VisibleSpanDaysHint = spanDays;
+                        }
+                        lbl = fmt.Format(DateTime.FromOADate(t));
+                    }
+                    else
+                    {
+                        lbl = DateTime.FromOADate(t).ToString(dx.LabelFormat ?? "yyyy-MM-dd");
+                    }
+                }
+                else
+                {
+                    var xf = (model.XAxis as NumericAxis)?.NumberFormatter;
+                    lbl = xf != null ? xf.Format(t) : t.ToString((model.XAxis as NumericAxis)?.LabelFormat ?? "G");
+                }
                 float w = paints.Text.MeasureText(lbl);
                 c.DrawText(lbl, px - w / 2f, yBase + tickLen + 3 + paints.Text.TextSize, paints.Text);
             }
@@ -44,8 +69,9 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             {
                 float py = PixelMapper.Y(t, model.YAxis, pr);
                 c.DrawLine(xBase - tickLen, py, xBase, py, paints.Tick);
-                var yf = model.YAxis.NumberFormatter;
-                var lbl = yf != null ? yf.Format(t) : t.ToString(model.YAxis.LabelFormat ?? "G");
+                var ny = model.YAxis as NumericAxis;
+                var yf = ny?.NumberFormatter;
+                var lbl = yf != null ? yf.Format(t) : t.ToString(ny?.LabelFormat ?? "G");
                 float w = paints.Text.MeasureText(lbl);
                 c.DrawText(lbl, xBase - tickLen - 6 - w, py + 4, paints.Text);
             }

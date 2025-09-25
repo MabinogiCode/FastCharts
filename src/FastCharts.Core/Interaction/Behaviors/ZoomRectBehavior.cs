@@ -1,4 +1,5 @@
 using FastCharts.Core.Primitives;
+using FastCharts.Core.Axes;
 
 namespace FastCharts.Core.Interaction.Behaviors
 {

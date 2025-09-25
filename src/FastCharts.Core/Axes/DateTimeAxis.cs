@@ -3,6 +3,7 @@ using FastCharts.Core.Abstractions;
 using FastCharts.Core.Axes.Ticks;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Scales;
+using FastCharts.Core.Formatting;
 
 namespace FastCharts.Core.Axes;
 
@@ -15,14 +16,17 @@ public sealed class DateTimeAxis : AxisBase, IAxis<double>
     public DateTimeAxis()
     {
         Scale = new LinearScale(0, 1, 0, 1);
-        Ticker = new NiceTicker(); // later: DateTicker with smart steps
+        Ticker = new DateTicker();
         DataRange = new FRange(DateTime.Today.AddDays(-7).ToOADate(), DateTime.Today.ToOADate());
         VisibleRange = DataRange;
         LabelFormat = "yyyy-MM-dd";
+        DateTimeFormatter = new AdaptiveDateTimeFormatter();
     }
 
     public IScale<double> Scale { get; private set; }
     public ITicker<double> Ticker { get; }
+
+    public IDateTimeFormatter? DateTimeFormatter { get; set; }
 
     public override void UpdateScale(double pixelMin, double pixelMax)
     {

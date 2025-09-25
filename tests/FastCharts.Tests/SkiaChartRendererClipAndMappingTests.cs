@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Xunit;
 using SkiaSharp;
@@ -6,6 +6,7 @@ using FastCharts.Core;              // ChartModel
 using FastCharts.Core.Series;       // LineSeries
 using FastCharts.Rendering.Skia;    // SkiaChartRenderer
 using FastCharts.Core.Primitives;   // PointD (si l'espace de noms diffère, adapte l'using)
+using FastCharts.Core.Axes;         // AxisExtensions
 
 namespace FastCharts.Tests
 {

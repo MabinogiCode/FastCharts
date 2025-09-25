@@ -5,6 +5,7 @@ using FastCharts.Core;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 using FastCharts.Core.Themes.BuiltIn;
+using FastCharts.Core.Axes;
 
 namespace DemoApp.Net48.ViewModels
 {
@@ -18,27 +19,33 @@ namespace DemoApp.Net48.ViewModels
             Chart = new ChartModel();
 
             int n = 201;
-            var xs = Enumerable.Range(0, n).Select(i => i * 0.1).ToArray();
+            var start = DateTime.Today.AddDays(-14);
+            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 1.5)).ToArray();
             Chart.Theme = new DarkTheme();
 
-            var areaPts = xs.Select(x => new PointD(x, Math.Max(0, Math.Sin(x)))).ToArray();
-            Chart.AddSeries(new AreaSeries(areaPts) { Title = "Area: max(0, sin x)", Baseline = 0.0, FillOpacity = 0.35 });
+            // Switch X axis to DateTime
+            var dtAxis = new DateTimeAxis();
+            dtAxis.SetVisibleRange(start, DateTime.Today.AddDays(1));
+            Chart.ReplaceXAxis(dtAxis);
 
-            var linePts = xs.Select(x => new PointD(x, Math.Cos(x))).ToArray();
-            Chart.AddSeries(new LineSeries(linePts) { Title = "Line: cos x", StrokeThickness = 1.8 });
+            var areaPts = xs.Select(x => new PointD(x.ToOADate(), Math.Max(0, Math.Sin(x.Ticks / 1e10)))).ToArray();
+            Chart.AddSeries(new AreaSeries(areaPts) { Title = "Area: daily pattern", Baseline = 0.0, FillOpacity = 0.35 });
 
-            var stepPts = xs.Select(x => new PointD(x, Math.Sign(Math.Sin(x)))).ToArray();
-            Chart.AddSeries(new StepLineSeries(stepPts) { Title = "Step: sign(sin x)", StrokeThickness = 1.5, Mode = StepMode.Before });
+            var linePts = xs.Select(x => new PointD(x.ToOADate(), Math.Cos(x.Ticks / 1e10))).ToArray();
+            Chart.AddSeries(new LineSeries(linePts) { Title = "Line: trend", StrokeThickness = 1.8 });
+
+            var stepPts = xs.Select(x => new PointD(x.ToOADate(), Math.Sign(Math.Sin(x.Ticks / 1e10)))).ToArray();
+            Chart.AddSeries(new StepLineSeries(stepPts) { Title = "Step: regime", StrokeThickness = 1.5, Mode = StepMode.Before });
 
             var bandPts = xs.Select(x =>
             {
-                var y = Math.Sin(x);
-                return new BandPoint(x, y - 0.3, y + 0.3);
+                var t = Math.Sin(x.Ticks / 1e10);
+                return new BandPoint(x.ToOADate(), t - 0.3, t + 0.3);
             }).ToArray();
-            Chart.AddSeries(new BandSeries(bandPts) { Title = "Band: sin x ± 0.3", FillOpacity = 0.2, StrokeThickness = 1.0 });
+            Chart.AddSeries(new BandSeries(bandPts) { Title = "Band: conf", FillOpacity = 0.2, StrokeThickness = 1.0 });
 
-            var scatterPts = xs.Where((x, i) => i % 8 == 0)
-                .Select(x => new PointD(x, Math.Sin(x) + (Math.Sin(3 * x) * 0.05)))
+            var scatterPts = xs.Where((x, i) => i % 16 == 0)
+                .Select(x => new PointD(x.ToOADate(), Math.Sin(x.Ticks / 1e10) + (Math.Sin(3 * (x.Ticks / 1e10)) * 0.05)))
                 .ToArray();
             Chart.AddSeries(new ScatterSeries(scatterPts) { Title = "Scatter: samples", MarkerSize = 4.0, MarkerShape = MarkerShape.Circle });
 
