@@ -26,6 +26,13 @@ namespace FastCharts.Core.Series
         /// </summary>
         public double FillOpacity { get; set; }
 
+        /// <summary>
+        /// Grouping for side-by-side bars (clustered bars). GroupCount = total series in the cluster, GroupIndex = 0..GroupCount-1.
+        /// If null, series is treated as a single group (no clustering).
+        /// </summary>
+        public int? GroupCount { get; set; }
+        public int? GroupIndex { get; set; }
+
         public override bool IsEmpty
         {
             get { return Data == null || Data.Count == 0; }

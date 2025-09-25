@@ -49,6 +49,14 @@ namespace DemoApp.Net48.ViewModels
                 .ToArray();
             Chart.AddSeries(new ScatterSeries(scatterPts) { Title = "Scatter: samples", MarkerSize = 4.0, MarkerShape = MarkerShape.Circle });
 
+            // Grouped bars (daily buckets)
+            int buckets = 10;
+            var bucketXs = Enumerable.Range(0, buckets).Select(i => start.AddDays(1 + i)).ToArray();
+            var barsA = bucketXs.Select((x, i) => new BarPoint(x.ToOADate(), (Math.Sin(i * 0.6) + 1.2) * 0.6)).ToArray();
+            var barsB = bucketXs.Select((x, i) => new BarPoint(x.ToOADate(), (Math.Cos(i * 0.6) + 1.2) * 0.5)).ToArray();
+            Chart.AddSeries(new BarSeries(barsA) { Title = "Bars A", GroupCount = 2, GroupIndex = 0, FillOpacity = 0.7 });
+            Chart.AddSeries(new BarSeries(barsB) { Title = "Bars B", GroupCount = 2, GroupIndex = 1, FillOpacity = 0.7 });
+
             Chart.UpdateScales(800, 400); // nominal size; real renderer will update on arrange
         }
     }
