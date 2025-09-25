@@ -15,23 +15,29 @@ namespace FastCharts.Core;
 
 public sealed class ChartModel : IChartModel
 {
+    private readonly List<AxisBase> _axesList;
+    private readonly ReadOnlyCollection<AxisBase> _axesView;
+
     public ChartModel()
     {
-        XAxis = new NumericAxis();
-        YAxis = new NumericAxis();
+        var x = new NumericAxis();
+        var y = new NumericAxis();
+        XAxis = x;
+        YAxis = y;
         Viewport = new Interactivity.Viewport(new FRange(0, 1), new FRange(0, 1));
 
         Series = new ObservableCollection<SeriesBase>();
-        Axes = new ReadOnlyCollection<AxisBase>(new AxisBase[] { XAxis, YAxis });
+        _axesList = new List<AxisBase> { (AxisBase)XAxis, (AxisBase)YAxis };
+        _axesView = new ReadOnlyCollection<AxisBase>(_axesList);
         Legend = new LegendModel();
     }
 
     public ITheme Theme { get; set; } = new LightTheme();
-    public NumericAxis XAxis { get; }
-    public NumericAxis YAxis { get; }
+    public IAxis<double> XAxis { get; private set; }
+    public IAxis<double> YAxis { get; private set; }
     public IViewport Viewport { get; }
     public ObservableCollection<SeriesBase> Series { get; }
-    public IReadOnlyList<AxisBase> Axes { get; }
+    public IReadOnlyList<AxisBase> Axes => _axesView;
 
     // IChartModel (kept loose for now)
     IReadOnlyList<AxisBase> IChartModel.Axes => Axes;
@@ -47,6 +53,37 @@ public sealed class ChartModel : IChartModel
 
     /// <summary>Shared interaction state that renderers may read to draw overlays.</summary>
     public InteractionState? InteractionState { get; set; }
+
+    public void ReplaceXAxis(IAxis<double> newAxis)
+    {
+        if (newAxis == null)
+        {
+            return;
+        }
+        var old = XAxis;
+        // Preserve data range; visible will be set from viewport during UpdateScales
+        newAxis.DataRange = old.DataRange;
+        XAxis = newAxis;
+        if (_axesList.Count > 0)
+        {
+            _axesList[0] = (AxisBase)newAxis;
+        }
+    }
+
+    public void ReplaceYAxis(IAxis<double> newAxis)
+    {
+        if (newAxis == null)
+        {
+            return;
+        }
+        var old = YAxis;
+        newAxis.DataRange = old.DataRange;
+        YAxis = newAxis;
+        if (_axesList.Count > 1)
+        {
+            _axesList[1] = (AxisBase)newAxis;
+        }
+    }
 
     public void AddSeries(SeriesBase series)
     {
@@ -68,9 +105,9 @@ public sealed class ChartModel : IChartModel
     {
         XAxis.VisibleRange = Viewport.X;
         YAxis.VisibleRange = Viewport.Y;
-        XAxis.UpdateScale(0, widthPx);
+        ((AxisBase)XAxis).UpdateScale(0, widthPx);
         // Y pixels typically grow downward; invert here for convenience
-        YAxis.UpdateScale(heightPx, 0);
+        ((AxisBase)YAxis).UpdateScale(heightPx, 0);
     }
 
     public void AutoFitDataRange()
@@ -133,8 +170,12 @@ public sealed class ChartModel : IChartModel
         var newMinY = centerDataY - (centerDataY - yr.Min) * factorY;
         var newMaxY = newMinY + newSizeY;
 
-        XAxis.SetVisibleRange(newMinX, newMaxX);
-        YAxis.SetVisibleRange(newMinY, newMaxY);
+        // apply with guard against zero-length
+        if (newMinX == newMaxX) { newMinX -= 1e-6; newMaxX += 1e-6; }
+        if (newMinY == newMaxY) { newMinY -= 1e-6; newMaxY += 1e-6; }
+
+        XAxis.VisibleRange = new FRange(newMinX, newMaxX);
+        YAxis.VisibleRange = new FRange(newMinY, newMaxY);
     }
 
     public void Pan(double deltaDataX, double deltaDataY)
@@ -142,7 +183,7 @@ public sealed class ChartModel : IChartModel
         var xr = XAxis.VisibleRange;
         var yr = YAxis.VisibleRange;
 
-        XAxis.SetVisibleRange(xr.Min + deltaDataX, xr.Max + deltaDataX);
-        YAxis.SetVisibleRange(yr.Min + deltaDataY, yr.Max + deltaDataY);
+        XAxis.VisibleRange = new FRange(xr.Min + deltaDataX, xr.Max + deltaDataX);
+        YAxis.VisibleRange = new FRange(yr.Min + deltaDataY, yr.Max + deltaDataY);
     }
 }
