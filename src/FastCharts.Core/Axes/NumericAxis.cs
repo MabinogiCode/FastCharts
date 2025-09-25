@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Axes.Ticks;
@@ -8,7 +8,7 @@ using FastCharts.Core.Scales;
 
 namespace FastCharts.Core.Axes;
 
-public sealed class NumericAxis : IAxis<double>
+public sealed class NumericAxis : AxisBase, IAxis<double>
 {
     public NumericAxis()
     {
@@ -21,14 +21,9 @@ public sealed class NumericAxis : IAxis<double>
 
     public IScale<double> Scale { get; private set; }
     public ITicker<double> Ticker { get; }
-    public FRange DataRange { get; set; }
-    public FRange VisibleRange { get; set; }
-    public string? LabelFormat { get; set; } = "G";
-    
-    /// <summary>Optional number formatter for tick labels. If null, renderers fall back to LabelFormat/G.</summary>
     public INumberFormatter? NumberFormatter { get; set; }
 
-    public void UpdateScale(double pixelMin, double pixelMax)
+    public override void UpdateScale(double pixelMin, double pixelMax)
     {
         Scale = new LinearScale(VisibleRange.Min, VisibleRange.Max, pixelMin, pixelMax);
     }
@@ -39,7 +34,9 @@ public sealed class NumericAxis : IAxis<double>
     public void SetVisibleRange(double min, double max)
     {
         if (double.IsNaN(min) || double.IsNaN(max))
+        {
             return;
+        }
 
         if (min > max)
         {

@@ -23,8 +23,6 @@ namespace FastCharts.Wpf.Controls
         private const string PartSkia = "PART_Skia";
 
         private SKElement? _skia;
-        private bool _isPanning;
-        private Point _lastMousePos;
         private bool _userChangedView;
 
         // Default renderer instance (Skia)
@@ -108,6 +106,8 @@ namespace FastCharts.Wpf.Controls
                 Model.Behaviors.Add(new ZoomRectBehavior());
                 Model.Behaviors.Add(new NearestPointBehavior());
                 Model.Behaviors.Add(new LegendToggleBehavior());
+                Model.Behaviors.Add(new ZoomWheelBehavior());
+                Model.Behaviors.Add(new PanBehavior());
             }
 
             Redraw();
@@ -143,82 +143,61 @@ namespace FastCharts.Wpf.Controls
                 _skia.ActualWidth,
                 _skia.ActualHeight);
             if (RouteToBehaviors(ev)) { Redraw(); }
-
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                _userChangedView = true;
-                _isPanning = true;
-                _lastMousePos = pos;
-                _skia?.CaptureMouse();
-                Mouse.OverrideCursor = Cursors.SizeAll;
-            }
         }
 
         private void OnSkiaMouseMove(object sender, MouseEventArgs e)
         {
-            if (!_isPanning || _skia == null)
+            if (_skia == null)
             {
                 return;
             }
 
             var pos = e.GetPosition(_skia);
 
-            // Plot margins & size
-            var m = Model.PlotMargins;
-            double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
+            // Update data coords for tooltip/crosshair consumers
+            UpdateDataCoordsForTooltip(pos.X, pos.Y);
 
-            double plotW = _skia.ActualWidth  - (left + right);
-            double plotH = _skia.ActualHeight - (top  + bottom);
-            if (plotW < 0) { plotW = 0; }
-            if (plotH < 0) { plotH = 0; }
+            var ev = new InteractionEvent(
+                PointerEventType.Move,
+                PointerButton.None,
+                new PointerModifiers
+                {
+                    Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
+                    Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
+                    Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
+                },
+                pos.X, pos.Y,
+                0,
+                _skia.ActualWidth,
+                _skia.ActualHeight);
 
-            // Pixel deltas
-            double dxPx = (pos.X - _lastMousePos.X);
-            double dyPx = (pos.Y - _lastMousePos.Y);
-
-            // Visible ranges (from axes which mirror the viewport)
-            FRange vx = Model.XAxis.VisibleRange;
-            FRange vy = Model.YAxis.VisibleRange;
-            double spanX = vx.Max - vx.Min;
-            double spanY = vy.Max - vy.Min;
-
-            // Pixel -> data (X normal, Y inverted in pixels)
-            double dxData = (plotW > 0) ? -dxPx / plotW * spanX : 0.0;
-            double dyData = (plotH > 0) ?  dyPx / plotH * spanY : 0.0;
-
-            if (dxData != 0.0 || dyData != 0.0)
+            if (RouteToBehaviors(ev))
             {
                 _userChangedView = true;
-
-                // Use viewport pan to keep axis/scale sync consistent.
-                Model.Viewport.Pan(dxData, dyData);
-
-                UpdateDataCoordsForTooltip(pos.X, pos.Y);
-                var ev = new InteractionEvent(
-                    PointerEventType.Move,
-                    PointerButton.None,
-                    new PointerModifiers
-                    {
-                        Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
-                        Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
-                        Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
-                    },
-                    pos.X, pos.Y,
-                    0,
-                    _skia.ActualWidth,
-                    _skia.ActualHeight);
-
-                if (RouteToBehaviors(ev))
+                // Update cursor based on pan state
+                if (Model.InteractionState != null && Model.InteractionState.IsPanning)
                 {
-                    Redraw();
+                    Mouse.OverrideCursor = Cursors.Hand;
                 }
                 else
                 {
-                    Redraw(); // need redraw anyway for pan
+                    Mouse.OverrideCursor = null;
                 }
+                Redraw();
             }
-
-            _lastMousePos = pos;
+            else
+            {
+                // Update cursor also when not handled (e.g., just move)
+                if (Model.InteractionState != null && Model.InteractionState.IsPanning)
+                {
+                    Mouse.OverrideCursor = Cursors.Hand;
+                }
+                else
+                {
+                    Mouse.OverrideCursor = null;
+                }
+                Redraw(); // crosshair/nearest may need redraw on move regardless
+            }
         }
 
         private void OnSkiaMouseUp(object sender, MouseButtonEventArgs e)
@@ -246,13 +225,12 @@ namespace FastCharts.Wpf.Controls
                     _skia.ActualWidth,
                     _skia.ActualHeight);
                 if (RouteToBehaviors(ev)) { Redraw(); }
-            }
 
-            if (_isPanning && _skia != null)
-            {
-                _isPanning = false;
-                _skia.ReleaseMouseCapture();
-                Mouse.OverrideCursor = null;
+                // cursor reset when pan stops
+                if (Model.InteractionState == null || !Model.InteractionState.IsPanning)
+                {
+                    Mouse.OverrideCursor = null;
+                }
             }
         }
 
@@ -260,16 +238,12 @@ namespace FastCharts.Wpf.Controls
         {
             if (_skia != null)
             {
-                var pos = _lastMousePos;
+                var pos = e.GetPosition(_skia);
                 var ev = new InteractionEvent(PointerEventType.Leave, PointerButton.None, new PointerModifiers(), pos.X, pos.Y, 0, _skia.ActualWidth, _skia.ActualHeight);
                 if (RouteToBehaviors(ev)) { Redraw(); }
             }
-            if (_isPanning && _skia != null)
-            {
-                _isPanning = false;
-                _skia.ReleaseMouseCapture();
-                Mouse.OverrideCursor = null;
-            }
+            // cursor reset on leave
+            Mouse.OverrideCursor = null;
         }
 
         private void OnSkiaMouseWheel(object sender, MouseWheelEventArgs e)
@@ -277,7 +251,6 @@ namespace FastCharts.Wpf.Controls
             if (_skia == null) { return; }
             _userChangedView = true;
             bool zoomIn = e.Delta > 0;
-            double scaleContract = zoomIn ? 1.1 : 0.9;
             Point pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(_skia);
 
             var ev = new InteractionEvent(
@@ -294,45 +267,6 @@ namespace FastCharts.Wpf.Controls
                 surfaceWidth: _skia.ActualWidth,
                 surfaceHeight: _skia.ActualHeight);
             if (RouteToBehaviors(ev)) { Redraw(); }
-
-            // Current factor (<1 = zoom in) but Viewport.Zoom expects scale > 1 to shrink (contract) => invert mapping.
-            // bool zoomIn = e.Delta > 0;
-            // double scaleContract = zoomIn ? 1.1 : 0.9; // >1 contract, <1 expand
-
-            // Cursor position (prefer sender if available)
-            // Point pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(_skia);
-
-            // Plot margins & size
-            // var m = Model.PlotMargins;
-            // double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
-
-            // double plotW = _skia.ActualWidth  - (left + right);
-            // double plotH = _skia.ActualHeight - (top  + bottom);
-            // if (plotW < 0) { plotW = 0; }
-            // if (plotH < 0) { plotH = 0; }
-
-            // Plot-relative pixels
-            // double px = pos.X - left; if (px < 0) { px = 0; } else if (px > plotW) { px = plotW; }
-            // double py = pos.Y - top;  if (py < 0) { py = 0; } else if (py > plotH) { py = plotH; }
-
-            // Visible ranges
-            // FRange vx = Model.XAxis.VisibleRange;
-            // FRange vy = Model.YAxis.VisibleRange;
-            // double spanX = vx.Max - vx.Min;
-            // double spanY = vy.Max - vy.Min;
-
-            // Ratios 0..1 inside plot
-            // double rx = (plotW > 0) ? (px / plotW) : 0.0;
-            // double ry = (plotH > 0) ? (py / plotH) : 0.0;
-
-            // Anchor in data space (Y inverted)
-            // double anchorX = vx.Min + rx * spanX;
-            // double anchorY = vy.Max - ry * spanY;
-
-            // Apply zoom on viewport
-            // Model.Viewport.Zoom(scaleContract, scaleContract, new PointD(anchorX, anchorY));
-
-            // Redraw();
             e.Handled = true;
         }
 
