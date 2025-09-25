@@ -76,6 +76,39 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 bandIndex++;
             }
 
+            // BAR/COLUMN
+            int barIndex = 0;
+            foreach (var bs in model.Series.OfType<BarSeries>())
+            {
+                if (bs.IsEmpty || !bs.IsVisible) { barIndex++; continue; }
+                var c = (palette != null && barIndex < palette.Count) ? palette[barIndex] : model.Theme.PrimarySeriesColor;
+                byte alpha = (byte)(System.Math.Max(0, System.Math.Min(1, bs.FillOpacity)) * c.A);
+                using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, alpha) };
+                using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, bs.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
+
+                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);
+                for (int i = 0; i < bs.Data.Count; i++)
+                {
+                    var p = bs.Data[i];
+                    double wData = bs.GetWidthFor(i);
+                    double half = wData * 0.5;
+                    float xCenter = PixelMapper.X(p.X, model.XAxis, pr);
+                    float xL = PixelMapper.X(p.X - half, model.XAxis, pr);
+                    float xR = PixelMapper.X(p.X + half, model.XAxis, pr);
+                    float y0 = PixelMapper.Y(bs.Baseline, model.YAxis, pr);
+                    float y1 = PixelMapper.Y(p.Y, model.YAxis, pr);
+                    var rect = SKRect.Create(System.Math.Min(xL, xR), System.Math.Min(y0, y1), System.Math.Abs(xR - xL), System.Math.Abs(y1 - y0));
+                    if (rect.Width <= 0 || rect.Height <= 0) continue;
+                    ctx.Canvas.DrawRect(rect, fillPaint);
+                    if (strokePaint.StrokeWidth > 0.5f)
+                    {
+                        ctx.Canvas.DrawRect(rect, strokePaint);
+                    }
+                }
+                ctx.Canvas.Restore();
+                barIndex++;
+            }
+
             // SCATTER
             int scatterIndex = 0;
             foreach (var ss in model.Series.OfType<ScatterSeries>())
