@@ -105,6 +105,7 @@ namespace FastCharts.Wpf.Controls
             if (Model.Behaviors.Count == 0)
             {
                 Model.Behaviors.Add(new CrosshairBehavior());
+                Model.Behaviors.Add(new ZoomRectBehavior());
             }
 
             Redraw();
@@ -118,11 +119,34 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (_skia == null) return;
+            var pos = e.GetPosition(_skia);
+            var ev = new InteractionEvent(
+                PointerEventType.Down,
+                e.ChangedButton switch
+                {
+                    MouseButton.Left => PointerButton.Left,
+                    MouseButton.Middle => PointerButton.Middle,
+                    MouseButton.Right => PointerButton.Right,
+                    _ => PointerButton.None
+                },
+                new PointerModifiers
+                {
+                    Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
+                    Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
+                    Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
+                },
+                pos.X, pos.Y,
+                0,
+                _skia.ActualWidth,
+                _skia.ActualHeight);
+            if (RouteToBehaviors(ev)) { Redraw(); }
+
             if (e.ChangedButton == MouseButton.Left)
             {
                 _userChangedView = true;
                 _isPanning = true;
-                _lastMousePos = e.GetPosition(_skia);
+                _lastMousePos = pos;
                 _skia?.CaptureMouse();
                 Mouse.OverrideCursor = Cursors.SizeAll;
             }
@@ -177,7 +201,10 @@ namespace FastCharts.Wpf.Controls
                         Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
                         Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
                     },
-                    pos.X, pos.Y);
+                    pos.X, pos.Y,
+                    0,
+                    _skia.ActualWidth,
+                    _skia.ActualHeight);
 
                 if (RouteToBehaviors(ev))
                 {
@@ -194,6 +221,31 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseUp(object sender, MouseButtonEventArgs e)
         {
+            if (_skia != null)
+            {
+                var pos = e.GetPosition(_skia);
+                var ev = new InteractionEvent(
+                    PointerEventType.Up,
+                    e.ChangedButton switch
+                    {
+                        MouseButton.Left => PointerButton.Left,
+                        MouseButton.Middle => PointerButton.Middle,
+                        MouseButton.Right => PointerButton.Right,
+                        _ => PointerButton.None
+                    },
+                    new PointerModifiers
+                    {
+                        Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
+                        Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
+                        Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
+                    },
+                    pos.X, pos.Y,
+                    0,
+                    _skia.ActualWidth,
+                    _skia.ActualHeight);
+                if (RouteToBehaviors(ev)) { Redraw(); }
+            }
+
             if (_isPanning && _skia != null)
             {
                 _isPanning = false;
@@ -204,65 +256,81 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseLeave(object sender, MouseEventArgs e)
         {
+            if (_skia != null)
+            {
+                var pos = _lastMousePos;
+                var ev = new InteractionEvent(PointerEventType.Leave, PointerButton.None, new PointerModifiers(), pos.X, pos.Y, 0, _skia.ActualWidth, _skia.ActualHeight);
+                if (RouteToBehaviors(ev)) { Redraw(); }
+            }
             if (_isPanning && _skia != null)
             {
                 _isPanning = false;
                 _skia.ReleaseMouseCapture();
                 Mouse.OverrideCursor = null;
             }
-            var ev = new InteractionEvent(PointerEventType.Leave, PointerButton.None, new PointerModifiers(), _lastMousePos.X, _lastMousePos.Y);
-            if (RouteToBehaviors(ev))
-            {
-                Redraw();
-            }
         }
 
         private void OnSkiaMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (_skia == null)
-            {
-                return;
-            }
+            if (_skia == null) { return; }
             _userChangedView = true;
-
-            // Current factor (<1 = zoom in) but Viewport.Zoom expects scale > 1 to shrink (contract) => invert mapping.
             bool zoomIn = e.Delta > 0;
-            double scaleContract = zoomIn ? 1.1 : 0.9; // >1 contract, <1 expand
-
-            // Cursor position (prefer sender if available)
+            double scaleContract = zoomIn ? 1.1 : 0.9;
             Point pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(_skia);
 
-            // Plot margins & size
-            var m = Model.PlotMargins;
-            double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
+            var ev = new InteractionEvent(
+                PointerEventType.Wheel,
+                PointerButton.None,
+                new PointerModifiers
+                {
+                    Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
+                    Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
+                    Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
+                },
+                pos.X, pos.Y,
+                wheelDelta: zoomIn ? 1 : -1,
+                surfaceWidth: _skia.ActualWidth,
+                surfaceHeight: _skia.ActualHeight);
+            if (RouteToBehaviors(ev)) { Redraw(); }
 
-            double plotW = _skia.ActualWidth  - (left + right);
-            double plotH = _skia.ActualHeight - (top  + bottom);
-            if (plotW < 0) { plotW = 0; }
-            if (plotH < 0) { plotH = 0; }
+            // Current factor (<1 = zoom in) but Viewport.Zoom expects scale > 1 to shrink (contract) => invert mapping.
+            // bool zoomIn = e.Delta > 0;
+            // double scaleContract = zoomIn ? 1.1 : 0.9; // >1 contract, <1 expand
+
+            // Cursor position (prefer sender if available)
+            // Point pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(_skia);
+
+            // Plot margins & size
+            // var m = Model.PlotMargins;
+            // double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
+
+            // double plotW = _skia.ActualWidth  - (left + right);
+            // double plotH = _skia.ActualHeight - (top  + bottom);
+            // if (plotW < 0) { plotW = 0; }
+            // if (plotH < 0) { plotH = 0; }
 
             // Plot-relative pixels
-            double px = pos.X - left; if (px < 0) { px = 0; } else if (px > plotW) { px = plotW; }
-            double py = pos.Y - top;  if (py < 0) { py = 0; } else if (py > plotH) { py = plotH; }
+            // double px = pos.X - left; if (px < 0) { px = 0; } else if (px > plotW) { px = plotW; }
+            // double py = pos.Y - top;  if (py < 0) { py = 0; } else if (py > plotH) { py = plotH; }
 
             // Visible ranges
-            FRange vx = Model.XAxis.VisibleRange;
-            FRange vy = Model.YAxis.VisibleRange;
-            double spanX = vx.Max - vx.Min;
-            double spanY = vy.Max - vy.Min;
+            // FRange vx = Model.XAxis.VisibleRange;
+            // FRange vy = Model.YAxis.VisibleRange;
+            // double spanX = vx.Max - vx.Min;
+            // double spanY = vy.Max - vy.Min;
 
             // Ratios 0..1 inside plot
-            double rx = (plotW > 0) ? (px / plotW) : 0.0;
-            double ry = (plotH > 0) ? (py / plotH) : 0.0;
+            // double rx = (plotW > 0) ? (px / plotW) : 0.0;
+            // double ry = (plotH > 0) ? (py / plotH) : 0.0;
 
             // Anchor in data space (Y inverted)
-            double anchorX = vx.Min + rx * spanX;
-            double anchorY = vy.Max - ry * spanY;
+            // double anchorX = vx.Min + rx * spanX;
+            // double anchorY = vy.Max - ry * spanY;
 
             // Apply zoom on viewport
-            Model.Viewport.Zoom(scaleContract, scaleContract, new PointD(anchorX, anchorY));
+            // Model.Viewport.Zoom(scaleContract, scaleContract, new PointD(anchorX, anchorY));
 
-            Redraw();
+            // Redraw();
             e.Handled = true;
         }
 

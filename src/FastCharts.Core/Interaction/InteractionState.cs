@@ -1,4 +1,4 @@
-﻿namespace FastCharts.Core.Interaction
+namespace FastCharts.Core.Interaction
 {
     /// <summary>
     /// Shared, renderer-agnostic interaction state the renderer can read to draw overlays (crosshair, tooltip, selection, etc.).
@@ -17,5 +17,12 @@
 
         // Optional text to show near the cursor
         public string? TooltipText { get; set; }
+
+        // Selection rectangle (SURFACE pixels)
+        public bool ShowSelectionRect { get; set; }
+        public double SelX1 { get; set; }
+        public double SelY1 { get; set; }
+        public double SelX2 { get; set; }
+        public double SelY2 { get; set; }
     }
 }
