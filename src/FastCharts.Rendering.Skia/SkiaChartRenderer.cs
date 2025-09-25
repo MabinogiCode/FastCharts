@@ -52,7 +52,23 @@ namespace FastCharts.Rendering.Skia
             var model = ctx.Model;
             var pr = ctx.PlotRect;
             var st = model.InteractionState;
-            if (st == null || !st.ShowCrosshair) return;
+            if (st == null) return;
+
+            // Selection rectangle
+            if (st.ShowSelectionRect)
+            {
+                float x1 = (float)st.SelX1, y1 = (float)st.SelY1, x2 = (float)st.SelX2, y2 = (float)st.SelY2;
+                using var selFill = new SKPaint { Color = new SKColor(30, 120, 220, 40), Style = SKPaintStyle.Fill, IsAntialias = true };
+                using var selStroke = new SKPaint { Color = new SKColor(30, 120, 220, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
+                var rr = SKRect.Create(System.Math.Min(x1, x2), System.Math.Min(y1, y2), System.Math.Abs(x2 - x1), System.Math.Abs(y2 - y1));
+                // clip to plot
+                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);
+                ctx.Canvas.DrawRect(rr, selFill);
+                ctx.Canvas.DrawRect(rr, selStroke);
+                ctx.Canvas.Restore();
+            }
+
+            if (!st.ShowCrosshair) return;
 
             float cx = (float)st.PixelX;
             float cy = (float)st.PixelY;
