@@ -61,10 +61,22 @@ namespace FastCharts.Rendering.Skia
                 using var selFill = new SKPaint { Color = new SKColor(30, 120, 220, 40), Style = SKPaintStyle.Fill, IsAntialias = true };
                 using var selStroke = new SKPaint { Color = new SKColor(30, 120, 220, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
                 var rr = SKRect.Create(System.Math.Min(x1, x2), System.Math.Min(y1, y2), System.Math.Abs(x2 - x1), System.Math.Abs(y2 - y1));
-                // clip to plot
                 ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);
                 ctx.Canvas.DrawRect(rr, selFill);
                 ctx.Canvas.DrawRect(rr, selStroke);
+                ctx.Canvas.Restore();
+            }
+
+            // Nearest-point highlight
+            if (st.ShowNearest)
+            {
+                float px = PixelMapper.X(st.NearestDataX, ctx.Model.XAxis, pr);
+                float py = PixelMapper.Y(st.NearestDataY, ctx.Model.YAxis, pr);
+                using var npStroke = new SKPaint { Color = new SKColor(255, 80, 80, 220), Style = SKPaintStyle.Stroke, StrokeWidth = 2, IsAntialias = true };
+                using var npFill = new SKPaint { Color = new SKColor(255, 80, 80, 120), Style = SKPaintStyle.Fill, IsAntialias = true };
+                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);
+                ctx.Canvas.DrawCircle(px, py, 6, npFill);
+                ctx.Canvas.DrawCircle(px, py, 6, npStroke);
                 ctx.Canvas.Restore();
             }
 
