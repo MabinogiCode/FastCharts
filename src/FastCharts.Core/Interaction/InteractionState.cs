@@ -32,6 +32,9 @@ namespace FastCharts.Core.Interaction
 
         // Legend hit test rectangles (SURFACE pixels)
         public System.Collections.Generic.List<LegendHit> LegendHits { get; set; } = new System.Collections.Generic.List<LegendHit>();
+
+        // Pan state (for UI cursor feedback)
+        public bool IsPanning { get; set; }
     }
 
     public sealed class LegendHit

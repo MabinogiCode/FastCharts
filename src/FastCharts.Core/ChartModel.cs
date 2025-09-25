@@ -22,7 +22,7 @@ public sealed class ChartModel : IChartModel
         Viewport = new Interactivity.Viewport(new FRange(0, 1), new FRange(0, 1));
 
         Series = new ObservableCollection<SeriesBase>();
-        Axes = new ReadOnlyCollection<NumericAxis>(new[] { XAxis, YAxis });
+        Axes = new ReadOnlyCollection<AxisBase>(new AxisBase[] { XAxis, YAxis });
         Legend = new LegendModel();
     }
 
@@ -31,10 +31,10 @@ public sealed class ChartModel : IChartModel
     public NumericAxis YAxis { get; }
     public IViewport Viewport { get; }
     public ObservableCollection<SeriesBase> Series { get; }
-    public IReadOnlyList<NumericAxis> Axes { get; }
+    public IReadOnlyList<AxisBase> Axes { get; }
 
     // IChartModel (kept loose for now)
-    IReadOnlyList<NumericAxis> IChartModel.Axes => Axes;
+    IReadOnlyList<AxisBase> IChartModel.Axes => Axes;
     IReadOnlyList<SeriesBase> IChartModel.Series => Series;
     
     public Margins PlotMargins { get; set; } = new Margins(48, 16, 16, 36);
