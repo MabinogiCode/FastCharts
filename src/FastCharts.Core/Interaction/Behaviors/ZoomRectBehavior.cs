@@ -5,6 +5,7 @@ namespace FastCharts.Core.Interaction.Behaviors
     /// <summary>
     /// Drag with left mouse to draw a selection rectangle inside the plot; on mouse up, zoom view to that data region.
     /// Requires host to route events with Pixel coords and to fill Model.UpdateScales before rendering.
+    /// Start only when Shift is held (to avoid conflict with panning).
     /// </summary>
     public sealed class ZoomRectBehavior : IBehavior
     {
@@ -20,6 +21,11 @@ namespace FastCharts.Core.Interaction.Behaviors
             switch (ev.Type)
             {
                 case PointerEventType.Down when ev.Button == PointerButton.Left:
+                    if (!ev.Modifiers.Shift)
+                    {
+                        // Only engage when Shift is pressed
+                        return false;
+                    }
                     _dragging = true;
                     _start = new PointD(ev.PixelX, ev.PixelY);
                     st.ShowSelectionRect = true;
