@@ -19,5 +19,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\FastCharts.Core\FastCharts.Core.csproj" />
+        <ProjectReference Include="..\..\src\FastCharts.Rendering.Skia\FastCharts.Rendering.Skia.csproj" />
     </ItemGroup>
 </Project>
