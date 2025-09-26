@@ -22,7 +22,8 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 {
                     var p = sls.Data[i];
                     float x = PixelMapper.X(p.X, model.XAxis, pr);
-                    float y = PixelMapper.Y(p.Y, model.YAxis, pr);
+                    var yAxis = (sls.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                    float y = PixelMapper.Y(p.Y, yAxis, pr);
                     if (!started2)
                     {
                         path.MoveTo(x, y);
@@ -31,7 +32,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     }
                     var prev = sls.Data[i - 1];
                     float xPrev = PixelMapper.X(prev.X, model.XAxis, pr);
-                    float yPrev = PixelMapper.Y(prev.Y, model.YAxis, pr);
+                    float yPrev = PixelMapper.Y(prev.Y, yAxis, pr);
                     if (sls.Mode == StepMode.Before)
                     {
                         path.LineTo(x, yPrev); path.LineTo(x, y);

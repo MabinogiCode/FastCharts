@@ -25,14 +25,13 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             var xr = model.XAxis.VisibleRange;
             var yr = model.YAxis.VisibleRange;
             if (xr.Size <= 0 || yr.Size <= 0) return;
-
             double xDataPerPx = xr.Size / System.Math.Max(1.0, pr.Width);
             double yDataPerPx = yr.Size / System.Math.Max(1.0, pr.Height);
             double approxXStepData = 80.0 * xDataPerPx;
             double approxYStepData = 50.0 * yDataPerPx;
             var xTicks = model.XAxis.Ticker.GetTicks(xr, approxXStepData);
             var yTicks = model.YAxis.Ticker.GetTicks(yr, approxYStepData);
-
+            var y2Ticks = model.YAxisSecondary != null ? model.YAxisSecondary.Ticker.GetTicks(model.YAxisSecondary.VisibleRange, approxYStepData) : null;
             float tickLen = (float)theme.TickLength;
             bool xIsDate = model.XAxis is DateTimeAxis;
             foreach (var t in xTicks)
@@ -76,7 +75,19 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 float w = paints.Text.MeasureText(lbl);
                 c.DrawText(lbl, xBase - tickLen - 6 - w, py + 4, paints.Text);
             }
-
+            if (y2Ticks != null)
+            {
+                float xR = pr.Right;
+                foreach (var t in y2Ticks)
+                {
+                    float py = PixelMapper.Y(t, model.YAxisSecondary!, pr);
+                    c.DrawLine(xR, py, xR + tickLen, py, paints.Tick);
+                    var ny2 = model.YAxisSecondary as NumericAxis;
+                    var y2f = ny2?.NumberFormatter;
+                    var lbl2 = y2f != null ? y2f.Format(t) : t.ToString(ny2?.LabelFormat ?? "G", CultureInfo.InvariantCulture);
+                    c.DrawText(lbl2, xR + tickLen + 4, py + 4, paints.Text);
+                }
+            }
             // Border
             c.DrawRect(pr, paints.Border);
         }

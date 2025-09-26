@@ -37,6 +37,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     float xR = PixelMapper.X(p.X + groupOffset + effW * 0.5, model.XAxis, pr);
                     double accPos = sbs.Baseline;
                     double accNeg = sbs.Baseline;
+                    var yAxis = (sbs.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
                     if (p.Values != null && p.Values.Length > 0)
                     {
                         for (int seg = 0; seg < p.Values.Length; seg++)
@@ -55,8 +56,8 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                             byte alpha = (byte)(RenderMath.Clamp01(sbs.FillOpacity) * col.A);
                             using var fillSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(col.R, col.G, col.B, alpha) };
                             using var strokeSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, sbs.StrokeThickness), Color = new SKColor(col.R, col.G, col.B, col.A) };
-                            float y0 = PixelMapper.Y(yStart, model.YAxis, pr);
-                            float y1 = PixelMapper.Y(yEnd, model.YAxis, pr);
+                            float y0 = PixelMapper.Y(yStart, yAxis, pr);
+                            float y1 = PixelMapper.Y(yEnd, yAxis, pr);
                             var rect = SKRect.Create(System.Math.Min(xL, xR), System.Math.Min(y0, y1), System.Math.Abs(xR - xL), System.Math.Abs(y1 - y0));
                             if (rect.Width <= 0 || rect.Height <= 0)
                             {
