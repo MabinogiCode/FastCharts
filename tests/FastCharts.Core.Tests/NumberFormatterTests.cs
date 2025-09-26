@@ -12,7 +12,7 @@ public class NumberFormatterTests
     [InlineData(1234, "1.2k")]
     [InlineData(1_234_567, "1.2M")]
     [InlineData(1_234_567_890, "1.2B")]
-    public void Compact_ShouldProduceExpectedSuffixes(double value, string expectedPrefix)
+    public void CompactShouldProduceExpectedSuffixes(double value, string expectedPrefix)
     {
         var f = new CompactNumberFormatter(digits:1);
         f.Format(value).Should().StartWith(expectedPrefix);
@@ -21,7 +21,7 @@ public class NumberFormatterTests
     [Theory]
     [InlineData(1.23e6, "1.23E+0")]
     [InlineData(5.5e-5, "5.50E-")]
-    public void Scientific_ShouldUseScientificForExtremeValues(double value, string expectedStart)
+    public void ScientificShouldUseScientificForExtremeValues(double value, string expectedStart)
     {
         var f = new ScientificNumberFormatter(significantDigits:3);
         var s = f.Format(value);
@@ -29,7 +29,7 @@ public class NumberFormatterTests
     }
 
     [Fact]
-    public void SuffixFormatter_ShouldScaleDownNumbers()
+    public void SuffixFormatterShouldScaleDownNumbers()
     {
         var f = new SuffixNumberFormatter(maxDecimals:2);
         f.Format(1532).Should().StartWith("1.53k");

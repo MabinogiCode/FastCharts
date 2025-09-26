@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using FastCharts.Core.Primitives;
+
 namespace FastCharts.Core.Series
 {
     /// <summary>
@@ -28,7 +30,10 @@ namespace FastCharts.Core.Series
 
         public double GetWidthFor(int index)
         {
-            if (Width.HasValue) return Width.Value;
+            if (Width.HasValue)
+            {
+                return Width.Value;
+            }
             if (Data.Count >= 2)
             {
                 double minDx = double.PositiveInfinity;
@@ -43,21 +48,27 @@ namespace FastCharts.Core.Series
             return 1.0;
         }
 
-        public FastCharts.Core.Primitives.FRange GetXRange()
+        public FRange GetXRange()
         {
-            if (IsEmpty) return new FastCharts.Core.Primitives.FRange(0, 0);
+            if (IsEmpty)
+            {
+                return new FRange(0, 0);
+            }
             double minX = Data.Min(p => p.X);
             double maxX = Data.Max(p => p.X);
             double half = GetWidthFor(0) * 0.5;
-            return new FastCharts.Core.Primitives.FRange(minX - half, maxX + half);
+            return new FRange(minX - half, maxX + half);
         }
 
-        public FastCharts.Core.Primitives.FRange GetYRange()
+        public FRange GetYRange()
         {
-            if (IsEmpty) return new FastCharts.Core.Primitives.FRange(0, 0);
+            if (IsEmpty)
+            {
+                return new FRange(0, 0);
+            }
             double minY = Data.Min(p => p.Low);
             double maxY = Data.Max(p => p.High);
-            return new FastCharts.Core.Primitives.FRange(minY, maxY);
+            return new FRange(minY, maxY);
         }
     }
 }

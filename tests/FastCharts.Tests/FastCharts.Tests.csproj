@@ -11,6 +11,7 @@
 
         <!-- Ensure NuGet packages are copied into bin for the testhost -->
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>

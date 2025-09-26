@@ -10,9 +10,18 @@ namespace FastCharts.Core.Interaction.Behaviors
     {
         public bool OnEvent(ChartModel model, InteractionEvent ev)
         {
-            if (model == null) return false;
-            if (ev.Type != PointerEventType.Down || ev.Button != PointerButton.Left) return false;
-            if (model.InteractionState == null || model.InteractionState.LegendHits == null) return false;
+            if (model == null)
+            {
+                return false;
+            }
+            if (ev.Type != PointerEventType.Down || ev.Button != PointerButton.Left)
+            {
+                return false;
+            }
+            if (model.InteractionState == null || model.InteractionState.LegendHits == null)
+            {
+                return false;
+            }
 
             var hits = model.InteractionState.LegendHits;
             for (int i = 0; i < hits.Count; i++)

@@ -1,14 +1,15 @@
-﻿using FastCharts.Core;
+using FastCharts.Core;
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Interaction.Behaviors;
+
 using Xunit;
 
-namespace FastCharts.Core.Tests
+namespace FastCharts.Tests
 {
     public class CrosshairBehaviorTests
     {
         [Fact]
-        public void Move_Sets_ShowCrosshair_And_PixelPosition()
+        public void MoveSetsShowCrosshairAndPixelPosition()
         {
             var model = new ChartModel();
             var b = new CrosshairBehavior();
@@ -24,7 +25,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void Leave_Hides_Crosshair()
+        public void LeaveHidesCrosshair()
         {
             var model = new ChartModel { InteractionState = new InteractionState { ShowCrosshair = true } };
             var b = new CrosshairBehavior();
@@ -37,7 +38,7 @@ namespace FastCharts.Core.Tests
             Assert.False(model.InteractionState.ShowCrosshair);
         }
         [Fact]
-        public void Tooltip_Composes_From_Data_When_Available()
+        public void TooltipComposesFromDataWhenAvailable()
         {
             var model = new ChartModel { InteractionState = new InteractionState { DataX = 10.5, DataY = 2.3 } };
             var b = new CrosshairBehavior();

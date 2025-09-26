@@ -15,7 +15,10 @@ namespace FastCharts.Core.Interaction.Behaviors
 
         public bool OnEvent(ChartModel model, InteractionEvent ev)
         {
-            if (model == null) return false;
+            if (model == null)
+            {
+                return false;
+            }
             model.InteractionState ??= new InteractionState();
             var st = model.InteractionState;
 
@@ -24,7 +27,6 @@ namespace FastCharts.Core.Interaction.Behaviors
                 case PointerEventType.Down when ev.Button == PointerButton.Left:
                     if (!ev.Modifiers.Shift)
                     {
-                        // Only engage when Shift is pressed
                         return false;
                     }
                     _dragging = true;
@@ -65,7 +67,10 @@ namespace FastCharts.Core.Interaction.Behaviors
                         double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
                         double plotW = System.Math.Max(0, ev.SurfaceWidth  - (left + right));
                         double plotH = System.Math.Max(0, ev.SurfaceHeight - (top  + bottom));
-                        if (plotW <= 0 || plotH <= 0) return true;
+                        if (plotW <= 0 || plotH <= 0)
+                        {
+                            return true;
+                        }
 
                         double px1 = x1 - left; if (px1 < 0) px1 = 0; else if (px1 > plotW) px1 = plotW;
                         double px2 = x2 - left; if (px2 < 0) px2 = 0; else if (px2 > plotW) px2 = plotW;

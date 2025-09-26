@@ -22,7 +22,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void Plot_Is_Hard_Clipped_Margins_Unaffected()
+        public void PlotIsHardClippedMarginsUnaffected()
         {
             // Arrange
             var model = new ChartModel();
@@ -73,7 +73,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void Diagonal_Maps_From_BottomLeft_To_TopRight_Inside_Plot()
+        public void DiagonalMapsFromBottomLeftToTopRightInsidePlot()
         {
             // Arrange
             var model = new ChartModel();

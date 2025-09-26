@@ -2,6 +2,7 @@ using SkiaSharp;
 using System.Linq;
 using FastCharts.Core.Axes;
 using System;
+using System.Globalization;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers
 {
@@ -54,13 +55,13 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     }
                     else
                     {
-                        lbl = DateTime.FromOADate(t).ToString(dx.LabelFormat ?? "yyyy-MM-dd");
+                        lbl = DateTime.FromOADate(t).ToString(dx.LabelFormat ?? "yyyy-MM-dd", CultureInfo.InvariantCulture);
                     }
                 }
                 else
                 {
                     var xf = (model.XAxis as NumericAxis)?.NumberFormatter;
-                    lbl = xf != null ? xf.Format(t) : t.ToString((model.XAxis as NumericAxis)?.LabelFormat ?? "G");
+                    lbl = xf != null ? xf.Format(t) : t.ToString((model.XAxis as NumericAxis)?.LabelFormat ?? "G", CultureInfo.InvariantCulture);
                 }
                 float w = paints.Text.MeasureText(lbl);
                 c.DrawText(lbl, px - w / 2f, yBase + tickLen + 3 + paints.Text.TextSize, paints.Text);
@@ -71,7 +72,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 c.DrawLine(xBase - tickLen, py, xBase, py, paints.Tick);
                 var ny = model.YAxis as NumericAxis;
                 var yf = ny?.NumberFormatter;
-                var lbl = yf != null ? yf.Format(t) : t.ToString(ny?.LabelFormat ?? "G");
+                var lbl = yf != null ? yf.Format(t) : t.ToString(ny?.LabelFormat ?? "G", CultureInfo.InvariantCulture);
                 float w = paints.Text.MeasureText(lbl);
                 c.DrawText(lbl, xBase - tickLen - 6 - w, py + 4, paints.Text);
             }

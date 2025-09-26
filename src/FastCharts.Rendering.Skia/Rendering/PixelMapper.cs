@@ -1,7 +1,8 @@
 using System;
+using System.Globalization;
 
 using FastCharts.Core.Abstractions;
-using SkiaSharp;                    // SKRect
+using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering
 {
@@ -17,7 +18,7 @@ namespace FastCharts.Rendering.Skia.Rendering
             var vr = axis.VisibleRange; // FRange (double)
             double span = vr.Max - vr.Min;
             if (span == 0) return plotRect.Left;
-            double v = Convert.ToDouble(value);
+            double v = Convert.ToDouble(value, CultureInfo.InvariantCulture);
             double t = (v - vr.Min) / span;
             return (float)(plotRect.Left + t * plotRect.Width);
         }
@@ -29,7 +30,7 @@ namespace FastCharts.Rendering.Skia.Rendering
             var vr = axis.VisibleRange;
             double span = vr.Max - vr.Min;
             if (span == 0) return plotRect.Bottom;
-            double v = Convert.ToDouble(value);
+            double v = Convert.ToDouble(value, CultureInfo.InvariantCulture);
             double t = (v - vr.Min) / span;
             return (float)(plotRect.Bottom - t * plotRect.Height);
         }

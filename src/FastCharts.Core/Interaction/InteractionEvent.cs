@@ -6,19 +6,14 @@ namespace FastCharts.Core.Interaction
     /// </summary>
     public struct InteractionEvent
     {
-        public PointerEventType Type;
-        public PointerButton Button;
-        public PointerModifiers Modifiers;
-
-        public double PixelX;
-        public double PixelY;
-
-        /// <summary>Total surface width/height in pixels for conversions.</summary>
-        public double SurfaceWidth;
-        public double SurfaceHeight;
-
-        /// <summary>Wheel delta in logical steps (positive = zoom in), 0 otherwise.</summary>
-        public double WheelDelta;
+        public PointerEventType Type { get; set; }
+        public PointerButton Button { get; set; }
+        public PointerModifiers Modifiers { get; set; }
+        public double PixelX { get; set; }
+        public double PixelY { get; set; }
+        public double SurfaceWidth { get; set; }
+        public double SurfaceHeight { get; set; }
+        public double WheelDelta { get; set; }
 
         public InteractionEvent(
             PointerEventType type,

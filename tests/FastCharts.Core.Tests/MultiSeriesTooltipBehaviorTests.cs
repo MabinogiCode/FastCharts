@@ -10,7 +10,7 @@ namespace FastCharts.Core.Tests
 {
     public class MultiSeriesTooltipBehaviorTests
     {
-        private (ChartModel model, InteractionState st) CreateModel()
+        private static (ChartModel model, InteractionState st) CreateModel()
         {
             var m = new ChartModel();
             m.Series.Add(new LineSeries(new []
@@ -28,7 +28,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void MoveEvent_PopulatesTooltipSeries()
+        public void MoveEventPopulatesTooltipSeries()
         {
             var (m, st) = CreateModel();
             var cross = new CrosshairBehavior();
@@ -44,7 +44,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void Lock_OnClick_PreservesValues()
+        public void LockOnClickPreservesValues()
         {
             var (m, st) = CreateModel();
             var cross = new CrosshairBehavior();

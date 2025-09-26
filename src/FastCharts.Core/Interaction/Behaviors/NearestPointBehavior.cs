@@ -13,9 +13,18 @@ namespace FastCharts.Core.Interaction.Behaviors
 
         public bool OnEvent(ChartModel model, InteractionEvent ev)
         {
-            if (model == null) return false;
-            if (ev.Type != PointerEventType.Move) return false;
-            if (model.InteractionState == null) model.InteractionState = new InteractionState();
+            if (model == null)
+            {
+                return false;
+            }
+            if (ev.Type != PointerEventType.Move)
+            {
+                return false;
+            }
+            if (model.InteractionState == null)
+            {
+                model.InteractionState = new InteractionState();
+            }
             var st = model.InteractionState;
 
             // Plot rect from margins
@@ -25,7 +34,8 @@ namespace FastCharts.Core.Interaction.Behaviors
             double plotH = Math.Max(0, ev.SurfaceHeight - (top + bottom));
             if (plotW <= 0 || plotH <= 0)
             {
-                st.ShowNearest = false; return false;
+                st.ShowNearest = false;
+                return false;
             }
 
             var xr = model.XAxis.VisibleRange;
@@ -34,7 +44,8 @@ namespace FastCharts.Core.Interaction.Behaviors
             double spanY = yr.Max - yr.Min;
             if (spanX <= 0 || spanY <= 0)
             {
-                st.ShowNearest = false; return false;
+                st.ShowNearest = false;
+                return false;
             }
 
             // Cursor pixel
@@ -122,7 +133,11 @@ namespace FastCharts.Core.Interaction.Behaviors
 
             if (double.IsInfinity(bestD2))
             {
-                if (st.ShowNearest) { st.ShowNearest = false; return true; }
+                if (st.ShowNearest)
+                {
+                    st.ShowNearest = false;
+                    return true;
+                }
                 return false;
             }
 

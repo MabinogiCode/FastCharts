@@ -1,4 +1,4 @@
-﻿namespace FastCharts.Core.Series
+namespace FastCharts.Core.Series
 {
     /// <summary>
     /// Base class for all series types. Holds common metadata used by renderers.
@@ -8,7 +8,7 @@
         /// <summary>
         /// Display name (for legends, tooltips).
         /// </summary>
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         /// <summary>
         /// Whether the series is visible. Renderers should skip drawing when false.
@@ -34,7 +34,7 @@
         /// <summary>
         /// Tag object for app-specific metadata.
         /// </summary>
-        public object Tag { get; set; }
+        public object? Tag { get; set; }
 
         /// <summary>
         /// Series has no data to render.

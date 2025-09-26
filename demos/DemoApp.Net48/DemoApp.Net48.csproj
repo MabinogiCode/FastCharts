@@ -1,15 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
-  <PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Condition="'$(OS)'=='Windows_NT'">
     <OutputType>WinExe</OutputType>
     <TargetFramework>net48</TargetFramework>
     <UseWPF>true</UseWPF>
     <LangVersion>9.0</LangVersion>
-    <!-- 👈 ajoute ça -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <ItemGroup>
+  <!-- Non-Windows: define dummy build to avoid failure (Windows-only demo) -->
+  <PropertyGroup Condition="'$(OS)'!='Windows_NT'">
+    <TargetFramework>net8.0</TargetFramework>
+    <SkipNonWindowsDemo>true</SkipNonWindowsDemo>
+  </PropertyGroup>
+  <Target Name="SkipBuildNonWindows" BeforeTargets="Build" Condition="'$(SkipNonWindowsDemo)'=='true'">
+    <Message Text="Skipping DemoApp.Net48 (Windows-only demo) build on non-Windows host." Importance="High" />
+    <!-- Prevent any compile by clearing Compile items -->
+    <ItemGroup>
+      <Compile Remove="**/*.cs" />
+    </ItemGroup>
+  </Target>
+  <ItemGroup Condition="'$(OS)'=='Windows_NT'">
     <ProjectReference Include="..\\..\\src\\FastCharts.Wpf\\FastCharts.Wpf.csproj" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(OS)'=='Windows_NT'">
     <PackageReference Include="DynamicData" Version="8.*" />
   </ItemGroup>
 </Project>

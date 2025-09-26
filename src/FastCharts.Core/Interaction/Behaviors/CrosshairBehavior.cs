@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 namespace FastCharts.Core.Interaction.Behaviors
 {
@@ -13,9 +13,14 @@ namespace FastCharts.Core.Interaction.Behaviors
 
         public bool OnEvent(ChartModel model, InteractionEvent ev)
         {
-            if (model == null) return false;
+            if (model == null)
+            {
+                return false;
+            }
             if (model.InteractionState == null)
+            {
                 model.InteractionState = new InteractionState();
+            }
 
             var st = model.InteractionState;
             switch (ev.Type)
@@ -24,10 +29,8 @@ namespace FastCharts.Core.Interaction.Behaviors
                     st.ShowCrosshair = true;
                     st.PixelX = ev.PixelX;
                     st.PixelY = ev.PixelY;
-
                     if (st.DataX.HasValue && st.DataY.HasValue)
                     {
-                        // Compose tooltip lazily from DataX/DataY if present
                         var ci = CultureInfo.InvariantCulture;
                         st.TooltipText = string.Format(
                             ci,
@@ -36,12 +39,10 @@ namespace FastCharts.Core.Interaction.Behaviors
                             string.Format(ci, TooltipFormatY, st.DataY.Value));
                     }
                     return true;
-
                 case PointerEventType.Leave:
                     st.ShowCrosshair = false;
                     st.TooltipText = null;
                     return true;
-
                 default:
                     return false;
             }

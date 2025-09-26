@@ -1,4 +1,4 @@
-﻿using FastCharts.Core.Primitives;
+using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 using FluentAssertions;
 using Xunit;
@@ -8,7 +8,7 @@ namespace FastCharts.Core.Tests;
 public class ChartModelTests
 {
     [Fact]
-    public void ChartModel_ShouldStartWithDefaultAxesAndViewport()
+    public void ChartModelShouldStartWithDefaultAxesAndViewport()
     {
         var m = new ChartModel();
         m.Axes.Should().HaveCount(2);
@@ -18,7 +18,7 @@ public class ChartModelTests
     }
 
     [Fact]
-    public void AutoFit_ShouldUpdateDataRangesAndViewport()
+    public void AutoFitShouldUpdateDataRangesAndViewport()
     {
         var m = new ChartModel();
         m.AddSeries(new LineSeries(new[]
@@ -39,7 +39,7 @@ public class ChartModelTests
     }
 
     [Fact]
-    public void UpdateScales_ShouldMapX0To0AndX100ToWidth()
+    public void UpdateScalesShouldMapX0To0AndX100ToWidth()
     {
         var m = new ChartModel();
         m.AddSeries(new LineSeries(new[] { new PointD(0, 0), new PointD(100, 100) }));

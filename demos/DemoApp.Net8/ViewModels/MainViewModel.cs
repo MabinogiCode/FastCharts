@@ -30,7 +30,7 @@ public sealed class MainViewModel
         Charts.Add(BuildMultiSeriesTooltipShowcase()); //12
     }
 
-    private ChartModel CreateBase(DateTime start, DateTime end)
+    private static ChartModel CreateBase(DateTime start, DateTime end)
     {
         var m = new ChartModel { Theme = new LightTheme() };
         var dtAxis = new DateTimeAxis();
@@ -39,7 +39,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildMixedChart()
+    private static ChartModel BuildMixedChart()
     {
         var start = DateTime.Today.AddDays(-14);
         var end = DateTime.Today.AddDays(1);
@@ -57,7 +57,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildBarsChart()
+    private static ChartModel BuildBarsChart()
     {
         var start = DateTime.Today.AddDays(-10);
         var end = DateTime.Today.AddDays(1);
@@ -72,7 +72,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildStackedBarsChart()
+    private static ChartModel BuildStackedBarsChart()
     {
         var start = DateTime.Today.AddDays(-12);
         var end = DateTime.Today.AddDays(1);
@@ -87,7 +87,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildOhlcChart()
+    private static ChartModel BuildOhlcChart()
     {
         var start = DateTime.Today.AddDays(-20);
         var end = DateTime.Today.AddDays(1);
@@ -111,7 +111,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildErrorBarChart()
+    private static ChartModel BuildErrorBarChart()
     {
         var start = DateTime.Today.AddDays(-10);
         var end = DateTime.Today.AddDays(1);
@@ -130,7 +130,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildMinimalLineChart()
+    private static ChartModel BuildMinimalLineChart()
     {
         var start = DateTime.Today.AddDays(-5);
         var end = DateTime.Today.AddDays(1);
@@ -143,7 +143,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildAreaOnly()
+    private static ChartModel BuildAreaOnly()
     {
         var start = DateTime.Today.AddDays(-7);
         var end = DateTime.Today.AddDays(1);
@@ -156,7 +156,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildScatterOnly()
+    private static ChartModel BuildScatterOnly()
     {
         var start = DateTime.Today.AddDays(-3);
         var end = DateTime.Today.AddDays(1);
@@ -170,7 +170,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildStepLine()
+    private static ChartModel BuildStepLine()
     {
         var start = DateTime.Today.AddDays(-6);
         var end = DateTime.Today.AddDays(1);
@@ -183,7 +183,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildSingleBars()
+    private static ChartModel BuildSingleBars()
     {
         var start = DateTime.Today.AddDays(-8);
         var end = DateTime.Today.AddDays(1);
@@ -196,7 +196,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildStacked100()
+    private static ChartModel BuildStacked100()
     {
         var start = DateTime.Today.AddDays(-10);
         var end = DateTime.Today.AddDays(1);
@@ -217,7 +217,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildOhlcWithErrorOverlay()
+    private static ChartModel BuildOhlcWithErrorOverlay()
     {
         var start = DateTime.Today.AddDays(-15);
         var end = DateTime.Today.AddDays(1);
@@ -247,7 +247,7 @@ public sealed class MainViewModel
         return m;
     }
 
-    private ChartModel BuildMultiSeriesTooltipShowcase()
+    private static ChartModel BuildMultiSeriesTooltipShowcase()
     {
         var start = DateTime.Today.AddDays(-3);
         var end = DateTime.Today.AddDays(0.5);

@@ -7,12 +7,15 @@ namespace FastCharts.Core.Ticks;
 
 public sealed class NumericTicker : ITicker<double>
 {
-    public int MinorMode { get; set; } = 0; // 0 auto 1 half 2 quarters 3 fifths
+    public int MinorMode { get; set; } // 0 auto 1 half 2 quarters 3 fifths
 
     public IReadOnlyList<double> GetTicks(FRange range, double approxStep)
     {
         var ticks = new List<double>();
-        if (range.Size <= 0) return ticks;
+        if (range.Size <= 0)
+        {
+            return ticks;
+        }
         double span = range.Size;
         double req = approxStep > 0 ? approxStep : span / 5.0;
         double step = Nice(req);
@@ -21,8 +24,13 @@ public sealed class NumericTicker : ITicker<double>
         for (double v = start; v <= end; v += step)
         {
             if (v >= range.Min - step * 0.25 && v <= range.Max + step * 0.25)
+            {
                 ticks.Add(v);
-            if (ticks.Count > 2000) break;
+            }
+            if (ticks.Count > 2000)
+            {
+                break;
+            }
         }
         return ticks;
     }
@@ -30,9 +38,15 @@ public sealed class NumericTicker : ITicker<double>
     public IReadOnlyList<double> GetMinorTicks(FRange range, IReadOnlyList<double> majorTicks)
     {
         var minors = new List<double>();
-        if (majorTicks == null || majorTicks.Count < 2) return minors;
+        if (majorTicks == null || majorTicks.Count < 2)
+        {
+            return minors;
+        }
         double step = majorTicks[1] - majorTicks[0];
-        if (step <= 0) return minors;
+        if (step <= 0)
+        {
+            return minors;
+        }
         // Determine subdivision pattern 1-2-5
         int subdiv; double first = majorTicks[0];
         double m = step / Math.Pow(10, Math.Floor(Math.Log10(step)));
@@ -48,9 +62,18 @@ public sealed class NumericTicker : ITicker<double>
         var majorsSet = new HashSet<double>(majorTicks);
         for (double v = start; v <= max; v += minorStep)
         {
-            if (majorsSet.Contains(v)) continue;
-            if (v >= min && v <= max) minors.Add(v);
-            if (minors.Count > 8000) break;
+            if (majorsSet.Contains(v))
+            {
+                continue;
+            }
+            if (v >= min && v <= max)
+            {
+                minors.Add(v);
+            }
+            if (minors.Count > 8000)
+            {
+                break;
+            }
         }
         return minors;
     }

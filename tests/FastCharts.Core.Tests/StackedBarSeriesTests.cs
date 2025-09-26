@@ -6,14 +6,20 @@ namespace FastCharts.Core.Tests;
 
 public class StackedBarSeriesTests
 {
-    [Fact]
-    public void GetYRange_ShouldSumPositiveAndNegativeStacks_RelativeToBaseline()
+    private static readonly StackedBarPoint[] SampleA = new[]
     {
-        var s = new StackedBarSeries(new[]
-        {
-            new StackedBarPoint(0, new[]{ 1.0, 2.0, -0.5 }),
-            new StackedBarPoint(1, new[]{ 0.5, -1.5, 3.0 }),
-        }) { Baseline = 0 };
+        new StackedBarPoint(0, new[]{ 1.0, 2.0, -0.5 }),
+        new StackedBarPoint(1, new[]{ 0.5, -1.5, 3.0 }),
+    };
+    private static readonly StackedBarPoint[] SampleB = new[]
+    {
+        new StackedBarPoint(10, new[]{ 1.0, 2.0 }),
+        new StackedBarPoint(20, new[]{ -1.0, 1.0 })
+    };
+    [Fact]
+    public void GetYRangeShouldSumPositiveAndNegativeStacksRelativeToBaseline()
+    {
+        var s = new StackedBarSeries(SampleA) { Baseline = 0 };
 
         var yr = s.GetYRange();
         yr.Min.Should().BeLessThanOrEqualTo(-1.5);
@@ -21,13 +27,9 @@ public class StackedBarSeriesTests
     }
 
     [Fact]
-    public void GetXRange_ShouldExpandByHalfWidth()
+    public void GetXRangeShouldExpandByHalfWidth()
     {
-        var s = new StackedBarSeries(new[]
-        {
-            new StackedBarPoint(10, new[]{ 1.0, 2.0 }),
-            new StackedBarPoint(20, new[]{ -1.0, 1.0 })
-        });
+        var s = new StackedBarSeries(SampleB);
 
         var xr = s.GetXRange();
         xr.Min.Should().BeLessThan(10);

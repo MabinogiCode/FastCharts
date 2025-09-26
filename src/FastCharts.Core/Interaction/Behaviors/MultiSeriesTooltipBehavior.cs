@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.Linq;
-
 using FastCharts.Core.Series;
 
 namespace FastCharts.Core.Interaction.Behaviors
@@ -21,7 +20,10 @@ namespace FastCharts.Core.Interaction.Behaviors
 
         public bool OnEvent(ChartModel model, InteractionEvent ev)
         {
-            if (model == null) return false;
+            if (model == null)
+            {
+                return false;
+            }
             model.InteractionState ??= new InteractionState();
             var st = model.InteractionState;
 
@@ -45,8 +47,10 @@ namespace FastCharts.Core.Interaction.Behaviors
                     return false;
 
                 case PointerEventType.Move:
-                    if (st.TooltipLocked) return false; // do not update while locked
-                    if (!st.DataX.HasValue) return false;
+                    if (st.TooltipLocked || !st.DataX.HasValue)
+                    {
+                        return false;
+                    }
                     Build(model, st, st.DataX.Value);
                     return true;
 
@@ -61,11 +65,29 @@ namespace FastCharts.Core.Interaction.Behaviors
             double tol = xr.Size * XSnapToleranceFraction;
             var ci = CultureInfo.InvariantCulture;
             st.TooltipSeries.Clear();
+            if (st.TooltipSeries.Capacity < MaxSeries)
+            {
+                st.TooltipSeries.Capacity = MaxSeries;
+            }
+
+            void AddPoint(string? title, double px, double py, int? paletteIndex)
+            {
+                if (st.TooltipSeries.Count < MaxSeries)
+                {
+                    st.TooltipSeries.Add(new TooltipSeriesValue { Title = title ?? "?", X = px, Y = py, PaletteIndex = paletteIndex });
+                }
+            }
 
             foreach (var s in model.Series)
             {
-                if (st.TooltipSeries.Count >= MaxSeries) break;
-                if (!s.IsVisible || s.IsEmpty) continue;
+                if (st.TooltipSeries.Count >= MaxSeries)
+                {
+                    break;
+                }
+                if (!s.IsVisible || s.IsEmpty)
+                {
+                    continue;
+                }
                 switch (s)
                 {
                     case AreaSeries area:
@@ -85,7 +107,9 @@ namespace FastCharts.Core.Interaction.Behaviors
                         {
                             double halfW = bar.GetWidthFor(0) * 0.5; // approximate width; per-point width rarely varies
                             if (Math.Abs(p.X - x) <= halfW) // use bar half-width instead of point tolerance
-                                st.TooltipSeries.Add(new TooltipSeriesValue { Title = bar.Title ?? "Bar", X = p.X, Y = p.Y, PaletteIndex = bar.PaletteIndex });
+                            {
+                                AddPoint(bar.Title ?? "Bar", p.X, p.Y, bar.PaletteIndex);
+                            }
                         }
                         break;
                     case StackedBarSeries sbar:
@@ -95,19 +119,27 @@ namespace FastCharts.Core.Interaction.Behaviors
                             if (Math.Abs(p.X - x) <= halfW && p.Values != null)
                             {
                                 double sum = 0; for (int i = 0; i < p.Values.Length; i++) sum += p.Values[i];
-                                st.TooltipSeries.Add(new TooltipSeriesValue { Title = sbar.Title ?? "Stack", X = p.X, Y = sum, PaletteIndex = sbar.PaletteIndex });
+                                AddPoint(sbar.Title ?? "Stack", p.X, sum, sbar.PaletteIndex);
                             }
                         }
                         break;
                     case OhlcSeries ohlc:
                         foreach (var p in ohlc.Data)
+                        {
                             if (Math.Abs(p.X - x) <= tol)
-                                st.TooltipSeries.Add(new TooltipSeriesValue { Title = ohlc.Title ?? "OHLC", X = p.X, Y = p.Close, PaletteIndex = ohlc.PaletteIndex });
+                            {
+                                AddPoint(ohlc.Title ?? "OHLC", p.X, p.Close, ohlc.PaletteIndex);
+                            }
+                        }
                         break;
                     case ErrorBarSeries err:
                         foreach (var p in err.Data)
+                        {
                             if (Math.Abs(p.X - x) <= tol)
-                                st.TooltipSeries.Add(new TooltipSeriesValue { Title = err.Title ?? "Err", X = p.X, Y = p.Y, PaletteIndex = err.PaletteIndex });
+                            {
+                                AddPoint(err.Title ?? "Err", p.X, p.Y, err.PaletteIndex);
+                            }
+                        }
                         break;
                 }
             }
@@ -121,18 +153,24 @@ namespace FastCharts.Core.Interaction.Behaviors
             double anchorX = st.TooltipSeries[0].X;
             st.TooltipAnchorX = anchorX;
             string header = string.Format(ci, HeaderFormat, anchorX.ToString(NumberFormatX, ci));
-            var lines = st.TooltipSeries.Select(v =>
+            var sb = new System.Text.StringBuilder(header.Length + st.TooltipSeries.Count * 24);
+            sb.Append(header);
+            for (int i = 0; i < st.TooltipSeries.Count; i++)
             {
+                var v = st.TooltipSeries[i];
                 var val = v.Y.ToString(NumberFormatY, ci);
-                return string.Format(ci, LineFormat, v.Title ?? "?", val);
-            });
-            st.TooltipText = header + "\n" + string.Join("\n", lines);
+                sb.Append('\n');
+                sb.AppendFormat(ci, LineFormat, v.Title ?? "?", val);
+            }
+            st.TooltipText = sb.ToString();
         }
 
-        private static void AddXY(InteractionState st, System.Collections.Generic.IList<FastCharts.Core.Primitives.PointD> data, double x, double tol, string title, int? paletteIndex)
+        private static void AddXY(InteractionState st, System.Collections.Generic.IList<FastCharts.Core.Primitives.PointD> data, double x, double tol, string? title, int? paletteIndex)
         {
-            if (data == null || data.Count == 0) return;
-            // Binary search nearest by X
+            if (data == null || data.Count == 0)
+            {
+                return;
+            }
             int lo = 0, hi = data.Count - 1;
             while (lo < hi)
             {
@@ -140,15 +178,21 @@ namespace FastCharts.Core.Interaction.Behaviors
                 if (data[mid].X < x) lo = mid + 1; else hi = mid;
             }
             int idx = lo;
-            // check neighbors
             for (int d = -1; d <= 1; d++)
             {
                 int i = idx + d;
-                if (i < 0 || i >= data.Count) continue;
+                if (i < 0 || i >= data.Count)
+                {
+                    continue;
+                }
                 var p = data[i];
-                if (System.Math.Abs(p.X - x) <= tol)
+                if (Math.Abs(p.X - x) <= tol)
                 {
                     st.TooltipSeries.Add(new TooltipSeriesValue { Title = title ?? "Line", X = p.X, Y = p.Y, PaletteIndex = paletteIndex });
+                    if (st.TooltipSeries.Count >= st.TooltipSeries.Capacity)
+                    {
+                        return;
+                    }
                 }
             }
         }
