@@ -116,7 +116,8 @@ namespace FastCharts.Tests
             model.AutoFitDataRange();
             var xr = model.XAxis.DataRange; var yr = model.YAxis.DataRange;
             Assert.True(xr.Min <= 10 && xr.Max >= 25, $"Unexpected X range: {xr.Min}..{xr.Max}");
-            Assert.True(yr.Min <= 56 && yr.Max >= 125, $"Unexpected Y range: {yr.Min}..{yr.Max}");
+            // Highest OHLC high is 120; ensure max >= 120 (no enforced padding in AutoFit)
+            Assert.True(yr.Min <= 56 && yr.Max >= 120, $"Unexpected Y range: {yr.Min}..{yr.Max}");
         }
     }
 }
