@@ -12,7 +12,10 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             var xr = model.XAxis.VisibleRange;
             var yr = model.YAxis.VisibleRange;
             var pr = ctx.PlotRect;
-            if (xr.Size <= 0 || yr.Size <= 0) return;
+            if (xr.Size <= 0 || yr.Size <= 0)
+            {
+                return;
+            }
 
             var xAxisBase = (AxisBase)model.XAxis;
             var yAxisBase = (AxisBase)model.YAxis;

@@ -1,17 +1,34 @@
 using System;
 using System.Linq;
+
 using FastCharts.Core;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 using FastCharts.Rendering.Skia;
+
 using SkiaSharp;
+
 using Xunit;
 
 namespace FastCharts.Tests
 {
     public class CommonSeriesRenderSmokeTests
     {
-        private (SKBitmap bmp, ChartModel model) Render(ChartModel model, int w = 420, int h = 300)
+        // Static readonly arrays to satisfy CA1861 (reused constant data definitions)
+        private static readonly BarPoint[] BarsAutoFitPoints =
+        [
+            new BarPoint(1,5),
+            new BarPoint(2,8),
+            new BarPoint(3,3)
+        ];
+
+        private static readonly StackedBarPoint[] StackAutoFitPoints =
+        [
+            new StackedBarPoint(4, [1.0, 2.0]),
+            new StackedBarPoint(5, [0.5, 1.5, 1.0])
+        ];
+
+        private static (SKBitmap bmp, ChartModel model) Render(ChartModel model, int w = 420, int h = 300)
         {
             var renderer = new SkiaChartRenderer();
             var bmp = new SKBitmap(w, h, true);
@@ -21,9 +38,9 @@ namespace FastCharts.Tests
             return (bmp, model);
         }
 
-        private int CountDiff(SKBitmap a, SKBitmap b)
+        private static int CountDiff(SKBitmap a, SKBitmap b)
         {
-            int w = Math.Min(a.Width, b.Width);
+            var w = Math.Min(a.Width, b.Width);
             int h = Math.Min(a.Height, b.Height);
             int diff = 0;
             for (int y = 0; y < h; y++)
@@ -43,7 +60,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void LineSeries_Smoke()
+        public void LineSeriesSmoke()
         {
             var empty = new ChartModel();
             SetVisibleRange(empty, 0, 100, -10, 10);
@@ -60,7 +77,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void AreaSeries_Smoke()
+        public void AreaSeriesSmoke()
         {
             var empty = new ChartModel();
             SetVisibleRange(empty, 0, 50, 0, 20);
@@ -77,7 +94,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void ScatterSeries_Smoke()
+        public void ScatterSeriesSmoke()
         {
             var empty = new ChartModel();
             SetVisibleRange(empty, 0, 100, 0, 100);
@@ -95,7 +112,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void BarSeries_Smoke()
+        public void BarSeriesSmoke()
         {
             var empty = new ChartModel();
             SetVisibleRange(empty, 0, 12, 0, 20);
@@ -112,7 +129,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void StackedBarSeries_Smoke()
+        public void StackedBarSeriesSmoke()
         {
             var empty = new ChartModel();
             SetVisibleRange(empty, 0, 12, 0, 10);
@@ -136,18 +153,11 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void AutoFit_ShouldCoverBarsAndStacked()
+        public void AutoFitShouldCoverBarsAndStacked()
         {
             var m = new ChartModel();
-            var bars = new BarSeries(new []
-            {
-                new BarPoint(1,5), new BarPoint(2,8), new BarPoint(3,3)
-            });
-            var stack = new StackedBarSeries(new []
-            {
-                new StackedBarPoint(4, new[]{1.0, 2.0}),
-                new StackedBarPoint(5, new[]{0.5, 1.5, 1.0})
-            });
+            var bars = new BarSeries(BarsAutoFitPoints);
+            var stack = new StackedBarSeries(StackAutoFitPoints);
             m.AddSeries(bars);
             m.AddSeries(stack);
             m.AutoFitDataRange();

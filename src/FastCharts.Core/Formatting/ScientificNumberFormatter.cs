@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using FastCharts.Core.Abstractions;
 
 namespace FastCharts.Core.Formatting
@@ -31,16 +32,16 @@ namespace FastCharts.Core.Formatting
         {
             if (double.IsNaN(value) || double.IsInfinity(value))
             {
-                return value.ToString();
+                return value.ToString(CultureInfo.InvariantCulture);
             }
             double abs = Math.Abs(value);
             if ((abs >= UpperThreshold) || (abs > 0 && abs < LowerThreshold))
             {
                 // Scientific formatting with given significant digits.
-                return value.ToString("E" + (SignificantDigits - 1));
+                return value.ToString("E" + (SignificantDigits - 1), CultureInfo.InvariantCulture);
             }
             // Plain formatting; G ensures trimming of trailing zeros while keeping reasonable precision.
-            return value.ToString("G");
+            return value.ToString("G", CultureInfo.InvariantCulture);
         }
     }
 }

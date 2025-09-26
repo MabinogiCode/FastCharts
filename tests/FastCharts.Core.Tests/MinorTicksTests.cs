@@ -9,7 +9,7 @@ namespace FastCharts.Core.Tests
     public class MinorTicksTests
     {
         [Fact]
-        public void NumericAxis_MinorTicks_Disabled_WhenFlagsFalse()
+        public void NumericAxisMinorTicksDisabledWhenFlagsFalse()
         {
             var ax = new NumericAxis();
             ax.ShowMinorTicks = false;
@@ -24,7 +24,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void NumericAxis_MinorTicks_1_2_5_Subdivision()
+        public void NumericAxisMinorTicks125Subdivision()
         {
             var ax = new NumericAxis();
             var range = new FRange(0, 10);
@@ -39,7 +39,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void DateTicker_Minors_For_Weekly_Majors()
+        public void DateTickerMinorsForWeeklyMajors()
         {
             var dt = new DateTicker();
             // 60 days range -> weekly majors likely

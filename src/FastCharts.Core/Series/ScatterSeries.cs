@@ -39,17 +39,23 @@ namespace FastCharts.Core.Series
 
         public FRange GetXRange()
         {
-            if (IsEmpty) { return new FRange(0, 0); }
-            var min = Data.Min(p => p.X);
-            var max = Data.Max(p => p.X);
+            if (IsEmpty)
+            {
+                return new FRange(0, 0);
+            }
+            double min = Data.Min(p => p.X);
+            double max = Data.Max(p => p.X);
             return new FRange(min, max);
         }
 
         public FRange GetYRange()
         {
-            if (IsEmpty) { return new FRange(0, 0); }
-            var min = Data.Min(p => p.Y);
-            var max = Data.Max(p => p.Y);
+            if (IsEmpty)
+            {
+                return new FRange(0, 0);
+            }
+            double min = Data.Min(p => p.Y);
+            double max = Data.Max(p => p.Y);
             return new FRange(min, max);
         }
     }

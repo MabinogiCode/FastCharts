@@ -1,4 +1,4 @@
-﻿using FastCharts.Core.Interactivity;
+using FastCharts.Core.Interactivity;
 using FastCharts.Core.Primitives;
 using FluentAssertions;
 using Xunit;
@@ -8,7 +8,7 @@ namespace FastCharts.Core.Tests;
 public class ViewportTests
 {
     [Fact]
-    public void Pan_ShouldShiftBothAxes_ByGivenDelta()
+    public void PanShouldShiftBothAxesByGivenDelta()
     {
         var vp = new Viewport(new FRange(0, 10), new FRange(0, 5));
 
@@ -21,7 +21,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void Zoom_ShouldContractAroundPivot_WhenScaleGreaterThan1()
+    public void ZoomShouldContractAroundPivotWhenScaleGreaterThan1()
     {
         var vp = new Viewport(new FRange(0, 10), new FRange(0, 10));
         var pivot = new PointD(5, 5);
@@ -35,7 +35,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void Zoom_ShouldExpandAroundPivot_WhenScaleBetween0And1()
+    public void ZoomShouldExpandAroundPivotWhenScaleBetween0And1()
     {
         var vp = new Viewport(new FRange(0, 10), new FRange(0, 10));
         var pivot = new PointD(5, 5);

@@ -1,4 +1,4 @@
-﻿using FastCharts.Core.Formatting;
+using FastCharts.Core.Formatting;
 using Xunit;
 
 namespace FastCharts.Core.Tests
@@ -15,7 +15,7 @@ namespace FastCharts.Core.Tests
         [InlineData(2_000_000_000, "2B")]
         [InlineData(3_400_000_000_000, "3.4T")]
         [InlineData(-1250, "-1.3k")]
-        public void Formats_Expected(double v, string expectedPrefix)
+        public void FormatsExpected(double v, string expectedPrefix)
         {
             var f = new CompactNumberFormatter(digits: 1);
             var s = f.Format(v);

@@ -1,4 +1,4 @@
-﻿using FastCharts.Core.Scales;
+using FastCharts.Core.Scales;
 using FluentAssertions;
 using Xunit;
 
@@ -7,7 +7,7 @@ namespace FastCharts.Core.Tests;
 public class LinearScaleTests
 {
     [Fact]
-    public void ToPixels_ShouldMapDataLinearly()
+    public void ToPixelsShouldMapDataLinearly()
     {
         var s = new LinearScale(dataMin: 0, dataMax: 100, pixelMin: 0, pixelMax: 200);
 
@@ -17,7 +17,7 @@ public class LinearScaleTests
     }
 
     [Fact]
-    public void FromPixels_ShouldInvertMapping()
+    public void FromPixelsShouldInvertMapping()
     {
         var s = new LinearScale(0, 100, 0, 200);
 

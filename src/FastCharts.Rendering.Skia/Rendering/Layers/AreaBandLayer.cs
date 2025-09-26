@@ -11,22 +11,31 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             var pr = ctx.PlotRect;
             var palette = model.Theme.SeriesPalette;
             int paletteCount = palette?.Count ?? 0;
-
             int areaIndex = 0;
             // First pass: area series
             foreach (var s in model.Series)
             {
-                if (s is not AreaSeries area || area.IsEmpty || !area.IsVisible) continue;
+                if (s is not AreaSeries area || area.IsEmpty || !area.IsVisible)
+                {
+                    continue;
+                }
                 int idx = area.PaletteIndex ?? areaIndex;
-                var c = (paletteCount > 0 && idx < paletteCount) ? palette[idx] : model.Theme.PrimarySeriesColor;
+                var chosen = (paletteCount > 0 && idx < paletteCount && palette != null) ? palette[idx] : model.Theme.PrimarySeriesColor;
                 using var path = new SKPath();
                 bool started = false;
                 foreach (var p in area.Data)
                 {
                     float px = PixelMapper.X(p.X, model.XAxis, pr);
                     float py = PixelMapper.Y(p.Y, model.YAxis, pr);
-                    if (!started) { path.MoveTo(px, py); started = true; }
-                    else { path.LineTo(px, py); }
+                    if (!started)
+                    {
+                        path.MoveTo(px, py);
+                        started = true;
+                    }
+                    else
+                    {
+                        path.LineTo(px, py);
+                    }
                 }
                 if (started)
                 {
@@ -35,9 +44,12 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     float baseY = PixelMapper.Y(area.Baseline, model.YAxis, pr);
                     path.LineTo(lastX, baseY);
                     path.Close();
-                    byte alpha = (byte)(RenderMath.Clamp01(area.FillOpacity) * c.A);
-                    using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, alpha) };
-                    ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawPath(path, fill); ctx.Canvas.Restore();
+                    byte alpha = (byte)(RenderMath.Clamp01(area.FillOpacity) * chosen.A);
+                    using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(chosen.R, chosen.G, chosen.B, alpha) };
+                    ctx.Canvas.Save();
+                    ctx.Canvas.ClipRect(pr);
+                    ctx.Canvas.DrawPath(path, fill);
+                    ctx.Canvas.Restore();
                 }
                 areaIndex++;
             }
@@ -46,20 +58,30 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             int bandIndex = 0;
             foreach (var s in model.Series)
             {
-                if (s is not BandSeries bs || bs.IsEmpty || !bs.IsVisible) continue;
-                var c = (paletteCount > 0 && bandIndex < paletteCount) ? palette[bandIndex] : model.Theme.PrimarySeriesColor;
-                byte alpha = (byte)(RenderMath.Clamp01(bs.FillOpacity) * c.A);
-                using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, alpha) };
-                using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)bs.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
+                if (s is not BandSeries bs || bs.IsEmpty || !bs.IsVisible)
+                {
+                    continue;
+                }
+                var col = (paletteCount > 0 && bandIndex < paletteCount && palette != null) ? palette[bandIndex] : model.Theme.PrimarySeriesColor;
+                byte alpha2 = (byte)(RenderMath.Clamp01(bs.FillOpacity) * col.A);
+                using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(col.R, col.G, col.B, alpha2) };
+                using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)bs.StrokeThickness, Color = new SKColor(col.R, col.G, col.B, col.A) };
                 using var bandPath = new SKPath();
-                bool started = false;
+                bool startedB = false;
                 for (int i = 0; i < bs.Data.Count; i++)
                 {
                     var p = bs.Data[i];
                     float px = PixelMapper.X(p.X, model.XAxis, pr);
                     float pyHigh = PixelMapper.Y(p.YHigh, model.YAxis, pr);
-                    if (!started) { bandPath.MoveTo(px, pyHigh); started = true; }
-                    else { bandPath.LineTo(px, pyHigh); }
+                    if (!startedB)
+                    {
+                        bandPath.MoveTo(px, pyHigh);
+                        startedB = true;
+                    }
+                    else
+                    {
+                        bandPath.LineTo(px, pyHigh);
+                    }
                 }
                 for (int i = bs.Data.Count - 1; i >= 0; i--)
                 {
@@ -68,10 +90,13 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     float pyLow = PixelMapper.Y(p.YLow, model.YAxis, pr);
                     bandPath.LineTo(px, pyLow);
                 }
-                if (started)
+                if (startedB)
                 {
                     bandPath.Close();
-                    ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawPath(bandPath, fillPaint); ctx.Canvas.Restore();
+                    ctx.Canvas.Save();
+                    ctx.Canvas.ClipRect(pr);
+                    ctx.Canvas.DrawPath(bandPath, fillPaint);
+                    ctx.Canvas.Restore();
                 }
                 bandIndex++;
             }

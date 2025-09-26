@@ -12,7 +12,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             foreach (var s in model.Series)
             {
                 if (s is not ScatterSeries ss || ss.IsEmpty || !ss.IsVisible) continue;
-                var c = (paletteCount > 0 && scatterIndex < paletteCount) ? palette[scatterIndex] : model.Theme.PrimarySeriesColor;
+                var c = (paletteCount > 0 && scatterIndex < paletteCount && palette != null) ? palette[scatterIndex] : model.Theme.PrimarySeriesColor;
                 float size = (float)ss.MarkerSize; if (size < 1f) size = 1f; float half = size * 0.5f;
                 using var mp = new SKPaint { IsAntialias = size <= 3 ? false : true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, c.A) };
                 ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);

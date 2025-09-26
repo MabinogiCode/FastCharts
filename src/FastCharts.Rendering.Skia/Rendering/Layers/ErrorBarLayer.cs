@@ -12,7 +12,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             foreach (var s in model.Series)
             {
                 if (s is not ErrorBarSeries es || es.IsEmpty || !es.IsVisible) continue;
-                var c = (paletteCount > 0 && errIndex < paletteCount) ? palette[errIndex] : model.Theme.PrimarySeriesColor;
+                var c = (paletteCount > 0 && errIndex < paletteCount && palette != null) ? palette[errIndex] : model.Theme.PrimarySeriesColor;
                 using var pen = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, es.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
                 double cap = es.GetCapWidth() * 0.5;
                 ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);

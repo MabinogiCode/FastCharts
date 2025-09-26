@@ -48,12 +48,12 @@ namespace FastCharts.Core.Interaction
         public double Y { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
-        public object SeriesReference { get; set; }
+        public object? SeriesReference { get; set; }
     }
 
     public sealed class TooltipSeriesValue
     {
-        public string Title { get; set; }
+        public string? Title { get; set; }
         public double X { get; set; }
         public double Y { get; set; }
         public int? PaletteIndex { get; set; }

@@ -8,7 +8,7 @@ namespace FastCharts.Core.Tests;
 public class BarSeriesTests
 {
     [Fact]
-    public void GetWidthFor_UsesGlobalWidth_WhenSet()
+    public void GetWidthForUsesGlobalWidthWhenSet()
     {
         var s = new BarSeries(new[]
         {
@@ -22,7 +22,7 @@ public class BarSeriesTests
     }
 
     [Fact]
-    public void GetWidthFor_InfersFromSpacing_WhenNotSet()
+    public void GetWidthForInfersFromSpacingWhenNotSet()
     {
         var s = new BarSeries(new[]
         {
@@ -35,7 +35,7 @@ public class BarSeriesTests
     }
 
     [Fact]
-    public void GetRanges_ExpandsXByHalfBar_And_YIncludesBaseline()
+    public void GetRangesExpandsXByHalfBarAndYIncludesBaseline()
     {
         var s = new BarSeries(new[]
         {

@@ -12,8 +12,14 @@ namespace FastCharts.Core.Interaction.Behaviors
 
         public bool OnEvent(ChartModel model, InteractionEvent ev)
         {
-            if (model == null) return false;
-            if (ev.Type != PointerEventType.Wheel) return false;
+            if (model == null)
+            {
+                return false;
+            }
+            if (ev.Type != PointerEventType.Wheel)
+            {
+                return false;
+            }
 
             bool zoomIn = ev.WheelDelta > 0;
             double scale = zoomIn ? Step : (1.0 / Step); // >1 contract, <1 expand
@@ -23,7 +29,10 @@ namespace FastCharts.Core.Interaction.Behaviors
             double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
             double plotW = ev.SurfaceWidth - (left + right);
             double plotH = ev.SurfaceHeight - (top + bottom);
-            if (plotW <= 0 || plotH <= 0) return false;
+            if (plotW <= 0 || plotH <= 0)
+            {
+                return false;
+            }
 
             // Plot-relative pixels clamped
             double px = ev.PixelX - left; if (px < 0) px = 0; else if (px > plotW) px = plotW;

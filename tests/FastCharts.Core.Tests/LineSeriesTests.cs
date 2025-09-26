@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
@@ -10,7 +10,7 @@ namespace FastCharts.Core.Tests;
 public class LineSeriesTests
 {
     [Fact]
-    public void LineSeries_ShouldExposeDataAndRanges()
+    public void LineSeriesShouldExposeDataAndRanges()
     {
         var points = new[]
         {
@@ -35,7 +35,7 @@ public class LineSeriesTests
     }
 
     [Fact]
-    public void LineSeries_WithNoPoints_ShouldBeEmptyAndZeroRanges()
+    public void LineSeriesWithNoPointsShouldBeEmptyAndZeroRanges()
     {
         var s = new LineSeries(Array.Empty<PointD>());
         s.IsEmpty.Should().BeTrue();

@@ -9,7 +9,7 @@ namespace FastCharts.Core.Tests
     public class DateTickerTests
     {
         [Fact]
-        public void TwoHours_Produces_Hourly_Ticks()
+        public void TwoHoursProducesHourlyTicks()
         {
             var t0 = DateTime.Today;
             var t1 = t0.AddHours(2);
@@ -24,7 +24,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void SevenDays_Produces_6h_Ticks()
+        public void SevenDaysProduces6hTicks()
         {
             var t0 = DateTime.Today;
             var t1 = t0.AddDays(7);
@@ -36,7 +36,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void ThirtyDays_Produces_Daily_Ticks()
+        public void ThirtyDaysProducesDailyTicks()
         {
             var t0 = new DateTime(2024, 1, 1);
             var t1 = t0.AddDays(30);
@@ -48,7 +48,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void OneHundredEightyDays_Produces_Weekly_Ticks()
+        public void OneHundredEightyDaysProducesWeeklyTicks()
         {
             var t0 = DateTime.Today;
             var t1 = t0.AddDays(180);
@@ -60,7 +60,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void ThreeYears_Produces_Quarterly_Ticks()
+        public void ThreeYearsProducesQuarterlyTicks()
         {
             var t0 = new DateTime(2020, 1, 15);
             var t1 = t0.AddYears(3);
@@ -76,7 +76,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void FifteenYears_Produces_Yearly_Ticks()
+        public void FifteenYearsProducesYearlyTicks()
         {
             var t0 = new DateTime(2000, 5, 1);
             var t1 = t0.AddYears(15);
@@ -90,7 +90,7 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void Ticks_Are_Monotonic_And_In_Range()
+        public void TicksAreMonotonicAndInRange()
         {
             var t0 = new DateTime(2022, 11, 3, 10, 23, 0);
             var t1 = t0.AddDays(12);
@@ -101,8 +101,8 @@ namespace FastCharts.Core.Tests
             {
                 Assert.True(ticks[i] >= ticks[i - 1]);
             }
-            Assert.True(ticks.First() >= tr.Min - 1e-6);
-            Assert.True(ticks.Last() <= tr.Max + 1e-6);
+            Assert.True(ticks[0] >= tr.Min - 1e-6);
+            Assert.True(ticks[ticks.Count - 1] <= tr.Max + 1e-6);
         }
     }
 }

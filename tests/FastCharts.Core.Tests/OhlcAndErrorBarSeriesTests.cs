@@ -7,7 +7,7 @@ namespace FastCharts.Core.Tests;
 public class OhlcAndErrorBarSeriesTests
 {
     [Fact]
-    public void OhlcSeries_Ranges_ShouldUseHighLowAndPadX()
+    public void OhlcSeriesRangesShouldUseHighLowAndPadX()
     {
         var s = new OhlcSeries(new[]
         {
@@ -23,7 +23,7 @@ public class OhlcAndErrorBarSeriesTests
     }
 
     [Fact]
-    public void ErrorBarSeries_Ranges_ShouldIncludeCapWidthAndErrors()
+    public void ErrorBarSeriesRangesShouldIncludeCapWidthAndErrors()
     {
         var s = new ErrorBarSeries(new[]
         {

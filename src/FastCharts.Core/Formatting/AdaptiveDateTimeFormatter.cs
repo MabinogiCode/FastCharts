@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace FastCharts.Core.Formatting
 {
@@ -15,21 +16,21 @@ namespace FastCharts.Core.Formatting
             double d = VisibleSpanDaysHint;
             if (d <= 1.0 / 24.0) // < 1h
             {
-                return value.ToString("HH:mm:ss");
+                return value.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
             }
             if (d <= 2.0) // <= 2 days
             {
-                return value.ToString("HH:mm\nMMM d");
+                return value.ToString("HH:mm\nMMM d", CultureInfo.InvariantCulture);
             }
             if (d <= 40.0)
             {
-                return value.ToString("MMM d");
+                return value.ToString("MMM d", CultureInfo.InvariantCulture);
             }
             if (d <= 800.0)
             {
-                return value.ToString("MMM yyyy");
+                return value.ToString("MMM yyyy", CultureInfo.InvariantCulture);
             }
-            return value.ToString("yyyy");
+            return value.ToString("yyyy", CultureInfo.InvariantCulture);
         }
     }
 }

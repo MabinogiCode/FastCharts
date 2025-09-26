@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Series
 {
@@ -63,19 +64,24 @@ namespace FastCharts.Core.Series
             return 1.0;
         }
 
-        public FastCharts.Core.Primitives.FRange GetXRange()
+        public FRange GetXRange()
         {
-            if (IsEmpty) return new FastCharts.Core.Primitives.FRange(0, 0);
+            if (IsEmpty)
+            {
+                return new FRange(0, 0);
+            }
             double minX = Data.Min(p => p.X);
             double maxX = Data.Max(p => p.X);
-            double w0 = GetWidthFor(0) * 0.5;
-            double wN = GetWidthFor(Data.Count - 1) * 0.5;
-            return new FastCharts.Core.Primitives.FRange(minX - w0, maxX + wN);
+            double w0 = GetWidthFor(0) * 0.5; double wN = GetWidthFor(Data.Count - 1) * 0.5;
+            return new FRange(minX - w0, maxX + wN);
         }
 
-        public FastCharts.Core.Primitives.FRange GetYRange()
+        public FRange GetYRange()
         {
-            if (IsEmpty) return new FastCharts.Core.Primitives.FRange(0, 0);
+            if (IsEmpty)
+            {
+                return new FRange(0, 0);
+            }
             double minY = Baseline, maxY = Baseline;
             foreach (var p in Data)
             {
@@ -85,7 +91,7 @@ namespace FastCharts.Core.Series
                     for (int i = 0; i < p.Values.Length; i++)
                     {
                         double v = p.Values[i];
-                        if (v >= 0) pos += v; else neg += v; // neg is negative sum
+                        if (v >= 0) pos += v; else neg += v;
                     }
                 }
                 double top = System.Math.Max(Baseline, Baseline + pos);
@@ -93,7 +99,7 @@ namespace FastCharts.Core.Series
                 if (top > maxY) maxY = top;
                 if (bot < minY) minY = bot;
             }
-            return new FastCharts.Core.Primitives.FRange(minY, maxY);
+            return new FRange(minY, maxY);
         }
     }
 }

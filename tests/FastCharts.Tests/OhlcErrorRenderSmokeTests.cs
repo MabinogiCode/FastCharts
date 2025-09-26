@@ -11,7 +11,7 @@ namespace FastCharts.Tests
 {
     public class OhlcErrorRenderSmokeTests
     {
-        private (SKBitmap bmp, ChartModel model) Render(ChartModel model, int w = 420, int h = 300)
+        private static (SKBitmap bmp, ChartModel model) Render(ChartModel model, int w = 420, int h = 300)
         {
             var renderer = new SkiaChartRenderer();
             var bmp = new SKBitmap(w, h, true);
@@ -21,7 +21,7 @@ namespace FastCharts.Tests
             return (bmp, model);
         }
 
-        private int CountDiff(SKBitmap a, SKBitmap b)
+        private static int CountDiff(SKBitmap a, SKBitmap b)
         {
             int w = Math.Min(a.Width, b.Width);
             int h = Math.Min(a.Height, b.Height);
@@ -43,7 +43,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void OhlcSeries_Should_AlterBitmapComparedToEmpty()
+        public void OhlcSeriesShouldAlterBitmapComparedToEmpty()
         {
             var empty = new ChartModel();
             SetVisibleRange(empty, 0, 10, 90, 110);
@@ -71,7 +71,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void ErrorBarSeries_Should_AlterBitmapComparedToEmpty()
+        public void ErrorBarSeriesShouldAlterBitmapComparedToEmpty()
         {
             var empty = new ChartModel();
             SetVisibleRange(empty, 0, 20, 0, 100);
@@ -97,7 +97,7 @@ namespace FastCharts.Tests
         }
 
         [Fact]
-        public void AutoFit_ShouldCoverOhlcAndErrorRanges()
+        public void AutoFitShouldCoverOhlcAndErrorRanges()
         {
             var model = new ChartModel();
             var ohlc = new OhlcSeries(new []

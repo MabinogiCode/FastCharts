@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <!-- Ensures NuGet package DLLs (e.g., FluentAssertions) are copied to bin -->
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>

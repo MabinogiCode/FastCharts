@@ -11,31 +11,34 @@ namespace FastCharts.Core.Axes.Ticks
     /// </summary>
     public sealed partial class DateTicker : ITicker<double>
     {
-        public IReadOnlyList<double> GetTicks(FRange visibleRange, double approxStep)
+        public IReadOnlyList<double> GetTicks(FRange range, double approxStep)
         {
-            var ticks = new List<double>();
-            double span = visibleRange.Max - visibleRange.Min;
+            double span = range.Max - range.Min;
+            var ticks = new List<double>(16);
             if (span <= 0 || double.IsNaN(span) || double.IsInfinity(span))
             {
                 return ticks;
             }
-
-            var min = ClampOADate(visibleRange.Min);
-            var max = ClampOADate(visibleRange.Max);
+            double min = ClampOADate(range.Min);
+            double max = ClampOADate(range.Max);
             DateTime dtMin = DateTime.FromOADate(min);
             DateTime dtMax = DateTime.FromOADate(max);
-
-            // Choose granularity based on total days
-            double days = span; // 1.0 OADate = 1 day
-
-            TimeUnit unit;
-            int stepCount;
-            ChooseUnit(days, out unit, out stepCount);
-
-            // Align start to unit boundary
+            double days = span;
+            TimeUnit unit; int stepCount; ChooseUnit(days, out unit, out stepCount);
             DateTime start = Align(dtMin, unit, stepCount);
-
-            // Iterate
+            // Rough est: assume uniform steps
+            double approxStepDays = (dtMax - dtMin).TotalDays / 10.0;
+            if (unit == TimeUnit.Day && stepCount > 0) approxStepDays = stepCount;
+            if (unit == TimeUnit.Month) approxStepDays = 30 * stepCount;
+            if (unit == TimeUnit.Year) approxStepDays = 365 * stepCount;
+            if (approxStepDays > 0)
+            {
+                double est = days / approxStepDays + 4;
+                if (est > ticks.Capacity && est < 6000)
+                {
+                    ticks.Capacity = (int)est;
+                }
+            }
             for (DateTime d = start; d <= dtMax.AddSeconds(1); d = Add(d, unit, stepCount))
             {
                 double oa = d.ToOADate();
@@ -43,16 +46,21 @@ namespace FastCharts.Core.Axes.Ticks
                 {
                     ticks.Add(oa);
                 }
-                if (ticks.Count > 5000) break; // safety
+                if (ticks.Count > 5000)
+                {
+                    break;
+                }
             }
-
             return ticks;
         }
 
         public IReadOnlyList<double> GetMinorTicks(FRange range, IReadOnlyList<double> majorTicks)
         {
             var minors = new List<double>();
-            if (majorTicks == null || majorTicks.Count < 2) return minors;
+            if (majorTicks == null || majorTicks.Count < 2)
+            {
+                return minors;
+            }
             double spanDays = range.Size;
             // Determine unit by reusing two majors
             double stepDays = majorTicks[1] - majorTicks[0];
@@ -67,7 +75,10 @@ namespace FastCharts.Core.Axes.Ticks
             else if (stepDays < 400.0) subdiv = 4;                                      // yearly -> quarterly
             else subdiv = 2;                                                            // multi-year -> semi-year
 
-            if (subdiv <= 1) return minors;
+            if (subdiv <= 1)
+            {
+                return minors;
+            }
             double minorStep = stepDays / subdiv;
             var majorSet = new HashSet<double>(majorTicks);
             double min = range.Min - stepDays * 0.25;
@@ -75,9 +86,18 @@ namespace FastCharts.Core.Axes.Ticks
             double start = Math.Floor(min / minorStep) * minorStep;
             for (double v = start; v <= max; v += minorStep)
             {
-                if (majorSet.Contains(v)) continue;
-                if (v >= min && v <= max) minors.Add(v);
-                if (minors.Count > 10000) break;
+                if (majorSet.Contains(v))
+                {
+                    continue;
+                }
+                if (v >= min && v <= max)
+                {
+                    minors.Add(v);
+                }
+                if (minors.Count > 10000)
+                {
+                    break;
+                }
             }
             return minors;
         }
@@ -108,7 +128,7 @@ namespace FastCharts.Core.Axes.Ticks
                     return new DateTime(t.Year, t.Month, t.Day, (t.Hour / step) * step, 0, 0, DateTimeKind.Local);
                 case TimeUnit.Day:
                     // align to midnight and then to multiple of step from the start of month
-                    var d0 = new DateTime(t.Year, t.Month, 1, 0, 0, 0, DateTimeKind.Local);
+                    DateTime d0 = new DateTime(t.Year, t.Month, 1, 0, 0, 0, DateTimeKind.Local);
                     int dayIndex = Math.Max(0, t.Day - 1);
                     int alignedDayIndex = (dayIndex / step) * step;
                     alignedDayIndex = Math.Min(alignedDayIndex, DateTime.DaysInMonth(t.Year, t.Month) - 1);
@@ -128,10 +148,10 @@ namespace FastCharts.Core.Axes.Ticks
             {
                 case TimeUnit.Second: return t.AddSeconds(step);
                 case TimeUnit.Minute: return t.AddMinutes(step);
-                case TimeUnit.Hour:   return t.AddHours(step);
-                case TimeUnit.Day:    return t.AddDays(step);
-                case TimeUnit.Month:  return t.AddMonths(step);
-                case TimeUnit.Year:   return t.AddYears(step);
+                case TimeUnit.Hour: return t.AddHours(step);
+                case TimeUnit.Day: return t.AddDays(step);
+                case TimeUnit.Month: return t.AddMonths(step);
+                case TimeUnit.Year: return t.AddYears(step);
                 default: return t;
             }
         }
