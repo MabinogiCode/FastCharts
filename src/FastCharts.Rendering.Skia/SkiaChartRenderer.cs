@@ -98,8 +98,20 @@ namespace FastCharts.Rendering.Skia
             ctx.Canvas.DrawLine(cx, pr.Top, cx, pr.Bottom, cross);
             ctx.Canvas.Restore();
 
-            if (string.IsNullOrEmpty(st.TooltipText)) return;
-            var lines = st.TooltipText.Split('\n');
+            // Prefer aggregated multi-series tooltip
+            string[] lines;
+            if (st.TooltipSeries.Count > 0)
+            {
+                var header = st.TooltipText?.Split('\n').FirstOrDefault();
+                var body = st.TooltipSeries.Select(v => v.Title + ": " + v.Y);
+                lines = (header != null ? new[] { header }.Concat(body) : body).ToArray();
+            }
+            else if (!string.IsNullOrEmpty(st.TooltipText))
+            {
+                lines = st.TooltipText.Split('\n');
+            }
+            else return;
+
             float maxW = 0;
             foreach (var l in lines)
             {
@@ -108,7 +120,11 @@ namespace FastCharts.Rendering.Skia
             }
             float lineH = tipTx.TextSize + 2;
             float pad = 6;
-            float boxW = maxW + pad * 2;
+            bool showSwatches = st.TooltipSeries.Count > 0;
+            float swatchSize = showSwatches ? tipTx.TextSize * 0.6f : 0f;
+            float swatchGap = showSwatches ? 4f : 0f;
+            float extra = showSwatches ? (swatchSize + swatchGap) : 0f;
+            float boxW = maxW + pad * 2 + extra;
             float boxH = lineH * lines.Length + pad * 2;
             float bx = cx + 12;
             float by = cy - boxH - 12;
@@ -117,11 +133,22 @@ namespace FastCharts.Rendering.Skia
             var rect = new SKRect(bx, by, bx + boxW, by + boxH);
             ctx.Canvas.DrawRect(rect, tipBg);
             ctx.Canvas.DrawRect(rect, tipBd);
-            float tx = bx + pad;
             float ty = by + pad + tipTx.TextSize;
-            foreach (var l in lines)
+            for (int i = 0; i < lines.Length; i++)
             {
-                ctx.Canvas.DrawText(l, tx, ty, tipTx);
+                float tx = bx + pad;
+                if (showSwatches && i > 0 && i-1 < st.TooltipSeries.Count)
+                {
+                    var sv = st.TooltipSeries[i - 1];
+                    var col = model.Theme.PrimarySeriesColor;
+                    if (sv.PaletteIndex.HasValue && model.Theme.SeriesPalette != null && sv.PaletteIndex.Value < model.Theme.SeriesPalette.Count)
+                        col = model.Theme.SeriesPalette[sv.PaletteIndex.Value];
+                    using var sw = new SKPaint { Color = new SKColor(col.R,col.G,col.B,col.A), Style = SKPaintStyle.Fill, IsAntialias = true };
+                    var swRect = new SKRect(tx, ty - tipTx.TextSize, tx + swatchSize, ty - tipTx.TextSize + swatchSize);
+                    ctx.Canvas.DrawRect(swRect, sw);
+                    tx += swatchSize + swatchGap;
+                }
+                ctx.Canvas.DrawText(lines[i], tx, ty, tipTx);
                 ty += lineH;
             }
         }

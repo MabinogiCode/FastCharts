@@ -18,6 +18,11 @@ namespace FastCharts.Core.Interaction
         // Optional text to show near the cursor
         public string? TooltipText { get; set; }
 
+        // Multi-series aggregated tooltip (raw numeric X anchor and list of lines)
+        public System.Collections.Generic.List<TooltipSeriesValue> TooltipSeries { get; } = new();
+        public bool TooltipLocked { get; set; }
+        public double? TooltipAnchorX { get; set; }
+
         // Selection rectangle (SURFACE pixels)
         public bool ShowSelectionRect { get; set; }
         public double SelX1 { get; set; }
@@ -44,5 +49,13 @@ namespace FastCharts.Core.Interaction
         public double Width { get; set; }
         public double Height { get; set; }
         public object SeriesReference { get; set; }
+    }
+
+    public sealed class TooltipSeriesValue
+    {
+        public string Title { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public int? PaletteIndex { get; set; }
     }
 }
