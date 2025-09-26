@@ -5,7 +5,6 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
 {
     internal sealed class BarLayer : ISeriesSubLayer
     {
-        private static double Clamp01(double v) => v < 0 ? 0 : (v > 1 ? 1 : v);
         public void Render(RenderContext ctx)
         {
             var model = ctx.Model; var pr = ctx.PlotRect; var palette = model.Theme.SeriesPalette; int paletteCount = palette?.Count ?? 0;
@@ -14,7 +13,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             {
                 if (s is not BarSeries bs || bs.IsEmpty || !bs.IsVisible) continue;
                 var c = (paletteCount > 0 && barIndex < paletteCount) ? palette[barIndex] : model.Theme.PrimarySeriesColor;
-                byte alpha = (byte)(Clamp01(bs.FillOpacity) * c.A);
+                byte alpha = (byte)(RenderMath.Clamp01(bs.FillOpacity) * c.A);
                 using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, alpha) };
                 using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, bs.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
                 int groupCount = bs.GroupCount.GetValueOrDefault(1);

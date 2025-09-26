@@ -5,7 +5,6 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
 {
     internal sealed class OhlcLayer : ISeriesSubLayer
     {
-        private static double Clamp01(double v) => v < 0 ? 0 : (v > 1 ? 1 : v);
         public void Render(RenderContext ctx)
         {
             var model = ctx.Model; var pr = ctx.PlotRect; var palette = model.Theme.SeriesPalette; int paletteCount = palette?.Count ?? 0;
@@ -29,7 +28,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     float yClose = PixelMapper.Y(p.Close, model.YAxis, pr);
                     bool up = p.Close >= p.Open;
                     var bodyColor = up ? cUp : cDown;
-                    byte fillAlpha = (byte)(Clamp01(up ? os.UpFillOpacity : os.DownFillOpacity) * bodyColor.A);
+                    byte fillAlpha = (byte)(RenderMath.Clamp01(up ? os.UpFillOpacity : os.DownFillOpacity) * bodyColor.A);
                     using var wick = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = wickStroke, Color = new SKColor(bodyColor.R, bodyColor.G, bodyColor.B, bodyColor.A) };
                     using var bodyFill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(bodyColor.R, bodyColor.G, bodyColor.B, fillAlpha) };
                     using var bodyStroke = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = new SKColor(bodyColor.R, bodyColor.G, bodyColor.B, bodyColor.A) };
