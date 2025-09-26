@@ -9,7 +9,7 @@ namespace FastCharts.Core.Axes.Ticks
     /// Date/Time ticker based on OADate doubles. Chooses sensible steps from seconds to years
     /// depending on the visible span and returns ticks as OADate values.
     /// </summary>
-    public sealed class DateTicker : ITicker<double>
+    public sealed partial class DateTicker : ITicker<double>
     {
         public IReadOnlyList<double> GetTicks(FRange visibleRange, double approxStep)
         {
@@ -47,6 +47,39 @@ namespace FastCharts.Core.Axes.Ticks
             }
 
             return ticks;
+        }
+
+        public IReadOnlyList<double> GetMinorTicks(FRange range, IReadOnlyList<double> majorTicks)
+        {
+            var minors = new List<double>();
+            if (majorTicks == null || majorTicks.Count < 2) return minors;
+            double spanDays = range.Size;
+            // Determine unit by reusing two majors
+            double stepDays = majorTicks[1] - majorTicks[0];
+            // Heuristic subdivisions based on step size
+            int subdiv = 0;
+            if (stepDays <= TimeSpan.FromHours(1).TotalDays) subdiv = 4;               // hourly -> 15 min
+            else if (stepDays <= TimeSpan.FromHours(6).TotalDays) subdiv = 6;           // 6h -> 1h
+            else if (stepDays <= 1.0) subdiv = spanDays < 60 ? 4 : 2;                   // daily -> 6h or 12h
+            else if (stepDays <= 7.0) subdiv = 7;                                       // weekly -> daily
+            else if (stepDays < 32.0) subdiv = 4;                                       // monthly -> ~weekly (approx)
+            else if (stepDays < 95.0) subdiv = 3;                                       // quarterly -> monthly
+            else if (stepDays < 400.0) subdiv = 4;                                      // yearly -> quarterly
+            else subdiv = 2;                                                            // multi-year -> semi-year
+
+            if (subdiv <= 1) return minors;
+            double minorStep = stepDays / subdiv;
+            var majorSet = new HashSet<double>(majorTicks);
+            double min = range.Min - stepDays * 0.25;
+            double max = range.Max + stepDays * 0.25;
+            double start = Math.Floor(min / minorStep) * minorStep;
+            for (double v = start; v <= max; v += minorStep)
+            {
+                if (majorSet.Contains(v)) continue;
+                if (v >= min && v <= max) minors.Add(v);
+                if (minors.Count > 10000) break;
+            }
+            return minors;
         }
 
         private enum TimeUnit { Second, Minute, Hour, Day, Month, Year }
