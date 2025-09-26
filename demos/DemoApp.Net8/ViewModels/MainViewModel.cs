@@ -27,6 +27,7 @@ public sealed class MainViewModel
         Charts.Add(BuildSingleBars());          // 9
         Charts.Add(BuildStacked100());          //10
         Charts.Add(BuildOhlcWithErrorOverlay()); //11
+        Charts.Add(BuildMultiSeriesTooltipShowcase()); //12
     }
 
     private ChartModel CreateBase(DateTime start, DateTime end)
@@ -243,6 +244,30 @@ public sealed class MainViewModel
         m.AddSeries(new OhlcSeries(ohlc) { Title = "OHLC" });
         m.AddSeries(new ErrorBarSeries(errs) { Title = "Err" });
         m.UpdateScales(800, 400);
+        return m;
+    }
+
+    private ChartModel BuildMultiSeriesTooltipShowcase()
+    {
+        var start = DateTime.Today.AddDays(-3);
+        var end = DateTime.Today.AddDays(0.5);
+        var m = CreateBase(start, end);
+        // Dense line
+        var xs = Enumerable.Range(0, 300).Select(i => start.AddMinutes(i * 15)).ToArray();
+        var line = xs.Select((x,i) => new PointD(x.ToOADate(), 50 + Math.Sin(i * 0.15)*10 + Math.Sin(i*0.03)*5)).ToArray();
+        m.AddSeries(new LineSeries(line) { Title = "Line A", StrokeThickness = 1.4 });
+        // Area
+        var area = xs.Where((_,i)=> i%3==0).Select((x,i) => new PointD(x.ToOADate(), 40 + Math.Cos(i*0.18)*6)).ToArray();
+        m.AddSeries(new AreaSeries(area) { Title = "Area B", Baseline = 35, FillOpacity = 0.35 });
+        // Scatter sparse
+        var scatter = xs.Where((_,i)=> i%20==0).Select((x,i) => new PointD(x.ToOADate(), 55 + Math.Sin(i*0.9)*4)).ToArray();
+        m.AddSeries(new ScatterSeries(scatter) { Title = "Scatter C", MarkerSize = 4 });
+        // Bars daily
+        var dayXs = Enumerable.Range(0, 4).Select(i => start.AddDays(i)).ToArray();
+        var bars = dayXs.Select((x,i) => new BarPoint(x.ToOADate(), 30 + i*2 + Math.Sin(i)*3)).ToArray();
+        m.AddSeries(new BarSeries(bars) { Title = "Bars D", FillOpacity = 0.6 });
+        m.UpdateScales(800, 400);
+        // Note: ESC to unlock tooltip; click to lock/unlock already enabled by behavior.
         return m;
     }
 }

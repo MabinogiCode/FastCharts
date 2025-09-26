@@ -1,14 +1,15 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using FastCharts.Core;              // ChartModel
-using FastCharts.Core.Primitives;   // FRange
+using FastCharts.Core;
+using FastCharts.Core.Primitives;
 using FastCharts.Core.Interaction;
-using FastCharts.Core.Interaction.Behaviors; // IAxis<T>
-using FastCharts.Rendering.Skia;    // SkiaChartRenderer (renderer par défaut)
+using FastCharts.Core.Interaction.Behaviors;
+using FastCharts.Rendering.Skia;
 using SkiaSharp.Views.WPF;
-using SkiaSharp.Views.Desktop;      // SKPaintSurfaceEventArgs
+using SkiaSharp.Views.Desktop;
 
 namespace FastCharts.Wpf.Controls
 {
@@ -67,6 +68,7 @@ namespace FastCharts.Wpf.Controls
                 _skia.MouseUp      -= OnSkiaMouseUp;
                 _skia.MouseLeave   -= OnSkiaMouseLeave;
                 _skia.MouseWheel   -= OnSkiaMouseWheel;
+                _skia.KeyDown      -= OnSkiaKeyDown;
             }
 
             _skia = GetTemplateChild(PartSkia) as SKElement;
@@ -80,14 +82,14 @@ namespace FastCharts.Wpf.Controls
             _skia.MouseMove    += OnSkiaMouseMove;
             _skia.MouseUp      += OnSkiaMouseUp;
             _skia.MouseLeave   += OnSkiaMouseLeave;
-
-            // Wheel: both direct on SKElement and Preview on the control (to beat parent ScrollViewer)
-            _skia.MouseWheel += OnSkiaMouseWheel;
-            this.PreviewMouseWheel -= OnSkiaMouseWheel;
-            this.PreviewMouseWheel += OnSkiaMouseWheel;
-
+            _skia.MouseWheel   += OnSkiaMouseWheel;
+            _skia.KeyDown      += OnSkiaKeyDown;
             _skia.Focusable = true;
             _skia.Focus();
+
+            this.Focusable = true;
+            this.KeyDown -= OnChartKeyDown;
+            this.KeyDown += OnChartKeyDown;
 
             this.Loaded -= OnLoaded;
             this.Loaded += OnLoaded;
@@ -103,11 +105,18 @@ namespace FastCharts.Wpf.Controls
             if (Model.Behaviors.Count == 0)
             {
                 Model.Behaviors.Add(new CrosshairBehavior());
+                Model.Behaviors.Add(new MultiSeriesTooltipBehavior()); // multi-series tooltip first so crosshair text fallback disabled when aggregated
                 Model.Behaviors.Add(new ZoomRectBehavior());
                 Model.Behaviors.Add(new NearestPointBehavior());
                 Model.Behaviors.Add(new LegendToggleBehavior());
                 Model.Behaviors.Add(new ZoomWheelBehavior());
                 Model.Behaviors.Add(new PanBehavior());
+            }
+            else
+            {
+                // Ensure multi-series tooltip present once
+                if (!Model.Behaviors.Any(b => b is MultiSeriesTooltipBehavior))
+                    Model.Behaviors.Insert(1, new MultiSeriesTooltipBehavior());
             }
 
             Redraw();
@@ -147,16 +156,9 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseMove(object sender, MouseEventArgs e)
         {
-            if (_skia == null)
-            {
-                return;
-            }
-
+            if (_skia == null) return;
             var pos = e.GetPosition(_skia);
-
-            // Update data coords for tooltip/crosshair consumers
             UpdateDataCoordsForTooltip(pos.X, pos.Y);
-
             var ev = new InteractionEvent(
                 PointerEventType.Move,
                 PointerButton.None,
@@ -170,68 +172,45 @@ namespace FastCharts.Wpf.Controls
                 0,
                 _skia.ActualWidth,
                 _skia.ActualHeight);
-
             if (RouteToBehaviors(ev))
             {
                 _userChangedView = true;
-                // Update cursor based on pan state
-                if (Model.InteractionState != null && Model.InteractionState.IsPanning)
-                {
-                    Mouse.OverrideCursor = Cursors.Hand;
-                }
-                else
-                {
-                    Mouse.OverrideCursor = null;
-                }
+                Mouse.OverrideCursor = (Model.InteractionState != null && Model.InteractionState.IsPanning) ? Cursors.Hand : null;
                 Redraw();
             }
             else
             {
-                // Update cursor also when not handled (e.g., just move)
-                if (Model.InteractionState != null && Model.InteractionState.IsPanning)
-                {
-                    Mouse.OverrideCursor = Cursors.Hand;
-                }
-                else
-                {
-                    Mouse.OverrideCursor = null;
-                }
-                Redraw(); // crosshair/nearest may need redraw on move regardless
+                Mouse.OverrideCursor = (Model.InteractionState != null && Model.InteractionState.IsPanning) ? Cursors.Hand : null;
+                Redraw();
             }
         }
 
         private void OnSkiaMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (_skia != null)
-            {
-                var pos = e.GetPosition(_skia);
-                var ev = new InteractionEvent(
-                    PointerEventType.Up,
-                    e.ChangedButton switch
-                    {
-                        MouseButton.Left => PointerButton.Left,
-                        MouseButton.Middle => PointerButton.Middle,
-                        MouseButton.Right => PointerButton.Right,
-                        _ => PointerButton.None
-                    },
-                    new PointerModifiers
-                    {
-                        Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
-                        Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
-                        Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
-                    },
-                    pos.X, pos.Y,
-                    0,
-                    _skia.ActualWidth,
-                    _skia.ActualHeight);
-                if (RouteToBehaviors(ev)) { Redraw(); }
-
-                // cursor reset when pan stops
-                if (Model.InteractionState == null || !Model.InteractionState.IsPanning)
+            if (_skia == null) return;
+            var pos = e.GetPosition(_skia);
+            var ev = new InteractionEvent(
+                PointerEventType.Up,
+                e.ChangedButton switch
                 {
-                    Mouse.OverrideCursor = null;
-                }
-            }
+                    MouseButton.Left => PointerButton.Left,
+                    MouseButton.Middle => PointerButton.Middle,
+                    MouseButton.Right => PointerButton.Right,
+                    _ => PointerButton.None
+                },
+                new PointerModifiers
+                {
+                    Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
+                    Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
+                    Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
+                },
+                pos.X, pos.Y,
+                0,
+                _skia.ActualWidth,
+                _skia.ActualHeight);
+            if (RouteToBehaviors(ev)) { Redraw(); }
+            if (Model.InteractionState == null || !Model.InteractionState.IsPanning)
+                Mouse.OverrideCursor = null;
         }
 
         private void OnSkiaMouseLeave(object sender, MouseEventArgs e)
@@ -242,17 +221,15 @@ namespace FastCharts.Wpf.Controls
                 var ev = new InteractionEvent(PointerEventType.Leave, PointerButton.None, new PointerModifiers(), pos.X, pos.Y, 0, _skia.ActualWidth, _skia.ActualHeight);
                 if (RouteToBehaviors(ev)) { Redraw(); }
             }
-            // cursor reset on leave
             Mouse.OverrideCursor = null;
         }
 
         private void OnSkiaMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (_skia == null) { return; }
+            if (_skia == null) return;
             _userChangedView = true;
             bool zoomIn = e.Delta > 0;
             Point pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(_skia);
-
             var ev = new InteractionEvent(
                 PointerEventType.Wheel,
                 PointerButton.None,
@@ -263,60 +240,55 @@ namespace FastCharts.Wpf.Controls
                     Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
                 },
                 pos.X, pos.Y,
-                wheelDelta: zoomIn ? 1 : -1,
-                surfaceWidth: _skia.ActualWidth,
-                surfaceHeight: _skia.ActualHeight);
+                zoomIn ? 1 : -1,
+                _skia.ActualWidth,
+                _skia.ActualHeight);
             if (RouteToBehaviors(ev)) { Redraw(); }
             e.Handled = true;
         }
 
-        private void Redraw()
+        private void OnSkiaKeyDown(object sender, KeyEventArgs e)
         {
-            if (_skia != null)
+            if (e.Key == Key.Escape && Model?.InteractionState != null && Model.InteractionState.TooltipLocked)
             {
-                _skia.InvalidateVisual();
+                Model.InteractionState.TooltipLocked = false;
+                Model.InteractionState.TooltipAnchorX = null;
+                Model.InteractionState.TooltipSeries.Clear();
+                Model.InteractionState.TooltipText = null;
+                Redraw();
+                e.Handled = true;
             }
         }
-        
+
+        private void OnChartKeyDown(object sender, KeyEventArgs e) => OnSkiaKeyDown(sender, e);
+
+        private void Redraw()
+        {
+            _skia?.InvalidateVisual();
+        }
+
         private bool RouteToBehaviors(InteractionEvent ev)
         {
             bool handled = false;
             for (int i = 0; i < Model.Behaviors.Count; i++)
-            {
                 handled |= Model.Behaviors[i].OnEvent(Model, ev);
-            }
-
             return handled;
         }
 
         private void UpdateDataCoordsForTooltip(double pixelX, double pixelY)
         {
-            if (_skia == null)
-            {
-                return;
-            }
-            
-            // Convert SURFACE pixels to DATA using VisibleRange and plotRect (same logic as renderer)
+            if (_skia == null) return;
             var m = Model.PlotMargins;
             double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
-
-            double plotW = _skia.ActualWidth  - (left + right);
-            double plotH = _skia.ActualHeight - (top  + bottom);
-            if (plotW <= 0 || plotH <= 0) { return; }
-
-            double px = pixelX - left; if (px < 0) { px = 0; } else if (px > plotW) { px = plotW; }
-            double py = pixelY - top;  if (py < 0) { py = 0; } else if (py > plotH) { py = plotH; }
-
-            var xr = Model.XAxis.VisibleRange;
-            var yr = Model.YAxis.VisibleRange;
+            double plotW = _skia.ActualWidth - (left + right);
+            double plotH = _skia.ActualHeight - (top + bottom);
+            if (plotW <= 0 || plotH <= 0) return;
+            double px = pixelX - left; if (px < 0) px = 0; else if (px > plotW) px = plotW;
+            double py = pixelY - top; if (py < 0) py = 0; else if (py > plotH) py = plotH;
+            var xr = Model.XAxis.VisibleRange; var yr = Model.YAxis.VisibleRange;
             double x = xr.Min + (px / plotW) * (xr.Max - xr.Min);
             double y = yr.Max - (py / plotH) * (yr.Max - yr.Min);
-
-            if (Model.InteractionState == null)
-            {
-                Model.InteractionState = new InteractionState();
-            }
-
+            Model.InteractionState ??= new InteractionState();
             Model.InteractionState.DataX = x;
             Model.InteractionState.DataY = y;
         }
