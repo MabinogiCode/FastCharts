@@ -5,7 +5,6 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
 {
     internal sealed class StackedBarLayer : ISeriesSubLayer
     {
-        private static double Clamp01(double v) => v < 0 ? 0 : (v > 1 ? 1 : v);
         public void Render(RenderContext ctx)
         {
             var model = ctx.Model; var pr = ctx.PlotRect; var palette = model.Theme.SeriesPalette; int paletteCount = palette?.Count ?? 0;
@@ -39,7 +38,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                             if (v >= 0) { yStart = accPos; yEnd = accPos + v; accPos = yEnd; }
                             else { yStart = accNeg; yEnd = accNeg + v; accNeg = yEnd; }
                             var col = (paletteCount > 0) ? palette[seg % paletteCount] : model.Theme.PrimarySeriesColor;
-                            byte alpha = (byte)(Clamp01(sbs.FillOpacity) * col.A);
+                            byte alpha = (byte)(RenderMath.Clamp01(sbs.FillOpacity) * col.A);
                             using var fillSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(col.R, col.G, col.B, alpha) };
                             using var strokeSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, sbs.StrokeThickness), Color = new SKColor(col.R, col.G, col.B, col.A) };
                             float y0 = PixelMapper.Y(yStart, model.YAxis, pr);

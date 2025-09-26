@@ -9,10 +9,7 @@ namespace FastCharts.Core.Series
     public sealed class ErrorBarSeries : SeriesBase
     {
         public IList<ErrorBarPoint> Data { get; }
-
-        /// <summary>Cap width in data units (if null, inferred from min ΔX * 0.25).</summary>
         public double? CapWidth { get; set; }
-
         public override bool IsEmpty => Data == null || Data.Count == 0;
 
         public ErrorBarSeries()
@@ -59,21 +56,6 @@ namespace FastCharts.Core.Series
             double minY = Data.Min(p => p.Y - (p.NegativeError ?? p.PositiveError));
             double maxY = Data.Max(p => p.Y + p.PositiveError);
             return new FastCharts.Core.Primitives.FRange(minY, maxY);
-        }
-    }
-
-    public struct ErrorBarPoint
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-        /// <summary>Positive error (always required).</summary>
-        public double PositiveError { get; set; }
-        /// <summary>Optional negative error; if null, symmetric = PositiveError.</summary>
-        public double? NegativeError { get; set; }
-
-        public ErrorBarPoint(double x, double y, double positiveError, double? negativeError = null)
-        {
-            X = x; Y = y; PositiveError = positiveError; NegativeError = negativeError;
         }
     }
 }

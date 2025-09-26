@@ -9,22 +9,11 @@ namespace FastCharts.Core.Series
     public sealed class OhlcSeries : SeriesBase
     {
         public IList<OhlcPoint> Data { get; }
-
-        /// <summary>Width (data units) of the candle body / bar (auto-inferred if null).</summary>
         public double? Width { get; set; }
-
-        /// <summary>Stroke thickness for wicks/borders.</summary>
         public double WickThickness { get; set; } = 1.0;
-
-        /// <summary>Fill opacity for up candles (if using filled style).</summary>
         public double UpFillOpacity { get; set; } = 0.9;
-
-        /// <summary>Fill opacity for down candles.</summary>
         public double DownFillOpacity { get; set; } = 0.4;
-
-        /// <summary>If true, draw filled candle bodies; otherwise draw only outlines.</summary>
         public bool Filled { get; set; } = true;
-
         public override bool IsEmpty => Data == null || Data.Count == 0;
 
         public OhlcSeries()
@@ -49,7 +38,7 @@ namespace FastCharts.Core.Series
                     if (dx > 0 && dx < minDx) minDx = dx;
                 }
                 if (double.IsInfinity(minDx) || minDx <= 0) return 1.0;
-                return minDx * 0.6; // candles narrower than bars
+                return minDx * 0.6;
             }
             return 1.0;
         }
@@ -69,20 +58,6 @@ namespace FastCharts.Core.Series
             double minY = Data.Min(p => p.Low);
             double maxY = Data.Max(p => p.High);
             return new FastCharts.Core.Primitives.FRange(minY, maxY);
-        }
-    }
-
-    public struct OhlcPoint
-    {
-        public double X { get; set; }
-        public double Open { get; set; }
-        public double High { get; set; }
-        public double Low { get; set; }
-        public double Close { get; set; }
-
-        public OhlcPoint(double x, double open, double high, double low, double close)
-        {
-            X = x; Open = open; High = high; Low = low; Close = close;
         }
     }
 }

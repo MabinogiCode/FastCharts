@@ -96,19 +96,4 @@ namespace FastCharts.Core.Series
             return new FastCharts.Core.Primitives.FRange(minY, maxY);
         }
     }
-
-    /// <summary>
-    /// A stacked bar point at X with multiple segment values. Optional per-point width.
-    /// </summary>
-    public struct StackedBarPoint
-    {
-        public double X { get; set; }
-        public double[] Values { get; set; }
-        public double? Width { get; set; }
-
-        public StackedBarPoint(double x, double[] values, double? width = null)
-        {
-            X = x; Values = values; Width = width;
-        }
-    }
 }

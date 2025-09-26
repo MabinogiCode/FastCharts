@@ -1,19 +1,18 @@
-using FastCharts.Core.Series;
-
 namespace FastCharts.Rendering.Skia.Rendering.Layers
 {
     internal sealed class SeriesLayer : IRenderLayer
     {
-        private readonly ISeriesSubLayer[] _layers = new ISeriesSubLayer[]
+        // Ordered sublayers (back-to-front) to preserve expected overlap semantics
+        private readonly ISeriesSubLayer[] _layers =
         {
-            new AreaBandLayer(),
-            new BarLayer(),
-            new StackedBarLayer(),
-            new OhlcLayer(),
-            new ErrorBarLayer(),
-            new ScatterLayer(),
-            new StepLineLayer(),
-            new LineLayer()
+            new AreaBandLayer(),   // fills first
+            new BarLayer(),        // grouped bars
+            new StackedBarLayer(), // stacked bars
+            new OhlcLayer(),       // candles
+            new ErrorBarLayer(),   // error bars overlay
+            new ScatterLayer(),    // markers
+            new StepLineLayer(),   // step lines
+            new LineLayer()        // plain lines on top
         };
 
         public void Render(RenderContext ctx)
