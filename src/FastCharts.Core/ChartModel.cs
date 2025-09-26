@@ -117,25 +117,40 @@ public sealed class ChartModel : IChartModel
 
         foreach (var s in Series)
         {
-            if (s is LineSeries ls && !ls.IsEmpty)
+            switch (s)
             {
-                xs.Add(ls.GetXRange());
-                ys.Add(ls.GetYRange());
-            }
-            else if (s is ScatterSeries sc && !sc.IsEmpty)
-            {
-                xs.Add(sc.GetXRange());
-                ys.Add(sc.GetYRange());
-            }
-            else if (s is BandSeries bs && !bs.IsEmpty)
-            {
-                // Band series X range from its points, Y from min(low) to max(high)
-                var minX = bs.Data.Min(p => p.X);
-                var maxX = bs.Data.Max(p => p.X);
-                var minY = bs.Data.Min(p => p.YLow);
-                var maxY = bs.Data.Max(p => p.YHigh);
-                xs.Add(new FRange(minX, maxX));
-                ys.Add(new FRange(minY, maxY));
+                case LineSeries ls when !ls.IsEmpty:
+                    xs.Add(ls.GetXRange());
+                    ys.Add(ls.GetYRange());
+                    break;
+                case ScatterSeries sc when !sc.IsEmpty:
+                    xs.Add(sc.GetXRange());
+                    ys.Add(sc.GetYRange());
+                    break;
+                case BandSeries band when !band.IsEmpty:
+                    var minX = band.Data.Min(p => p.X);
+                    var maxX = band.Data.Max(p => p.X);
+                    var minY = band.Data.Min(p => p.YLow);
+                    var maxY = band.Data.Max(p => p.YHigh);
+                    xs.Add(new FRange(minX, maxX));
+                    ys.Add(new FRange(minY, maxY));
+                    break;
+                case BarSeries bar when !bar.IsEmpty:
+                    xs.Add(bar.GetXRange());
+                    ys.Add(bar.GetYRange());
+                    break;
+                case StackedBarSeries sbar when !sbar.IsEmpty:
+                    xs.Add(sbar.GetXRange());
+                    ys.Add(sbar.GetYRange());
+                    break;
+                case OhlcSeries ohlc when !ohlc.IsEmpty:
+                    xs.Add(ohlc.GetXRange());
+                    ys.Add(ohlc.GetYRange());
+                    break;
+                case ErrorBarSeries err when !err.IsEmpty:
+                    xs.Add(err.GetXRange());
+                    ys.Add(err.GetYRange());
+                    break;
             }
         }
 

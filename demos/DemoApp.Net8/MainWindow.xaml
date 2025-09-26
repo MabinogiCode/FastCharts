@@ -5,8 +5,21 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:controls="clr-namespace:FastCharts.Wpf.Controls;assembly=FastCharts.Wpf"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <controls:FastChart
-        Margin="16"
-        Model="{Binding Chart}" />
+        Title="FastCharts Demo (.NET 8)" Height="1200" Width="1800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <UniformGrid Rows="3" Columns="4" Margin="16" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <controls:FastChart Margin="8" Model="{Binding Charts[0]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[1]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[2]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[3]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[4]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[5]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[6]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[7]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[8]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[9]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[10]}" />
+            <controls:FastChart Margin="8" Model="{Binding Charts[11]}" />
+        </UniformGrid>
+    </ScrollViewer>
 </Window>
