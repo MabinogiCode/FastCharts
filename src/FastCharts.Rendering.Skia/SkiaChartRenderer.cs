@@ -134,17 +134,24 @@ namespace FastCharts.Rendering.Skia
             ctx.Canvas.DrawRect(rect, tipBg);
             ctx.Canvas.DrawRect(rect, tipBd);
             float ty = by + pad + tipTx.TextSize;
+            // Obtain font metrics once for vertical alignment
+            tipTx.GetFontMetrics(out var fm);
+            float textHeight = fm.Descent - fm.Ascent; // positive height
             for (int i = 0; i < lines.Length; i++)
             {
                 float tx = bx + pad;
-                if (showSwatches && i > 0 && i-1 < st.TooltipSeries.Count)
+                if (showSwatches && i > 0 && i - 1 < st.TooltipSeries.Count)
                 {
                     var sv = st.TooltipSeries[i - 1];
                     var col = model.Theme.PrimarySeriesColor;
                     if (sv.PaletteIndex.HasValue && model.Theme.SeriesPalette != null && sv.PaletteIndex.Value < model.Theme.SeriesPalette.Count)
                         col = model.Theme.SeriesPalette[sv.PaletteIndex.Value];
-                    using var sw = new SKPaint { Color = new SKColor(col.R,col.G,col.B,col.A), Style = SKPaintStyle.Fill, IsAntialias = true };
-                    var swRect = new SKRect(tx, ty - tipTx.TextSize, tx + swatchSize, ty - tipTx.TextSize + swatchSize);
+                    using var sw = new SKPaint { Color = new SKColor(col.R, col.G, col.B, col.A), Style = SKPaintStyle.Fill, IsAntialias = true };
+                    // Align swatch center with text middle (baseline + ascent gives top)
+                    float topText = ty + fm.Ascent; // ascent is negative
+                    float verticalPadding = (textHeight - swatchSize) * 0.5f;
+                    float swTop = topText + verticalPadding;
+                    var swRect = new SKRect(tx, swTop, tx + swatchSize, swTop + swatchSize);
                     ctx.Canvas.DrawRect(swRect, sw);
                     tx += swatchSize + swatchGap;
                 }

@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+
 using FastCharts.Core.Series;
 
 namespace FastCharts.Core.Interaction.Behaviors
@@ -81,17 +82,22 @@ namespace FastCharts.Core.Interaction.Behaviors
                         break;
                     case BarSeries bar:
                         foreach (var p in bar.Data)
-                            if (Math.Abs(p.X - x) <= tol)
+                        {
+                            double halfW = bar.GetWidthFor(0) * 0.5; // approximate width; per-point width rarely varies
+                            if (Math.Abs(p.X - x) <= halfW) // use bar half-width instead of point tolerance
                                 st.TooltipSeries.Add(new TooltipSeriesValue { Title = bar.Title ?? "Bar", X = p.X, Y = p.Y, PaletteIndex = bar.PaletteIndex });
+                        }
                         break;
                     case StackedBarSeries sbar:
                         foreach (var p in sbar.Data)
-                            if (Math.Abs(p.X - x) <= tol && p.Values != null)
+                        {
+                            double halfW = sbar.GetWidthFor(0) * 0.5;
+                            if (Math.Abs(p.X - x) <= halfW && p.Values != null)
                             {
-                                double sum = 0;
-                                for (int i = 0; i < p.Values.Length; i++) sum += p.Values[i];
+                                double sum = 0; for (int i = 0; i < p.Values.Length; i++) sum += p.Values[i];
                                 st.TooltipSeries.Add(new TooltipSeriesValue { Title = sbar.Title ?? "Stack", X = p.X, Y = sum, PaletteIndex = sbar.PaletteIndex });
                             }
+                        }
                         break;
                     case OhlcSeries ohlc:
                         foreach (var p in ohlc.Data)
