@@ -18,6 +18,16 @@ public abstract class AxisBase
     /// <summary>Label format hint used by renderers when no custom formatter provided.</summary>
     public string? LabelFormat { get; set; }
 
+    // Minor tick options
+    /// <summary>Show minor ticks between major ticks.</summary>
+    public bool ShowMinorTicks { get; set; } = true;
+
+    /// <summary>Show grid lines for minor ticks.</summary>
+    public bool ShowMinorGrid { get; set; } = true;
+
+    /// <summary>Opacity of the minor grid lines, as a fraction of the GridColor alpha.</summary>
+    public double MinorGridOpacity { get; set; } = 0.4;
+
     protected AxisBase()
     {
         DataRange = new FRange(0, 1);

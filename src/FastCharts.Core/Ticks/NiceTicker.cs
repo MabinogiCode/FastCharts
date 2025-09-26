@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 using FastCharts.Core.Abstractions;
@@ -40,6 +40,33 @@ namespace FastCharts.Core.Axes.Ticks
                 if (list.Count > 1000) break;
             }
             return list;
+        }
+
+        public IReadOnlyList<double> GetMinorTicks(FRange range, IReadOnlyList<double> majorTicks)
+        {
+            var minors = new List<double>();
+            if (majorTicks == null || majorTicks.Count < 2) return minors;
+            double step = majorTicks[1] - majorTicks[0];
+            if (step <= 0) return minors;
+            double exp = Math.Floor(Math.Log10(step));
+            double m = step / Math.Pow(10, exp);
+            int subdiv;
+            if (m < 1.5) subdiv = 5;        // 1 -> 0.2
+            else if (m < 3) subdiv = 4;     // 2 -> 0.5
+            else if (m < 7) subdiv = 5;     // 5 -> 1
+            else subdiv = 2;                // 10 -> 5
+            double minorStep = step / subdiv;
+            var set = new HashSet<double>(majorTicks);
+            double start = Math.Floor((range.Min - step) / minorStep) * minorStep;
+            double end = range.Max + step;
+            for (double v = start; v <= end; v += minorStep)
+            {
+                if (set.Contains(v)) continue;
+                if (v >= range.Min - minorStep * 0.25 && v <= range.Max + minorStep * 0.25)
+                    minors.Add(v);
+                if (minors.Count > 8000) break;
+            }
+            return minors;
         }
 
         private static double NiceStep(double rough)
