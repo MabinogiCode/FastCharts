@@ -39,8 +39,9 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     double groupOffsetFromCenter = ((groupIndex2 + 0.5) - (groupCount * 0.5)) * slotW;
                     float xL = PixelMapper.X(p.X + groupOffsetFromCenter - effW * 0.5, model.XAxis, pr);
                     float xR = PixelMapper.X(p.X + groupOffsetFromCenter + effW * 0.5, model.XAxis, pr);
-                    float y0 = PixelMapper.Y(bs.Baseline, model.YAxis, pr);
-                    float y1 = PixelMapper.Y(p.Y, model.YAxis, pr);
+                    var yAxis = (bs.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                    float y0 = PixelMapper.Y(bs.Baseline, yAxis, pr);
+                    float y1 = PixelMapper.Y(p.Y, yAxis, pr);
                     var rect = SKRect.Create(System.Math.Min(xL, xR), System.Math.Min(y0, y1), System.Math.Abs(xR - xL), System.Math.Abs(y1 - y0));
                     if (rect.Width <= 0 || rect.Height <= 0)
                     {

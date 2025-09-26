@@ -23,10 +23,11 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 var chosen = (paletteCount > 0 && idx < paletteCount && palette != null) ? palette[idx] : model.Theme.PrimarySeriesColor;
                 using var path = new SKPath();
                 bool started = false;
+                var yAxis = (area.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
                 foreach (var p in area.Data)
                 {
                     float px = PixelMapper.X(p.X, model.XAxis, pr);
-                    float py = PixelMapper.Y(p.Y, model.YAxis, pr);
+                    float py = PixelMapper.Y(p.Y, yAxis, pr);
                     if (!started)
                     {
                         path.MoveTo(px, py);
@@ -41,7 +42,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 {
                     int lastIdx = area.Data.Count - 1;
                     float lastX = lastIdx >= 0 ? PixelMapper.X(area.Data[lastIdx].X, model.XAxis, pr) : 0f;
-                    float baseY = PixelMapper.Y(area.Baseline, model.YAxis, pr);
+                    float baseY = PixelMapper.Y(area.Baseline, yAxis, pr);
                     path.LineTo(lastX, baseY);
                     path.Close();
                     byte alpha = (byte)(RenderMath.Clamp01(area.FillOpacity) * chosen.A);
@@ -53,7 +54,6 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 }
                 areaIndex++;
             }
-
             // Band series
             int bandIndex = 0;
             foreach (var s in model.Series)
@@ -66,37 +66,27 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 byte alpha2 = (byte)(RenderMath.Clamp01(bs.FillOpacity) * col.A);
                 using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(col.R, col.G, col.B, alpha2) };
                 using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)bs.StrokeThickness, Color = new SKColor(col.R, col.G, col.B, col.A) };
-                using var bandPath = new SKPath();
-                bool startedB = false;
+                using var pathHigh = new SKPath(); using var pathLow = new SKPath(); bool startedB = false;
+                var yAxis = (bs.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
                 for (int i = 0; i < bs.Data.Count; i++)
                 {
                     var p = bs.Data[i];
                     float px = PixelMapper.X(p.X, model.XAxis, pr);
-                    float pyHigh = PixelMapper.Y(p.YHigh, model.YAxis, pr);
-                    if (!startedB)
-                    {
-                        bandPath.MoveTo(px, pyHigh);
-                        startedB = true;
-                    }
-                    else
-                    {
-                        bandPath.LineTo(px, pyHigh);
-                    }
+                    float pyHigh = PixelMapper.Y(p.YHigh, yAxis, pr);
+                    if (!startedB) { pathHigh.MoveTo(px, pyHigh); startedB = true; }
+                    else { pathHigh.LineTo(px, pyHigh); }
                 }
                 for (int i = bs.Data.Count - 1; i >= 0; i--)
                 {
                     var p = bs.Data[i];
                     float px = PixelMapper.X(p.X, model.XAxis, pr);
-                    float pyLow = PixelMapper.Y(p.YLow, model.YAxis, pr);
-                    bandPath.LineTo(px, pyLow);
+                    float pyLow = PixelMapper.Y(p.YLow, yAxis, pr);
+                    pathHigh.LineTo(px, pyLow);
                 }
                 if (startedB)
                 {
-                    bandPath.Close();
-                    ctx.Canvas.Save();
-                    ctx.Canvas.ClipRect(pr);
-                    ctx.Canvas.DrawPath(bandPath, fillPaint);
-                    ctx.Canvas.Restore();
+                    pathHigh.Close();
+                    ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawPath(pathHigh, fillPaint); ctx.Canvas.Restore();
                 }
                 bandIndex++;
             }

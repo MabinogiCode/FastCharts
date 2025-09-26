@@ -19,7 +19,8 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 foreach (var p in ss.Data)
                 {
                     float px = PixelMapper.X(p.X, model.XAxis, pr);
-                    float py = PixelMapper.Y(p.Y, model.YAxis, pr);
+                    var yAxis = (ss.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                    float py = PixelMapper.Y(p.Y, yAxis, pr);
                     switch (ss.MarkerShape)
                     {
                         case MarkerShape.Circle:

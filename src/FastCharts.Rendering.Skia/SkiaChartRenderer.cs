@@ -27,7 +27,13 @@ namespace FastCharts.Rendering.Skia
             var m = model.PlotMargins;
             float left = (float)m.Left;
             float top = (float)m.Top;
-            float right = (float)m.Right;
+            // Auto-extend right margin if secondary Y axis is present (reserve space for labels)
+            double rightBase = m.Right;
+            if (model.YAxisSecondary != null)
+            {
+                rightBase = System.Math.Max(rightBase, 48); // ensure sufficient space for secondary labels
+            }
+            float right = (float)rightBase;
             float bottom = (float)m.Bottom;
             float plotW = (float)System.Math.Max(0, pixelWidth - (left + right));
             float plotH = (float)System.Math.Max(0, pixelHeight - (top + bottom));

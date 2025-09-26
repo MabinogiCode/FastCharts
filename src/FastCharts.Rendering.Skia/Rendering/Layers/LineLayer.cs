@@ -34,7 +34,8 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 foreach (var p in ls.Data)
                 {
                     float px = PixelMapper.X(p.X, model.XAxis, pr);
-                    float py = PixelMapper.Y(p.Y, model.YAxis, pr);
+                    var yAxis = (ls.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                    float py = PixelMapper.Y(p.Y, yAxis, pr);
                     if (!startedLine)
                     {
                         path2.MoveTo(px, py);

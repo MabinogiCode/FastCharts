@@ -37,6 +37,11 @@ namespace FastCharts.Core.Series
         public object? Tag { get; set; }
 
         /// <summary>
+        /// Indicates which Y axis this series should use (0 = primary, 1 = secondary). Defaults to 0.
+        /// </summary>
+        public int YAxisIndex { get; set; }
+
+        /// <summary>
         /// Series has no data to render.
         /// </summary>
         public abstract bool IsEmpty { get; }

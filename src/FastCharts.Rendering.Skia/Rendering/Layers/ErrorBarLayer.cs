@@ -20,8 +20,9 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 {
                     double neg = p.NegativeError ?? p.PositiveError;
                     float xC = PixelMapper.X(p.X, model.XAxis, pr);
-                    float yTop = PixelMapper.Y(p.Y + p.PositiveError, model.YAxis, pr);
-                    float yBot = PixelMapper.Y(p.Y - neg, model.YAxis, pr);
+                    var yAxis = (es.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                    float yTop = PixelMapper.Y(p.Y + p.PositiveError, yAxis, pr);
+                    float yBot = PixelMapper.Y(p.Y - neg, yAxis, pr);
                     float xL = PixelMapper.X(p.X - cap, model.XAxis, pr);
                     float xR = PixelMapper.X(p.X + cap, model.XAxis, pr);
                     ctx.Canvas.DrawLine(xC, yTop, xC, yBot, pen);

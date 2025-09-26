@@ -30,10 +30,11 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     float xC = PixelMapper.X(p.X, model.XAxis, pr);
                     float xL = PixelMapper.X(p.X - half * 0.7, model.XAxis, pr);
                     float xR = PixelMapper.X(p.X + half * 0.7, model.XAxis, pr);
-                    float yOpen = PixelMapper.Y(p.Open, model.YAxis, pr);
-                    float yHigh = PixelMapper.Y(p.High, model.YAxis, pr);
-                    float yLow = PixelMapper.Y(p.Low, model.YAxis, pr);
-                    float yClose = PixelMapper.Y(p.Close, model.YAxis, pr);
+                    var yAxis = (os.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                    float yOpen = PixelMapper.Y(p.Open, yAxis, pr);
+                    float yHigh = PixelMapper.Y(p.High, yAxis, pr);
+                    float yLow = PixelMapper.Y(p.Low, yAxis, pr);
+                    float yClose = PixelMapper.Y(p.Close, yAxis, pr);
                     bool up = p.Close >= p.Open;
                     var bodyColor = up ? cUp : cDown;
                     byte fillAlpha = (byte)(RenderMath.Clamp01(up ? os.UpFillOpacity : os.DownFillOpacity) * bodyColor.A);
