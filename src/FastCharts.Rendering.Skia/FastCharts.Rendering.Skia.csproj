@@ -4,11 +4,17 @@
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="SkiaSharp" Version="2.88.6"/>
+        <PackageReference Include="SkiaSharp" Version="2.88.6" />
+        <!-- StyleCop Analyzers for strict SA1124 enforcement -->
+        <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj"/>
+        <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <AdditionalFiles Include="..\..\stylecop.json" Link="stylecop.json" />
     </ItemGroup>
 </Project>

@@ -1,32 +1,64 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
 
-namespace FastCharts.Core.Themes.BuiltIn;
-
-public sealed class LightTheme : ITheme
+namespace FastCharts.Core.Themes.BuiltIn
 {
-    public ColorRgba AxisColor => new(153, 153, 153, 255);   // #999
-    public ColorRgba GridColor => new(80, 80, 80, 64);       // subtle grid
-    public ColorRgba LabelColor => new(136, 136, 136, 255);  // #888
-    public double AxisThickness => 1;
-    public double GridThickness => 1;
-    public double TickLength => 5;
-    public double LabelTextSize => 12;
-    public ColorRgba PrimarySeriesColor => new(51, 153, 255, 255); // blue
-    
-    public IReadOnlyList<ColorRgba> SeriesPalette => _palette;
-    private static readonly ColorRgba[] _palette =
+    public sealed class LightTheme : ITheme
     {
-        new( 51, 153, 255), // blue
-        new(255, 128,  64), // orange
-        new( 60, 180,  90), // green
-        new(220,  70, 140), // pink
-        new(155, 120, 255), // purple
-        new(255, 200,  60), // yellow
-    };
-    
-    public ColorRgba PlotBackgroundColor => new(255, 255, 255); // white
-    public ColorRgba SurfaceBackgroundColor => new(255, 255, 255);
+        public ColorRgba AxisColor
+        {
+            get { return new ColorRgba(153, 153, 153, 255); }
+        }
+        public ColorRgba GridColor
+        {
+            get { return new ColorRgba(80, 80, 80, 64); }
+        }
+        public ColorRgba LabelColor
+        {
+            get { return new ColorRgba(136, 136, 136, 255); }
+        }
+        public double AxisThickness
+        {
+            get { return 1; }
+        }
+        public double GridThickness
+        {
+            get { return 1; }
+        }
+        public double TickLength
+        {
+            get { return 5; }
+        }
+        public double LabelTextSize
+        {
+            get { return 12; }
+        }
+        public ColorRgba PrimarySeriesColor
+        {
+            get { return new ColorRgba(51, 153, 255, 255); }
+        }
+        public IReadOnlyList<ColorRgba> SeriesPalette
+        {
+            get { return _palette; }
+        }
+        private static readonly ColorRgba[] _palette =
+        [
+            new ColorRgba( 51, 153, 255),
+            new ColorRgba(255, 128,  64),
+            new ColorRgba( 60, 180,  90),
+            new ColorRgba(220,  70, 140),
+            new ColorRgba(155, 120, 255),
+            new ColorRgba(255, 200,  60),
+        ];
+        public ColorRgba PlotBackgroundColor
+        {
+            get { return new ColorRgba(255, 255, 255); }
+        }
+        public ColorRgba SurfaceBackgroundColor
+        {
+            get { return new ColorRgba(255, 255, 255); }
+        }
+    }
 }

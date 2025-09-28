@@ -6,6 +6,7 @@
         <LangVersion>latest</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
         <LangVersion>9.0</LangVersion>
@@ -16,6 +17,8 @@
         <PackageReference Include="System.Reactive" Version="6.*" />
         <PackageReference Include="SkiaSharp" Version="2.88.6" />
         <PackageReference Include="SkiaSharp.Views.WPF" Version="2.88.6" />
+        <!-- StyleCop Analyzers for strict SA1124 enforcement -->
+        <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\tests\**" Pack="false" Visible="false" />
@@ -32,5 +35,8 @@
       <Page Update="Themes\Generic.xaml">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Page>
+    </ItemGroup>
+    <ItemGroup>
+        <AdditionalFiles Include="..\..\stylecop.json" Link="stylecop.json" />
     </ItemGroup>
 </Project>

@@ -1,7 +1,8 @@
-using SkiaSharp;
 using FastCharts.Core;
 using FastCharts.Core.Primitives;
 using FastCharts.Rendering.Skia.Rendering; // self
+
+using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering
 {

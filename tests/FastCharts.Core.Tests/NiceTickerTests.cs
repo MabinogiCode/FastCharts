@@ -1,6 +1,8 @@
 using System.Linq;
+
 using FastCharts.Core.Axes.Ticks;
 using FastCharts.Core.Primitives;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests
@@ -27,7 +29,7 @@ namespace FastCharts.Core.Tests
             var ticks = t.GetTicks(r, 1.6);
             Assert.True(ticks[0] <= r.Min + 1e-9);
             Assert.True(ticks[ticks.Count - 1] >= r.Max - 1e-9);
-            for (int i = 1; i < ticks.Count; i++)
+            for (var i = 1; i < ticks.Count; i++)
             {
                 Assert.True(ticks[i] >= ticks[i - 1]);
             }

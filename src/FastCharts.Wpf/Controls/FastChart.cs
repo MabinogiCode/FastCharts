@@ -3,13 +3,15 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+
 using FastCharts.Core;
-using FastCharts.Core.Primitives;
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Interaction.Behaviors;
+using FastCharts.Core.Primitives;
 using FastCharts.Rendering.Skia;
-using SkiaSharp.Views.WPF;
+
 using SkiaSharp.Views.Desktop;
+using SkiaSharp.Views.WPF;
 
 namespace FastCharts.Wpf.Controls
 {
@@ -45,15 +47,18 @@ namespace FastCharts.Wpf.Controls
 
         public ChartModel Model
         {
-            get { return (ChartModel)GetValue(ModelProperty); }
-            set { SetValue(ModelProperty, value); }
+            get => (ChartModel)GetValue(ModelProperty);
+            set => SetValue(ModelProperty, value);
         }
 
         private static void OnModelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var chart = (FastChart)d;
             chart._userChangedView = false; // allow initial AutoFit
-            if (chart._skia != null) chart._skia.InvalidateVisual();
+            if (chart._skia != null) 
+            {
+                chart._skia.InvalidateVisual();
+            }
         }
 
         public override void OnApplyTemplate()
@@ -63,12 +68,12 @@ namespace FastCharts.Wpf.Controls
             if (_skia != null)
             {
                 _skia.PaintSurface -= OnSkiaPaintSurface;
-                _skia.MouseDown    -= OnSkiaMouseDown;
-                _skia.MouseMove    -= OnSkiaMouseMove;
-                _skia.MouseUp      -= OnSkiaMouseUp;
-                _skia.MouseLeave   -= OnSkiaMouseLeave;
-                _skia.MouseWheel   -= OnSkiaMouseWheel;
-                _skia.KeyDown      -= OnSkiaKeyDown;
+                _skia.MouseDown -= OnSkiaMouseDown;
+                _skia.MouseMove -= OnSkiaMouseMove;
+                _skia.MouseUp -= OnSkiaMouseUp;
+                _skia.MouseLeave -= OnSkiaMouseLeave;
+                _skia.MouseWheel -= OnSkiaMouseWheel;
+                _skia.KeyDown -= OnSkiaKeyDown;
             }
 
             _skia = GetTemplateChild(PartSkia) as SKElement;
@@ -78,12 +83,12 @@ namespace FastCharts.Wpf.Controls
             }
 
             _skia.PaintSurface += OnSkiaPaintSurface;
-            _skia.MouseDown    += OnSkiaMouseDown;
-            _skia.MouseMove    += OnSkiaMouseMove;
-            _skia.MouseUp      += OnSkiaMouseUp;
-            _skia.MouseLeave   += OnSkiaMouseLeave;
-            _skia.MouseWheel   += OnSkiaMouseWheel;
-            _skia.KeyDown      += OnSkiaKeyDown;
+            _skia.MouseDown += OnSkiaMouseDown;
+            _skia.MouseMove += OnSkiaMouseMove;
+            _skia.MouseUp += OnSkiaMouseUp;
+            _skia.MouseLeave += OnSkiaMouseLeave;
+            _skia.MouseWheel += OnSkiaMouseWheel;
+            _skia.KeyDown += OnSkiaKeyDown;
             _skia.Focusable = true;
             _skia.Focus();
 
@@ -116,7 +121,9 @@ namespace FastCharts.Wpf.Controls
             {
                 // Ensure multi-series tooltip present once
                 if (!Model.Behaviors.Any(b => b is MultiSeriesTooltipBehavior))
+                {
                     Model.Behaviors.Insert(1, new MultiSeriesTooltipBehavior());
+                }
             }
 
             Redraw();
@@ -130,7 +137,10 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (_skia == null) return;
+            if (_skia == null) 
+            {
+                return;
+            }
             var pos = e.GetPosition(_skia);
             var ev = new InteractionEvent(
                 PointerEventType.Down,
@@ -156,7 +166,10 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseMove(object sender, MouseEventArgs e)
         {
-            if (_skia == null) return;
+            if (_skia == null) 
+            {
+                return;
+            }
             var pos = e.GetPosition(_skia);
             UpdateDataCoordsForTooltip(pos.X, pos.Y);
             var ev = new InteractionEvent(
@@ -187,7 +200,10 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (_skia == null) return;
+            if (_skia == null) 
+            {
+                return;
+            }
             var pos = e.GetPosition(_skia);
             var ev = new InteractionEvent(
                 PointerEventType.Up,
@@ -210,7 +226,9 @@ namespace FastCharts.Wpf.Controls
                 _skia.ActualHeight);
             if (RouteToBehaviors(ev)) { Redraw(); }
             if (Model.InteractionState == null || !Model.InteractionState.IsPanning)
+            {
                 Mouse.OverrideCursor = null;
+            }
         }
 
         private void OnSkiaMouseLeave(object sender, MouseEventArgs e)
@@ -226,10 +244,13 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (_skia == null) return;
+            if (_skia == null) 
+            {
+                return;
+            }
             _userChangedView = true;
-            bool zoomIn = e.Delta > 0;
-            Point pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(_skia);
+            var zoomIn = e.Delta > 0;
+            var pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(_skia);
             var ev = new InteractionEvent(
                 PointerEventType.Wheel,
                 PointerButton.None,
@@ -260,7 +281,10 @@ namespace FastCharts.Wpf.Controls
             }
         }
 
-        private void OnChartKeyDown(object sender, KeyEventArgs e) => OnSkiaKeyDown(sender, e);
+        private void OnChartKeyDown(object sender, KeyEventArgs e) 
+        {
+            OnSkiaKeyDown(sender, e);
+        }
 
         private void Redraw()
         {
@@ -269,25 +293,49 @@ namespace FastCharts.Wpf.Controls
 
         private bool RouteToBehaviors(InteractionEvent ev)
         {
-            bool handled = false;
-            for (int i = 0; i < Model.Behaviors.Count; i++)
+            var handled = false;
+            for (var i = 0; i < Model.Behaviors.Count; i++)
+            {
                 handled |= Model.Behaviors[i].OnEvent(Model, ev);
+            }
             return handled;
         }
 
         private void UpdateDataCoordsForTooltip(double pixelX, double pixelY)
         {
-            if (_skia == null) return;
+            if (_skia == null) 
+            {
+                return;
+            }
             var m = Model.PlotMargins;
             double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
-            double plotW = _skia.ActualWidth - (left + right);
-            double plotH = _skia.ActualHeight - (top + bottom);
-            if (plotW <= 0 || plotH <= 0) return;
-            double px = pixelX - left; if (px < 0) px = 0; else if (px > plotW) px = plotW;
-            double py = pixelY - top; if (py < 0) py = 0; else if (py > plotH) py = plotH;
+            var plotW = _skia.ActualWidth - (left + right);
+            var plotH = _skia.ActualHeight - (top + bottom);
+            if (plotW <= 0 || plotH <= 0) 
+            {
+                return;
+            }
+            var px = pixelX - left; 
+            if (px < 0) 
+            {
+                px = 0; 
+            }
+            else if (px > plotW) 
+            {
+                px = plotW;
+            }
+            var py = pixelY - top; 
+            if (py < 0) 
+            {
+                py = 0; 
+            }
+            else if (py > plotH) 
+            {
+                py = plotH;
+            }
             var xr = Model.XAxis.VisibleRange; var yr = Model.YAxis.VisibleRange;
-            double x = xr.Min + (px / plotW) * (xr.Max - xr.Min);
-            double y = yr.Max - (py / plotH) * (yr.Max - yr.Min);
+            var x = xr.Min + (px / plotW) * (xr.Max - xr.Min);
+            var y = yr.Max - (py / plotH) * (yr.Max - yr.Min);
             Model.InteractionState ??= new InteractionState();
             Model.InteractionState.DataX = x;
             Model.InteractionState.DataY = y;

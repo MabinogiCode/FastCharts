@@ -1,7 +1,9 @@
 using System.Linq;
+
 using FastCharts.Core.Axes;
 using FastCharts.Core.Axes.Ticks;
 using FastCharts.Core.Primitives;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests

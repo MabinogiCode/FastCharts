@@ -1,5 +1,6 @@
-using SkiaSharp;
 using FastCharts.Core.Series;
+
+using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers
 {

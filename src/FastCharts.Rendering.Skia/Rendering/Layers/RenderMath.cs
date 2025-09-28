@@ -1,7 +1,11 @@
-namespace FastCharts.Rendering.Skia.Rendering.Layers
+namespace FastCharts.Rendering.Skia.Rendering.Layers;
+
+internal static class RenderMath
 {
-    internal static class RenderMath
+    public static double Clamp01(double v)
     {
-        public static double Clamp01(double v) => v < 0 ? 0 : (v > 1 ? 1 : v);
+        if (v < 0) { return 0; }
+        if (v > 1) { return 1; }
+        return v;
     }
 }

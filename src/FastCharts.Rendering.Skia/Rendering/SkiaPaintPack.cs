@@ -1,6 +1,8 @@
 using System;
-using SkiaSharp;
+
 using FastCharts.Core.Abstractions;
+
+using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering
 {

@@ -1,1 +1,1 @@
-namespace FastCharts.Wpf.Axes{ public enum AxisPosition{ Left,Right,Top,Bottom } }
+namespace FastCharts.Wpf.Axes { public enum AxisPosition { Left, Right, Top, Bottom } }

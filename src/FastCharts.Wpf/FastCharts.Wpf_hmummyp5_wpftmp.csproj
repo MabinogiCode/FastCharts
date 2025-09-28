@@ -1,0 +1,103 @@
+<Project>
+  <PropertyGroup>
+    <AssemblyName>FastCharts.Wpf</AssemblyName>
+    <IntermediateOutputPath>obj\Debug\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>C:\Git\FastCharts\src\FastCharts.Wpf\obj\</MSBuildProjectExtensionsPath>
+    <_TargetAssemblyProjectName>FastCharts.Wpf</_TargetAssemblyProjectName>
+    <RootNamespace>FastCharts.Wpf</RootNamespace>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk.WindowsDesktop" />
+  <PropertyGroup>
+    <TargetFrameworks>net48;net6.0-windows10.0.19041.0;net8.0-windows10.0.19041.0</TargetFrameworks>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="DynamicData" Version="8.*" />
+    <PackageReference Include="ReactiveUI" Version="19.*" />
+    <PackageReference Include="System.Reactive" Version="6.*" />
+    <PackageReference Include="SkiaSharp" Version="2.88.6" />
+    <PackageReference Include="SkiaSharp.Views.WPF" Version="2.88.6" />
+    <!-- StyleCop Analyzers for strict SA1124 enforcement -->
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\tests\**" Pack="false" Visible="false" />
+    <None Include="..\..\demos\**" Pack="false" Visible="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj" />
+    <ProjectReference Include="..\FastCharts.Rendering.Skia\FastCharts.Rendering.Skia.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\dynamicdata\8.4.1\lib\net462\DynamicData.dll" />
+    <ReferencePath Include="C:\Git\FastCharts\src\FastCharts.Core\bin\Debug\netstandard2.0\FastCharts.Core.dll" />
+    <ReferencePath Include="C:\Git\FastCharts\src\FastCharts.Rendering.Skia\bin\Debug\netstandard2.0\FastCharts.Rendering.Skia.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\microsoft.bcl.asyncinterfaces\8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\mscorlib.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\PresentationCore.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\PresentationFramework.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\reactiveui\19.6.12\lib\net472\ReactiveUI.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\skiasharp\2.88.6\lib\net462\SkiaSharp.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\skiasharp.views.desktop.common\2.88.6\lib\net462\SkiaSharp.Views.Desktop.Common.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\skiasharp.views.wpf\2.88.6\lib\net462\SkiaSharp.Views.WPF.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\splat\14.8.12\lib\netstandard2.0\Splat.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.buffers\4.5.1\ref\net45\System.Buffers.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.componentmodel.annotations\5.0.0\ref\net461\System.ComponentModel.Annotations.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.ComponentModel.DataAnnotations.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Core.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Data.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.drawing.common\4.7.3\ref\net461\System.Drawing.Common.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Drawing.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.IO.Compression.FileSystem.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.memory\4.5.5\lib\net461\System.Memory.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Numerics.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.numerics.vectors\4.5.0\ref\net46\System.Numerics.Vectors.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.reactive\6.0.2\lib\net472\System.Reactive.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.runtime.compilerservices.unsafe\6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Runtime.Serialization.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.text.encodings.web\8.0.0\lib\net462\System.Text.Encodings.Web.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.text.json\8.0.3\lib\net462\System.Text.Json.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.threading.tasks.extensions\4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll" />
+    <ReferencePath Include="C:\Users\florent.menot\.nuget\packages\system.valuetuple\4.5.0\ref\net47\System.ValueTuple.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Windows.Controls.Ribbon.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Windows.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Windows.Forms.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Xaml.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Xml.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Xml.Linq.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\UIAutomationClient.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\UIAutomationClientsideProviders.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\UIAutomationProvider.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\UIAutomationTypes.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\WindowsBase.dll" />
+    <ReferencePath Include="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\Facades\netstandard.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="C:\Git\FastCharts\src\FastCharts.Wpf\obj\Debug\net48\GeneratedInternalTypeHelper.g.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="C:\Program Files\dotnet\sdk\9.0.304\Sdks\Microsoft.NET.Sdk\targets\..\codestyle\cs\Microsoft.CodeAnalysis.CodeStyle.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\sdk\9.0.304\Sdks\Microsoft.NET.Sdk\targets\..\codestyle\cs\Microsoft.CodeAnalysis.CodeStyle.Fixes.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\sdk\9.0.304\Sdks\Microsoft.NET.Sdk\targets\..\codestyle\cs\Microsoft.CodeAnalysis.CSharp.CodeStyle.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\sdk\9.0.304\Sdks\Microsoft.NET.Sdk\targets\..\codestyle\cs\Microsoft.CodeAnalysis.CSharp.CodeStyle.Fixes.dll" />
+    <Analyzer Include="C:\Users\florent.menot\.nuget\packages\stylecop.analyzers\1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="C:\Users\florent.menot\.nuget\packages\stylecop.analyzers\1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
+    <Analyzer Include="C:\Users\florent.menot\.nuget\packages\system.text.json\8.0.3\analyzers\dotnet\roslyn4.4\cs\System.Text.Json.SourceGeneration.dll" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk.WindowsDesktop" />
+</Project>

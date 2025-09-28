@@ -1,4 +1,4 @@
-﻿namespace FastCharts.Core.Series
+namespace FastCharts.Core.Series
 {
     /// <summary>
     /// Marker shape for scatter points.

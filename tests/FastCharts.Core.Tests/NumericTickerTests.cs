@@ -2,7 +2,9 @@ using System.Linq;
 
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Ticks;
+
 using FluentAssertions;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests;
@@ -18,7 +20,7 @@ public class NumericTickerTests
         ticks[0].Should().BeLessOrEqualTo(0);
         ticks[ticks.Count - 1].Should().BeGreaterOrEqualTo(10);
         ticks.Should().OnlyHaveUniqueItems();
-        for (int i = 1; i < ticks.Count; i++)
+        for (var i = 1; i < ticks.Count; i++)
         {
             (ticks[i] > ticks[i - 1]).Should().BeTrue();
         }

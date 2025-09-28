@@ -1,6 +1,7 @@
 using FastCharts.Core;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests
@@ -16,14 +17,16 @@ namespace FastCharts.Core.Tests
             {
                 new PointD(0, 0),
                 new PointD(5, 10)
-            }) { Title = "Primary" };
+            })
+            { Title = "Primary" };
             m.AddSeries(primary);
             // Secondary Y series (range 100..200)
             var secondary = new LineSeries(new[]
             {
                 new PointD(0, 100),
                 new PointD(5, 200)
-            }) { Title = "Secondary", YAxisIndex = 1 };
+            })
+            { Title = "Secondary", YAxisIndex = 1 };
             m.AddSeries(secondary);
 
             // AutoFit is invoked by AddSeries, but call again explicitly for clarity

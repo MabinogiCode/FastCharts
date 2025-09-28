@@ -1,4 +1,4 @@
-﻿using FastCharts.Core.Abstractions;
+using FastCharts.Core.Abstractions;
 
 namespace FastCharts.Core.Scales;
 
