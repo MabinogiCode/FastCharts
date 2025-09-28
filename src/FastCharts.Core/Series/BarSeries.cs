@@ -2,80 +2,87 @@ using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Primitives;
 
-namespace FastCharts.Core.Series
+namespace FastCharts.Core.Series;
+
+public sealed class BarSeries : SeriesBase
 {
-    /// <summary>
-    /// Vertical bar (column) series. Each data point draws a rectangle from Baseline to Y at X.
-    /// Width is inferred if not specified (80% min ΔX).
-    /// </summary>
-    public sealed class BarSeries : SeriesBase
+    public IList<BarPoint> Data { get; }
+    public double? Width { get; set; }
+    public double Baseline { get; set; }
+    public double FillOpacity { get; set; }
+    public int? GroupCount { get; set; }
+    public int? GroupIndex { get; set; }
+    public override bool IsEmpty => Data == null || Data.Count == 0;
+
+    public BarSeries()
     {
-        public IList<BarPoint> Data { get; }
-        public double? Width { get; set; }
-        public double Baseline { get; set; }
-        public double FillOpacity { get; set; }
-        public int? GroupCount { get; set; }
-        public int? GroupIndex { get; set; }
-        public override bool IsEmpty => Data == null || Data.Count == 0;
+        Data = new List<BarPoint>();
+        Baseline = 0.0;
+        FillOpacity = 0.85;
+    }
 
-        public BarSeries()
+    public BarSeries(IEnumerable<BarPoint> points)
+    {
+        Data = new List<BarPoint>(points);
+        Baseline = 0.0;
+        FillOpacity = 0.85;
+    }
+
+    public double GetWidthFor(int index)
+    {
+        if (Width.HasValue)
         {
-            Data = new List<BarPoint>();
-            Baseline = 0.0;
-            FillOpacity = 0.85;
+            return Width.Value;
         }
-
-        public BarSeries(IEnumerable<BarPoint> points)
+        if (index >= 0 && index < Data.Count)
         {
-            Data = new List<BarPoint>(points);
-            Baseline = 0.0;
-            FillOpacity = 0.85;
-        }
-
-        public double GetWidthFor(int index)
-        {
-            if (Width.HasValue) return Width.Value;
-            if (index >= 0 && index < Data.Count)
+            var w = Data[index].Width;
+            if (w.HasValue && w.Value > 0)
             {
-                var w = Data[index].Width;
-                if (w.HasValue && w.Value > 0) return w.Value;
+                return w.Value;
             }
-            if (Data.Count >= 2)
+        }
+        if (Data.Count >= 2)
+        {
+            var minDx = double.PositiveInfinity;
+            for (var i = 1; i < Data.Count; i++)
             {
-                double minDx = double.PositiveInfinity;
-                for (int i = 1; i < Data.Count; i++)
+                var dx = System.Math.Abs(Data[i].X - Data[i - 1].X);
+                if (dx > 0 && dx < minDx)
                 {
-                    double dx = System.Math.Abs(Data[i].X - Data[i - 1].X);
-                    if (dx > 0 && dx < minDx) minDx = dx;
+                    minDx = dx;
                 }
-                if (double.IsInfinity(minDx) || minDx <= 0) return 1.0;
-                return minDx * 0.8;
             }
-            return 1.0;
-        }
-
-        public FRange GetXRange()
-        {
-            if (IsEmpty)
+            if (double.IsInfinity(minDx) || minDx <= 0)
             {
-                return new FRange(0, 0);
+                return 1.0;
             }
-            double minX = Data.Min(p => p.X);
-            double maxX = Data.Max(p => p.X);
-            double w0 = GetWidthFor(0) * 0.5;
-            double wN = GetWidthFor(Data.Count - 1) * 0.5;
-            return new FRange(minX - w0, maxX + wN);
+            return minDx * 0.8;
         }
+        return 1.0;
+    }
 
-        public FRange GetYRange()
+    public FRange GetXRange()
+    {
+        if (IsEmpty)
         {
-            if (IsEmpty)
-            {
-                return new FRange(0, 0);
-            }
-            double minY = Data.Min(p => System.Math.Min(p.Y, Baseline));
-            double maxY = Data.Max(p => System.Math.Max(p.Y, Baseline));
-            return new FRange(minY, maxY);
+            return new FRange(0, 0);
         }
+        var minX = Data.Min(p => p.X);
+        var maxX = Data.Max(p => p.X);
+        var w0 = GetWidthFor(0) * 0.5;
+        var wN = GetWidthFor(Data.Count - 1) * 0.5;
+        return new FRange(minX - w0, maxX + wN);
+    }
+
+    public FRange GetYRange()
+    {
+        if (IsEmpty)
+        {
+            return new FRange(0, 0);
+        }
+        var minY = Data.Min(p => System.Math.Min(p.Y, Baseline));
+        var maxY = Data.Max(p => System.Math.Max(p.Y, Baseline));
+        return new FRange(minY, maxY);
     }
 }

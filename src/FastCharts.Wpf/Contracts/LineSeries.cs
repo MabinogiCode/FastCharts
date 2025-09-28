@@ -1,4 +1,3 @@
-
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
@@ -7,7 +6,10 @@ namespace FastCharts.Wpf.Contracts
     public class LineSeries : IReadOnlyLineSeries, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        void Raise([CallerMemberName] string? p = null) => PropertyChanged?.Invoke(this, new(p));
+        void Raise([CallerMemberName] string? p = null) 
+        {
+            PropertyChanged?.Invoke(this, new(p));
+        }
         public double[] X { get; }
         public double[] Y { get; }
         public string Name { get; }

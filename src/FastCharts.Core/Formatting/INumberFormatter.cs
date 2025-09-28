@@ -1,4 +1,4 @@
-﻿namespace FastCharts.Core.Formatting
+namespace FastCharts.Core.Formatting
 {
     /// <summary>
     /// Formats numeric tick values for axis labels.

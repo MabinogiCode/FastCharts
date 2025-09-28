@@ -1,6 +1,8 @@
 using FastCharts.Core.Interactivity;
 using FastCharts.Core.Primitives;
+
 using FluentAssertions;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests;

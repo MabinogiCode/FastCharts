@@ -1,4 +1,5 @@
 using FastCharts.Core.Formatting;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests

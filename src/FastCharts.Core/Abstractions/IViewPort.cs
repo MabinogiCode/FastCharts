@@ -1,4 +1,4 @@
-﻿using FastCharts.Core.Primitives;
+using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Abstractions;
 

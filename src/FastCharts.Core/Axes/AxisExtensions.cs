@@ -1,39 +1,66 @@
 using System;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
+using FastCharts.Core.Utilities;
 
-namespace FastCharts.Core.Axes
+namespace FastCharts.Core.Axes;
+
+public static class AxisExtensions
 {
-    /// <summary>
-    /// Extensions for IAxis<double> to set visible range with guards.
-    /// </summary>
-    public static class AxisExtensions
+    public static void SetVisibleRange(this IAxis<double> axis, double min, double max)
     {
-        public static void SetVisibleRange(this IAxis<double> axis, double min, double max)
+        if (axis == null)
         {
-            if (axis == null)
+            return;
+        }
+        if (double.IsNaN(min) || double.IsNaN(max))
+        {
+            return;
+        }
+        if (min > max)
+        {
+            (min, max) = (max, min);
+        }
+        if (Math.Abs(min - max) < double.Epsilon)
+        {
+            var eps = DoubleUtils.IsZero(min) ? 1e-6 : Math.Abs(min) * 1e-6;
+            min -= eps;
+            max += eps;
+        }
+        switch (axis)
+        {
+            case DateTimeAxis dta:
             {
-                return;
+                dta.SetVisibleRange(min, max);
+                break;
             }
-
-            if (double.IsNaN(min) || double.IsNaN(max))
+            case NumericAxis na:
             {
-                return;
+                na.SetVisibleRange(min, max);
+                break;
             }
-
-            if (min > max)
+            case AxisBase ab:
             {
-                var t = min; min = max; max = t;
+                ab.VisibleRange = new FRange(min, max);
+                break;
             }
-
-            if (Math.Abs(min - max) < double.Epsilon)
+            default:
             {
-                var eps = (min == 0d) ? 1e-6 : Math.Abs(min) * 1e-6;
-                min -= eps;
-                max += eps;
+                // Unknown axis type - attempt reflection fallback (avoid failure)
+                var prop = axis.GetType().GetProperty("VisibleRange");
+                if (prop != null && prop.CanWrite)
+                {
+                    try
+                    {
+                        prop.SetValue(axis, new FRange(min, max));
+                    }
+                    catch
+                    {
+                        // swallow
+                    }
+                }
+                break;
             }
-
-            axis.VisibleRange = new FRange(min, max);
         }
     }
 }

@@ -1,5 +1,7 @@
 using FastCharts.Core.Formatting;
+
 using FluentAssertions;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests;
@@ -14,7 +16,7 @@ public class NumberFormatterTests
     [InlineData(1_234_567_890, "1.2B")]
     public void CompactShouldProduceExpectedSuffixes(double value, string expectedPrefix)
     {
-        var f = new CompactNumberFormatter(digits:1);
+        var f = new CompactNumberFormatter(digits: 1);
         f.Format(value).Should().StartWith(expectedPrefix);
     }
 
@@ -23,7 +25,7 @@ public class NumberFormatterTests
     [InlineData(5.5e-5, "5.50E-")]
     public void ScientificShouldUseScientificForExtremeValues(double value, string expectedStart)
     {
-        var f = new ScientificNumberFormatter(significantDigits:3);
+        var f = new ScientificNumberFormatter(significantDigits: 3);
         var s = f.Format(value);
         s.Should().StartWith(expectedStart);
     }
@@ -31,7 +33,7 @@ public class NumberFormatterTests
     [Fact]
     public void SuffixFormatterShouldScaleDownNumbers()
     {
-        var f = new SuffixNumberFormatter(maxDecimals:2);
+        var f = new SuffixNumberFormatter(maxDecimals: 2);
         f.Format(1532).Should().StartWith("1.53k");
         f.Format(0.0000021).Should().StartWith("2.1μ");
     }

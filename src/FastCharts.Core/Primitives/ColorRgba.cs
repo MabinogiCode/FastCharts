@@ -1,16 +1,10 @@
-namespace FastCharts.Core.Primitives;
-
-public readonly struct ColorRgba
+namespace FastCharts.Core.Primitives
 {
-    public byte R { get; }
-    public byte G { get; }
-    public byte B { get; }
-    public byte A { get; }
-    public ColorRgba(byte r, byte g, byte b, byte a = 255)
+    public readonly struct ColorRgba(byte r, byte g, byte b, byte a = 255)
     {
-        R = r;
-        G = g;
-        B = b;
-        A = a;
+        public byte R { get; } = r;
+        public byte G { get; } = g;
+        public byte B { get; } = b;
+        public byte A { get; } = a;
     }
 }

@@ -1,8 +1,10 @@
-using SkiaSharp;
-using System.Linq;
-using FastCharts.Core.Axes;
 using System;
 using System.Globalization;
+using System.Linq;
+
+using FastCharts.Core.Axes;
+
+using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers
 {
@@ -24,7 +26,10 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
 
             var xr = model.XAxis.VisibleRange;
             var yr = model.YAxis.VisibleRange;
-            if (xr.Size <= 0 || yr.Size <= 0) return;
+            if (xr.Size <= 0 || yr.Size <= 0) 
+            {
+                return;
+            }
             double xDataPerPx = xr.Size / System.Math.Max(1.0, pr.Width);
             double yDataPerPx = yr.Size / System.Math.Max(1.0, pr.Height);
             double approxXStepData = 80.0 * xDataPerPx;

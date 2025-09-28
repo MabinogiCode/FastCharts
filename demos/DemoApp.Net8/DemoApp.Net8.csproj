@@ -4,11 +4,14 @@
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\FastCharts.Wpf\FastCharts.Wpf.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="DynamicData" Version="8.*" />
+    <!-- StyleCop Analyzers for strict SA1124 enforcement -->
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
   </ItemGroup>
 </Project>

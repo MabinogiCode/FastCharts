@@ -1,5 +1,7 @@
 using FastCharts.Core.Scales;
+
 using FluentAssertions;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests;

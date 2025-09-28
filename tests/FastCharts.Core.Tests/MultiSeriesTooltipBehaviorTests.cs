@@ -1,9 +1,11 @@
 using System.Linq;
+
 using FastCharts.Core;
-using FastCharts.Core.Primitives;
-using FastCharts.Core.Series;
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Interaction.Behaviors;
+using FastCharts.Core.Primitives;
+using FastCharts.Core.Series;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests
@@ -13,14 +15,16 @@ namespace FastCharts.Core.Tests
         private static (ChartModel model, InteractionState st) CreateModel()
         {
             var m = new ChartModel();
-            m.Series.Add(new LineSeries(new []
+            m.Series.Add(new LineSeries(new[]
             {
                 new PointD(0, 0), new PointD(1, 10), new PointD(2, 20)
-            }) { Title = "L1" });
-            m.Series.Add(new ScatterSeries(new []
+            })
+            { Title = "L1" });
+            m.Series.Add(new ScatterSeries(new[]
             {
                 new PointD(0, 5), new PointD(1, 6), new PointD(2, 7)
-            }) { Title = "S1" });
+            })
+            { Title = "S1" });
             m.AutoFitDataRange();
             m.UpdateScales(300, 200);
             m.InteractionState = new InteractionState();

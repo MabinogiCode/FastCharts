@@ -1,4 +1,4 @@
-﻿namespace FastCharts.Core.Interaction
+namespace FastCharts.Core.Interaction
 {
     /// <summary>
     /// A behavior consumes interaction events and may update the model's InteractionState.

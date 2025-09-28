@@ -1,6 +1,8 @@
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
+
 using FluentAssertions;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests;
@@ -15,7 +17,8 @@ public class BarSeriesTests
             new BarPoint(0, 1),
             new BarPoint(1, 2),
             new BarPoint(2, 3),
-        }) { Width = 0.5 };
+        })
+        { Width = 0.5 };
 
         s.GetWidthFor(0).Should().Be(0.5);
         s.GetWidthFor(1).Should().Be(0.5);
@@ -41,7 +44,8 @@ public class BarSeriesTests
         {
             new BarPoint(10, 2),
             new BarPoint(20, -3)
-        }) { Baseline = 0 };
+        })
+        { Baseline = 0 };
         var xr = s.GetXRange();
         var yr = s.GetYRange();
 

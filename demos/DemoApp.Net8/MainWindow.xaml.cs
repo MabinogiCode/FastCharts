@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 
 using DemoApp.Net8.ViewModels;
 

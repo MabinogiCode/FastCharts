@@ -1,4 +1,4 @@
-﻿namespace FastCharts.Core.Interaction;
+namespace FastCharts.Core.Interaction;
 
 public enum PointerButton
 {

@@ -1,3 +1,5 @@
 namespace FastCharts.Core.Abstractions;
 
-public interface IAnnotation { }
+public interface IAnnotation
+{
+}

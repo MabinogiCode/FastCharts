@@ -1,5 +1,6 @@
-using SkiaSharp;
 using FastCharts.Core.Series;
+
+using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers
 {
@@ -11,7 +12,10 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             int errIndex = 0;
             foreach (var s in model.Series)
             {
-                if (s is not ErrorBarSeries es || es.IsEmpty || !es.IsVisible) continue;
+                if (s is not ErrorBarSeries es || es.IsEmpty || !es.IsVisible) 
+                {
+                    continue;
+                }
                 var c = (paletteCount > 0 && errIndex < paletteCount && palette != null) ? palette[errIndex] : model.Theme.PrimarySeriesColor;
                 using var pen = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, es.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
                 double cap = es.GetCapWidth() * 0.5;

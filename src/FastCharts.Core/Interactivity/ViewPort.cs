@@ -1,4 +1,4 @@
-﻿using FastCharts.Core.Abstractions;
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Interactivity;
@@ -23,14 +23,13 @@ public sealed class Viewport : IViewport
     public void Zoom(double scaleX, double scaleY, PointD pivotData)
     {
         var newX = new FRange(
-            pivotData.X - (pivotData.X - X.Min) / scaleX,
-            pivotData.X + (X.Max - pivotData.X) / scaleX
+            pivotData.X - ((pivotData.X - X.Min) / scaleX),
+            pivotData.X + ((X.Max - pivotData.X) / scaleX)
         );
         var newY = new FRange(
-            pivotData.Y - (pivotData.Y - Y.Min) / scaleY,
-            pivotData.Y + (Y.Max - pivotData.Y) / scaleY
+            pivotData.Y - ((pivotData.Y - Y.Min) / scaleY),
+            pivotData.Y + ((Y.Max - pivotData.Y) / scaleY)
         );
-
         SetVisible(newX, newY);
     }
 

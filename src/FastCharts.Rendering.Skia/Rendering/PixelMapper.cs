@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 
 using FastCharts.Core.Abstractions;
+
 using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering
@@ -17,7 +18,10 @@ namespace FastCharts.Rendering.Skia.Rendering
         {
             var vr = axis.VisibleRange; // FRange (double)
             double span = vr.Max - vr.Min;
-            if (span == 0) return plotRect.Left;
+            if (span == 0) 
+            {
+                return plotRect.Left;
+            }
             double v = Convert.ToDouble(value, CultureInfo.InvariantCulture);
             double t = (v - vr.Min) / span;
             return (float)(plotRect.Left + t * plotRect.Width);
@@ -29,7 +33,10 @@ namespace FastCharts.Rendering.Skia.Rendering
         {
             var vr = axis.VisibleRange;
             double span = vr.Max - vr.Min;
-            if (span == 0) return plotRect.Bottom;
+            if (span == 0) 
+            {
+                return plotRect.Bottom;
+            }
             double v = Convert.ToDouble(value, CultureInfo.InvariantCulture);
             double t = (v - vr.Min) / span;
             return (float)(plotRect.Bottom - t * plotRect.Height);
@@ -39,9 +46,19 @@ namespace FastCharts.Rendering.Skia.Rendering
         public static double ToDataX(float px, IAxis<double> axis, SKRect plotRect)
         {
             var vr = axis.VisibleRange;
-            if (plotRect.Width <= 0) return vr.Min;
+            if (plotRect.Width <= 0) 
+            {
+                return vr.Min;
+            }
             double t = (px - plotRect.Left) / plotRect.Width;
-            if (t < 0) t = 0; else if (t > 1) t = 1;
+            if (t < 0) 
+            {
+                t = 0; 
+            }
+            else if (t > 1) 
+            {
+                t = 1;
+            }
             return vr.Min + t * (vr.Max - vr.Min);
         }
 
@@ -49,9 +66,19 @@ namespace FastCharts.Rendering.Skia.Rendering
         public static double ToDataY(float py, IAxis<double> axis, SKRect plotRect)
         {
             var vr = axis.VisibleRange;
-            if (plotRect.Height <= 0) return vr.Max;
+            if (plotRect.Height <= 0) 
+            {
+                return vr.Max;
+            }
             double t = (py - plotRect.Top) / plotRect.Height;
-            if (t < 0) t = 0; else if (t > 1) t = 1;
+            if (t < 0) 
+            {
+                t = 0; 
+            }
+            else if (t > 1) 
+            {
+                t = 1;
+            }
             t = 1.0 - t; // invert pixels
             return vr.Min + t * (vr.Max - vr.Min);
         }

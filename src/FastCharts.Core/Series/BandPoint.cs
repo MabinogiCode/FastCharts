@@ -1,4 +1,4 @@
-﻿namespace FastCharts.Core.Series
+namespace FastCharts.Core.Series
 {
     /// <summary>
     /// Single band datum: an interval [YLow, YHigh] at X.

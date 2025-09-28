@@ -2,7 +2,9 @@ using System;
 
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
+
 using FluentAssertions;
+
 using Xunit;
 
 namespace FastCharts.Core.Tests;
