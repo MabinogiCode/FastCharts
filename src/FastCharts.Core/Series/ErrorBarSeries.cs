@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Primitives;
+using FastCharts.Core.Abstractions;
 
 namespace FastCharts.Core.Series;
 
 /// <summary>
 /// Error bar series around a central Y value at X, with symmetric or asymmetric errors.
 /// </summary>
-public sealed class ErrorBarSeries : SeriesBase
+public sealed class ErrorBarSeries : SeriesBase, ISeriesRangeProvider
 {
     public IList<ErrorBarPoint> Data { get; }
     public double? CapWidth { get; set; }
@@ -72,5 +73,18 @@ public sealed class ErrorBarSeries : SeriesBase
         var minY = Data.Min(p => p.Y - (p.NegativeError ?? p.PositiveError));
         var maxY = Data.Max(p => p.Y + p.PositiveError);
         return new FRange(minY, maxY);
+    }
+
+    bool ISeriesRangeProvider.TryGetRanges(out FRange xRange, out FRange yRange)
+    {
+        if (IsEmpty)
+        {
+            xRange = default;
+            yRange = default;
+            return false;
+        }
+        xRange = GetXRange();
+        yRange = GetYRange();
+        return true;
     }
 }

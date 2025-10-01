@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Primitives;
+using FastCharts.Core.Abstractions;
 
 namespace FastCharts.Core.Series;
 
-public sealed class BarSeries : SeriesBase
+public sealed class BarSeries : SeriesBase, ISeriesRangeProvider
 {
     public IList<BarPoint> Data { get; }
     public double? Width { get; set; }
@@ -84,5 +85,18 @@ public sealed class BarSeries : SeriesBase
         var minY = Data.Min(p => System.Math.Min(p.Y, Baseline));
         var maxY = Data.Max(p => System.Math.Max(p.Y, Baseline));
         return new FRange(minY, maxY);
+    }
+
+    bool ISeriesRangeProvider.TryGetRanges(out FRange xRange, out FRange yRange)
+    {
+        if (IsEmpty)
+        {
+            xRange = default;
+            yRange = default;
+            return false;
+        }
+        xRange = GetXRange();
+        yRange = GetYRange();
+        return true;
     }
 }

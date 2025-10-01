@@ -1,11 +1,15 @@
+using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FastCharts.Core;
 using FastCharts.Core.Abstractions;
-using FastCharts.Core.Legend;
+using FastCharts.Core.Helpers;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
+using FastCharts.Rendering.Skia.Helpers;
 using FastCharts.Rendering.Skia.Rendering;
 using FastCharts.Rendering.Skia.Rendering.Layers;
 
@@ -13,7 +17,10 @@ using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia
 {
-    public sealed class SkiaChartRenderer : IRenderer<SKCanvas>
+    /// <summary>
+    /// ? UPDATED: Skia-based chart renderer implementing new interfaces for better extensibility
+    /// </summary>
+    public sealed class SkiaChartRenderer : IAsyncChartRenderer<SKCanvas>, IChartExporter, IRenderer<SKCanvas>
     {
         private readonly GridLayer _grid = new();
         private readonly SeriesLayer _series = new();
@@ -26,22 +33,51 @@ namespace FastCharts.Rendering.Skia
         /// </summary>
         public void Render(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight)
         {
-            if (model == null || canvas == null)
+            // ? CRITICAL FIX: Enhanced validation with specific error messages
+            if (model == null)
             {
-                return;
+                throw new ArgumentNullException(nameof(model), "Chart model cannot be null");
             }
+
+            if (canvas == null)
+            {
+                throw new ArgumentNullException(nameof(canvas), "Canvas cannot be null");
+            }
+
+            // ? CRITICAL FIX: Validate dimensions to prevent rendering errors
+            if (pixelWidth <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(pixelWidth), pixelWidth, "Pixel width must be positive");
+            }
+
+            if (pixelHeight <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(pixelHeight), pixelHeight, "Pixel height must be positive");
+            }
+
+            // ? CRITICAL FIX: Validate ranges to prevent rendering corruption
+            var xRange = model.XAxis.VisibleRange;
+            var yRange = model.YAxis.VisibleRange;
+
+            if (!ValidationHelper.IsValidRange(xRange))
+            {
+                throw new InvalidOperationException($"X-axis visible range is invalid: [{xRange.Min}, {xRange.Max}]");
+            }
+
+            if (!ValidationHelper.IsValidRange(yRange))
+            {
+                throw new InvalidOperationException($"Y-axis visible range is invalid: [{yRange.Min}, {yRange.Max}]");
+            }
+
             var theme = model.Theme;
             var m = model.PlotMargins;
             var left = (float)m.Left;
             var top = (float)m.Top;
-            // Auto-extend right margin if secondary Y axis is present (reserve space for labels)
-            var rightBase = m.Right;
-            if (model.YAxisSecondary != null)
-            {
-                rightBase = System.Math.Max(rightBase, 48); // ensure sufficient space for secondary labels
-            }
-            var right = (float)rightBase;
+            
+            // ? SOLID PRINCIPLES: Use helper for margin calculation
+            var right = (float)RenderingHelper.CalculateEffectiveRightMargin(m.Right, model.YAxisSecondary != null);
             var bottom = (float)m.Bottom;
+            
             var plotW = (float)System.Math.Max(0, pixelWidth - (left + right));
             var plotH = (float)System.Math.Max(0, pixelHeight - (top + bottom));
             var plotRect = new SKRect(left, top, left + plotW, top + plotH);
@@ -90,6 +126,99 @@ namespace FastCharts.Rendering.Skia
             using var data = img.Encode(SKEncodedImageFormat.Png, quality);
             data.SaveTo(destination);
             destination.Flush();
+        }
+
+        /// <summary>
+        /// ? NEW: Asynchronously exports the chart as PNG into a stream with cancellation support
+        /// </summary>
+        public async Task ExportPngAsync(ChartModel model, Stream destination, int pixelWidth, int pixelHeight, int quality = 100, bool transparentBackground = false, CancellationToken cancellationToken = default)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
+            if (!destination.CanWrite)
+            {
+                throw new ArgumentException("Destination stream must be writable", nameof(destination));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Perform heavy rendering on background thread
+            var imageData = await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                using var bmp = RenderToBitmap(model, pixelWidth, pixelHeight, transparentBackground);
+                using var img = SKImage.FromPixels(bmp.PeekPixels());
+                return img.Encode(SKEncodedImageFormat.Png, quality);
+            }, cancellationToken).ConfigureAwait(false);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Write to stream
+            using (imageData)
+            {
+                using var stream = imageData.AsStream();
+#if NET8_0_OR_GREATER
+                await stream.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+                await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
+#else
+                // .NET Standard 2.0 and .NET Framework don't support CancellationToken in CopyToAsync
+                cancellationToken.ThrowIfCancellationRequested();
+                await stream.CopyToAsync(destination).ConfigureAwait(false);
+                await destination.FlushAsync().ConfigureAwait(false);
+#endif
+            }
+        }
+
+        /// <summary>
+        /// ? NEW: Asynchronously renders the chart into a new SKBitmap with cancellation support
+        /// </summary>
+        public async Task<SKBitmap> RenderToBitmapAsync(ChartModel model, int pixelWidth, int pixelHeight, bool transparentBackground = false, CancellationToken cancellationToken = default)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return RenderToBitmap(model, pixelWidth, pixelHeight, transparentBackground);
+            }, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// ? NEW: Asynchronously render the chart model onto a provided SKCanvas
+        /// </summary>
+        public async Task RenderAsync(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight, CancellationToken cancellationToken = default)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+
+            if (canvas == null)
+            {
+                throw new ArgumentNullException(nameof(canvas));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                Render(model, canvas, pixelWidth, pixelHeight);
+            }, cancellationToken).ConfigureAwait(false);
         }
 
         private static void RenderOverlay(RenderContext ctx)
@@ -223,6 +352,16 @@ namespace FastCharts.Rendering.Skia
                 ctx.Canvas.DrawText(lines[i], tx, ty, tipTx); 
                 ty += lineH;
             }
+        }
+
+        /// <summary>
+        /// ? NEW: Validates that a range contains finite, valid values
+        /// </summary>
+        private static bool IsValidRange(FRange range)
+        {
+            return !double.IsNaN(range.Min) && !double.IsNaN(range.Max) &&
+                   !double.IsInfinity(range.Min) && !double.IsInfinity(range.Max) &&
+                   range.Min < range.Max;
         }
 
         internal static FastCharts.Core.Primitives.ColorRgba ResolveSeriesColorStatic(ChartModel model, object seriesRef, System.Collections.Generic.IReadOnlyList<FastCharts.Core.Primitives.ColorRgba> palette)

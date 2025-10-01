@@ -1,11 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
-        <!-- Ensures NuGet package DLLs (e.g., FluentAssertions) are copied to bin -->
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>
@@ -16,6 +15,9 @@
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
         <PackageReference Include="FluentAssertions" Version="6.12.0" />
         <PackageReference Include="coverlet.collector" Version="6.0.0" />
+        <!-- ReactiveUI for MVVM testing -->
+        <PackageReference Include="ReactiveUI" Version="19.*" />
+        <PackageReference Include="System.Reactive" Version="6.*" />
         <!-- StyleCop Analyzers for strict SA1124 enforcement -->
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
     </ItemGroup>
@@ -24,4 +26,5 @@
         <ProjectReference Include="..\..\src\FastCharts.Core\FastCharts.Core.csproj" />
         <ProjectReference Include="..\..\src\FastCharts.Rendering.Skia\FastCharts.Rendering.Skia.csproj" />
     </ItemGroup>
+
 </Project>
