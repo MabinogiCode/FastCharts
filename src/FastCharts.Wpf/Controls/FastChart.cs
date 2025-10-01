@@ -3,8 +3,11 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
+using System.Threading.Tasks;
 
 using FastCharts.Core;
+using FastCharts.Core.Helpers;
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Interaction.Behaviors;
 using FastCharts.Core.Primitives;
@@ -19,6 +22,7 @@ namespace FastCharts.Wpf.Controls
     /// WPF host control for FastCharts with Skia rendering and user interactions (zoom/pan).
     /// - Default renderer: SkiaChartRenderer (from FastCharts.Rendering.Skia)
     /// - Extensibility: assign RenderOverride to plug a different renderer (OpenGL, etc.)
+    /// Includes redraw throttling to coalesce rapid interaction events.
     /// </summary>
     [TemplatePart(Name = PartSkia, Type = typeof(SKElement))]
     public class FastChart : Control
@@ -27,6 +31,11 @@ namespace FastCharts.Wpf.Controls
 
         private SKElement? _skia;
         private bool _userChangedView;
+
+        // Throttling state
+        private DateTime _lastRedrawUtc = DateTime.MinValue;
+        private bool _redrawScheduled;
+        private TimeSpan _minRedrawInterval = TimeSpan.FromMilliseconds(16.6); // ~60 FPS default
 
         // Default renderer instance (Skia)
         private readonly SkiaChartRenderer _renderer = new SkiaChartRenderer();
@@ -45,6 +54,47 @@ namespace FastCharts.Wpf.Controls
                 typeof(FastChart),
                 new PropertyMetadata(null, OnModelChanged));
 
+        public static readonly DependencyProperty MaxRefreshRateProperty =
+            DependencyProperty.Register(
+                nameof(MaxRefreshRate),
+                typeof(int),
+                typeof(FastChart),
+                new PropertyMetadata(60, OnMaxRefreshRateChanged, CoerceMaxRefreshRate));
+
+        /// <summary>
+        /// Maximum redraw rate (frames per second). Default 60. Set lower to reduce CPU usage.
+        /// </summary>
+        public int MaxRefreshRate
+        {
+            get => (int)GetValue(MaxRefreshRateProperty);
+            set => SetValue(MaxRefreshRateProperty, value);
+        }
+
+        private static object CoerceMaxRefreshRate(DependencyObject d, object baseValue)
+        {
+            if (baseValue is int v)
+            {
+                if (v < 1)
+                {
+                    return 1;
+                }
+                if (v > 240)
+                {
+                    return 240; // clamp to sane upper bound
+                }
+                return v;
+            }
+            return 60;
+        }
+
+        private static void OnMaxRefreshRateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is FastChart fc && e.NewValue is int fps && fps > 0)
+            {
+                fc._minRedrawInterval = TimeSpan.FromSeconds(1.0 / fps);
+            }
+        }
+
         public ChartModel Model
         {
             get => (ChartModel)GetValue(ModelProperty);
@@ -55,10 +105,7 @@ namespace FastCharts.Wpf.Controls
         {
             var chart = (FastChart)d;
             chart._userChangedView = false; // allow initial AutoFit
-            if (chart._skia != null) 
-            {
-                chart._skia.InvalidateVisual();
-            }
+            chart.RequestRedraw();
         }
 
         public override void OnApplyTemplate()
@@ -110,34 +157,49 @@ namespace FastCharts.Wpf.Controls
             if (Model.Behaviors.Count == 0)
             {
                 Model.Behaviors.Add(new CrosshairBehavior());
-                Model.Behaviors.Add(new MultiSeriesTooltipBehavior()); // multi-series tooltip first so crosshair text fallback disabled when aggregated
+                Model.Behaviors.Add(new MultiSeriesTooltipBehavior());
                 Model.Behaviors.Add(new ZoomRectBehavior());
                 Model.Behaviors.Add(new NearestPointBehavior());
                 Model.Behaviors.Add(new LegendToggleBehavior());
                 Model.Behaviors.Add(new ZoomWheelBehavior());
                 Model.Behaviors.Add(new PanBehavior());
             }
-            else
+            else if (!Model.Behaviors.Any(b => b is MultiSeriesTooltipBehavior))
             {
-                // Ensure multi-series tooltip present once
-                if (!Model.Behaviors.Any(b => b is MultiSeriesTooltipBehavior))
-                {
-                    Model.Behaviors.Insert(1, new MultiSeriesTooltipBehavior());
-                }
+                Model.Behaviors.Insert(1, new MultiSeriesTooltipBehavior());
             }
 
-            Redraw();
+            RequestRedraw(forceImmediate: true);
         }
 
         private void OnSkiaPaintSurface(object? sender, SKPaintSurfaceEventArgs e)
         {
-            var canvas = e.Surface.Canvas;
-            _renderer.Render(Model, canvas, e.Info.Width, e.Info.Height);
+            try
+            {
+                if (Model == null)
+                {
+                    return;
+                }
+                var canvas = e.Surface.Canvas;
+                _renderer.Render(Model, canvas, e.Info.Width, e.Info.Height);
+            }
+            catch (ArgumentException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Chart rendering validation error: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Chart rendering state error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Unexpected chart rendering error: {ex}");
+            }
         }
 
         private void OnSkiaMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (_skia == null) 
+            if (_skia == null)
             {
                 return;
             }
@@ -151,22 +213,17 @@ namespace FastCharts.Wpf.Controls
                     MouseButton.Right => PointerButton.Right,
                     _ => PointerButton.None
                 },
-                new PointerModifiers
-                {
-                    Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
-                    Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
-                    Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
-                },
+                BuildModifiers(),
                 pos.X, pos.Y,
                 0,
                 _skia.ActualWidth,
                 _skia.ActualHeight);
-            if (RouteToBehaviors(ev)) { Redraw(); }
+            if (RouteToBehaviors(ev)) { RequestRedraw(); }
         }
 
         private void OnSkiaMouseMove(object sender, MouseEventArgs e)
         {
-            if (_skia == null) 
+            if (_skia == null)
             {
                 return;
             }
@@ -175,32 +232,20 @@ namespace FastCharts.Wpf.Controls
             var ev = new InteractionEvent(
                 PointerEventType.Move,
                 PointerButton.None,
-                new PointerModifiers
-                {
-                    Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
-                    Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
-                    Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
-                },
+                BuildModifiers(),
                 pos.X, pos.Y,
                 0,
                 _skia.ActualWidth,
                 _skia.ActualHeight);
-            if (RouteToBehaviors(ev))
-            {
-                _userChangedView = true;
-                Mouse.OverrideCursor = (Model.InteractionState != null && Model.InteractionState.IsPanning) ? Cursors.Hand : null;
-                Redraw();
-            }
-            else
-            {
-                Mouse.OverrideCursor = (Model.InteractionState != null && Model.InteractionState.IsPanning) ? Cursors.Hand : null;
-                Redraw();
-            }
+            var handled = RouteToBehaviors(ev);
+            _userChangedView |= handled;
+            Mouse.OverrideCursor = (Model.InteractionState != null && Model.InteractionState.IsPanning) ? Cursors.Hand : null;
+            RequestRedraw();
         }
 
         private void OnSkiaMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (_skia == null) 
+            if (_skia == null)
             {
                 return;
             }
@@ -214,17 +259,12 @@ namespace FastCharts.Wpf.Controls
                     MouseButton.Right => PointerButton.Right,
                     _ => PointerButton.None
                 },
-                new PointerModifiers
-                {
-                    Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
-                    Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
-                    Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
-                },
+                BuildModifiers(),
                 pos.X, pos.Y,
                 0,
                 _skia.ActualWidth,
                 _skia.ActualHeight);
-            if (RouteToBehaviors(ev)) { Redraw(); }
+            if (RouteToBehaviors(ev)) { RequestRedraw(); }
             if (Model.InteractionState == null || !Model.InteractionState.IsPanning)
             {
                 Mouse.OverrideCursor = null;
@@ -237,34 +277,28 @@ namespace FastCharts.Wpf.Controls
             {
                 var pos = e.GetPosition(_skia);
                 var ev = new InteractionEvent(PointerEventType.Leave, PointerButton.None, new PointerModifiers(), pos.X, pos.Y, 0, _skia.ActualWidth, _skia.ActualHeight);
-                if (RouteToBehaviors(ev)) { Redraw(); }
+                if (RouteToBehaviors(ev)) { RequestRedraw(); }
             }
             Mouse.OverrideCursor = null;
         }
 
         private void OnSkiaMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (_skia == null) 
+            if (_skia == null)
             {
                 return;
             }
             _userChangedView = true;
-            var zoomIn = e.Delta > 0;
             var pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(_skia);
             var ev = new InteractionEvent(
                 PointerEventType.Wheel,
                 PointerButton.None,
-                new PointerModifiers
-                {
-                    Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
-                    Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
-                    Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
-                },
+                BuildModifiers(),
                 pos.X, pos.Y,
-                zoomIn ? 1 : -1,
+                e.Delta > 0 ? 1 : -1,
                 _skia.ActualWidth,
                 _skia.ActualHeight);
-            if (RouteToBehaviors(ev)) { Redraw(); }
+            if (RouteToBehaviors(ev)) { RequestRedraw(); }
             e.Handled = true;
         }
 
@@ -276,19 +310,85 @@ namespace FastCharts.Wpf.Controls
                 Model.InteractionState.TooltipAnchorX = null;
                 Model.InteractionState.TooltipSeries.Clear();
                 Model.InteractionState.TooltipText = null;
-                Redraw();
+                RequestRedraw();
                 e.Handled = true;
             }
         }
 
-        private void OnChartKeyDown(object sender, KeyEventArgs e) 
+        private void OnChartKeyDown(object sender, KeyEventArgs e)
         {
             OnSkiaKeyDown(sender, e);
         }
 
-        private void Redraw()
+        private PointerModifiers BuildModifiers()
         {
-            _skia?.InvalidateVisual();
+            return new PointerModifiers
+            {
+                Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
+                Shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift),
+                Alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)
+            };
+        }
+
+        /// <summary>
+        /// Coalesces rapid redraw requests and enforces MaxRefreshRate.
+        /// </summary>
+        private void RequestRedraw(bool forceImmediate = false)
+        {
+            if (_skia == null)
+            {
+                return;
+            }
+            if (forceImmediate)
+            {
+                _redrawScheduled = false;
+                _lastRedrawUtc = DateTime.UtcNow;
+                _skia.InvalidateVisual();
+                return;
+            }
+            var now = DateTime.UtcNow;
+            var elapsed = now - _lastRedrawUtc;
+            if (elapsed >= _minRedrawInterval && !_redrawScheduled)
+            {
+                _redrawScheduled = true;
+                _skia.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    _redrawScheduled = false;
+                    _lastRedrawUtc = DateTime.UtcNow;
+                    _skia.InvalidateVisual();
+                }), DispatcherPriority.Background);
+            }
+            else if (!_redrawScheduled)
+            {
+                var delay = _minRedrawInterval - elapsed;
+                if (delay < TimeSpan.FromMilliseconds(1))
+                {
+                    delay = TimeSpan.FromMilliseconds(1);
+                }
+                _redrawScheduled = true;
+                _ = ScheduleDelayedRedraw(delay);
+            }
+        }
+
+        private async Task ScheduleDelayedRedraw(TimeSpan delay)
+        {
+            try
+            {
+                await Task.Delay(delay).ConfigureAwait(true);
+            }
+            catch
+            {
+                _redrawScheduled = false;
+                return;
+            }
+            if (_skia == null)
+            {
+                _redrawScheduled = false;
+                return;
+            }
+            _lastRedrawUtc = DateTime.UtcNow;
+            _redrawScheduled = false;
+            _skia.InvalidateVisual();
         }
 
         private bool RouteToBehaviors(InteractionEvent ev)
@@ -303,7 +403,11 @@ namespace FastCharts.Wpf.Controls
 
         private void UpdateDataCoordsForTooltip(double pixelX, double pixelY)
         {
-            if (_skia == null) 
+            if (_skia == null || Model == null)
+            {
+                return;
+            }
+            if (!ValidationHelper.AreValidCoordinates(pixelX, pixelY))
             {
                 return;
             }
@@ -311,31 +415,25 @@ namespace FastCharts.Wpf.Controls
             double left = m.Left, top = m.Top, right = m.Right, bottom = m.Bottom;
             var plotW = _skia.ActualWidth - (left + right);
             var plotH = _skia.ActualHeight - (top + bottom);
-            if (plotW <= 0 || plotH <= 0) 
+            if (plotW <= 0 || plotH <= 0)
             {
                 return;
             }
-            var px = pixelX - left; 
-            if (px < 0) 
-            {
-                px = 0; 
-            }
-            else if (px > plotW) 
-            {
-                px = plotW;
-            }
-            var py = pixelY - top; 
-            if (py < 0) 
-            {
-                py = 0; 
-            }
-            else if (py > plotH) 
-            {
-                py = plotH;
-            }
+            var px = pixelX - left;
+            if (px < 0) { px = 0; } else if (px > plotW) { px = plotW; }
+            var py = pixelY - top;
+            if (py < 0) { py = 0; } else if (py > plotH) { py = plotH; }
             var xr = Model.XAxis.VisibleRange; var yr = Model.YAxis.VisibleRange;
+            if (!ValidationHelper.IsValidRange(xr) || !ValidationHelper.IsValidRange(yr))
+            {
+                return;
+            }
             var x = xr.Min + (px / plotW) * (xr.Max - xr.Min);
             var y = yr.Max - (py / plotH) * (yr.Max - yr.Min);
+            if (!ValidationHelper.AreValidCoordinates(x, y))
+            {
+                return;
+            }
             Model.InteractionState ??= new InteractionState();
             Model.InteractionState.DataX = x;
             Model.InteractionState.DataY = y;

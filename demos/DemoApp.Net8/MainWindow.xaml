@@ -5,21 +5,111 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:controls="clr-namespace:FastCharts.Wpf.Controls;assembly=FastCharts.Wpf"
         mc:Ignorable="d"
-        Title="FastCharts Demo (.NET 8)" Height="1200" Width="1800">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-        <UniformGrid Rows="3" Columns="4" Margin="16" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <controls:FastChart Margin="8" Model="{Binding Charts[0]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[1]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[2]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[3]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[4]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[5]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[6]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[7]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[8]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[9]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[10]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[11]}" />
-        </UniformGrid>
-    </ScrollViewer>
+        Title="FastCharts ReactiveUI Demo (.NET 8)" Height="1200" Width="1800">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Reactive Controls Panel -->
+        <Border Grid.Row="0" Background="LightGray" Padding="10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="ReactiveUI Demo Controls:" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                
+                <!-- Theme Toggle -->
+                <Button Content="Toggle Theme" Command="{Binding ToggleThemeCommand}" Margin="5"/>
+                <TextBlock Text="{Binding SelectedTheme, StringFormat='Theme: {0}', Mode=OneWay}" VerticalAlignment="Center" Margin="10,0"/>
+                
+                <!-- Interaction Toggle -->
+                <CheckBox Content="Allow Interaction" IsChecked="{Binding AllowInteraction}" VerticalAlignment="Center" Margin="10,0"/>
+                
+                <!-- Chart Selection - Made more prominent -->
+                <Border Background="White" BorderBrush="DarkBlue" BorderThickness="2" CornerRadius="5" Padding="5" Margin="10,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎯 Target Chart:" VerticalAlignment="Center" Margin="0,0,5,0" FontWeight="Bold" Foreground="DarkBlue"/>
+                        <ComboBox ItemsSource="{Binding Charts}" 
+                                  SelectedItem="{Binding SelectedChart}"
+                                  DisplayMemberPath="Title"
+                                  Width="150" Margin="5"
+                                  ToolTip="Select which chart to modify with the buttons below"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Chart Actions - Now clearly labeled as operating on selected chart -->
+                <TextBlock Text="📝 Actions:" VerticalAlignment="Center" Margin="10,0,5,0" FontWeight="Bold"/>
+                <Button Content="➕ Add Random Series" Command="{Binding AddRandomSeriesCommand}" Margin="5"
+                        ToolTip="Add a random data series to the selected chart"/>
+                <Button Content="🔄 Reset View" Command="{Binding ResetViewCommand}" Margin="5"
+                        ToolTip="Reset the zoom/pan of the selected chart"/>
+                
+                <!-- Animation Progress -->
+                <TextBlock Text="Animation:" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                <ProgressBar Value="{Binding AnimationProgress, Mode=OneWay}" Maximum="1" Width="100" Height="20" Margin="5"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Charts Grid -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <UniformGrid Rows="4" Columns="4" Margin="16" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <!-- All charts with reactive binding to individual models -->
+                <controls:FastChart Margin="8" Model="{Binding Charts[0], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[1], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[2], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[3], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[4], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[5], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[6], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[7], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[8], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[9], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[10], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[11], Mode=OneWay}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[12], Mode=OneWay}" />
+                <!-- New reactive realtime chart -->
+                <controls:FastChart Margin="8" Model="{Binding Charts[13], Mode=OneWay}" />
+            </UniformGrid>
+        </ScrollViewer>
+        
+        <!-- Status Bar with Reactive Info -->
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock>
+                    <Run Text="🎯 Selected Chart: "/>
+                    <Run Text="{Binding SelectedChart.Title, Mode=OneWay}" FontWeight="Bold" Foreground="DarkBlue"/>
+                    <Run Text=" ("/>
+                    <Run Text="{Binding SelectedChart.Series.Count, Mode=OneWay}" FontWeight="Bold"/>
+                    <Run Text=" series)"/>
+                </TextBlock>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock>
+                    <Run Text="Theme: "/>
+                    <Run Text="{Binding SelectedTheme, Mode=OneWay}" FontWeight="Bold"/>
+                </TextBlock>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock>
+                    <Run Text="Interaction: "/>
+                    <Run Text="{Binding AllowInteraction, Mode=OneWay}" FontWeight="Bold"/>
+                </TextBlock>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock>
+                    <Run Text="Animation Progress: "/>
+                    <Run Text="{Binding AnimationProgress, StringFormat=P1, Mode=OneWay}" FontWeight="Bold"/>
+                </TextBlock>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock Text="💡 Use the Target Chart dropdown to select which chart to modify" 
+                           FontStyle="Italic" Foreground="DarkGreen"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
 </Window>

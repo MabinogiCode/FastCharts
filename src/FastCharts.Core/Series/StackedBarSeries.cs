@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Primitives;
+using FastCharts.Core.Abstractions;
 
 namespace FastCharts.Core.Series;
 
-public sealed class StackedBarSeries : SeriesBase
+public sealed class StackedBarSeries : SeriesBase, ISeriesRangeProvider
 {
     public IList<StackedBarPoint> Data { get; }
     public double? Width { get; set; }
@@ -76,7 +77,6 @@ public sealed class StackedBarSeries : SeriesBase
         }
         var minY = Baseline;
         var maxY = Baseline;
-        
         var ranges = Data.Select(p =>
         {
             var pos = 0.0;
@@ -100,7 +100,6 @@ public sealed class StackedBarSeries : SeriesBase
             var bot = System.Math.Min(Baseline, Baseline + neg);
             return new { Top = top, Bot = bot };
         }).ToList();
-
         foreach (var range in ranges)
         {
             if (range.Top > maxY)
@@ -112,7 +111,18 @@ public sealed class StackedBarSeries : SeriesBase
                 minY = range.Bot;
             }
         }
-        
         return new FRange(minY, maxY);
+    }
+    bool ISeriesRangeProvider.TryGetRanges(out FRange xRange, out FRange yRange)
+    {
+        if (IsEmpty)
+        {
+            xRange = default;
+            yRange = default;
+            return false;
+        }
+        xRange = GetXRange();
+        yRange = GetYRange();
+        return true;
     }
 }

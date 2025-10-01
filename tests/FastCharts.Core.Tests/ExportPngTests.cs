@@ -1,10 +1,7 @@
-using System.IO;
-
-using FastCharts.Core;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 using FastCharts.Rendering.Skia;
-
+using System.IO;
 using Xunit;
 
 namespace FastCharts.Core.Tests

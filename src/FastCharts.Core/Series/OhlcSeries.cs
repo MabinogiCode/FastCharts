@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using FastCharts.Core.Primitives;
 using System.Linq;
+using FastCharts.Core.Abstractions;
 
 namespace FastCharts.Core.Series;
 
-public sealed class OhlcSeries : SeriesBase
+public sealed class OhlcSeries : SeriesBase, ISeriesRangeProvider
 {
     public IList<OhlcPoint> Data { get; }
     public double? Width { get; set; }
@@ -64,5 +65,18 @@ public sealed class OhlcSeries : SeriesBase
         var minY = Data.Min(p => p.Low);
         var maxY = Data.Max(p => p.High);
         return new FRange(minY, maxY);
+    }
+
+    bool ISeriesRangeProvider.TryGetRanges(out FRange xRange, out FRange yRange)
+    {
+        if (IsEmpty)
+        {
+            xRange = default;
+            yRange = default;
+            return false;
+        }
+        xRange = GetXRange();
+        yRange = GetYRange();
+        return true;
     }
 }
