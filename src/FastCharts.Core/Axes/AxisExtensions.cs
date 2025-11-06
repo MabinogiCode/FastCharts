@@ -30,37 +30,37 @@ public static class AxisExtensions
         switch (axis)
         {
             case DateTimeAxis dta:
-            {
-                dta.SetVisibleRange(min, max);
-                break;
-            }
-            case NumericAxis na:
-            {
-                na.SetVisibleRange(min, max);
-                break;
-            }
-            case AxisBase ab:
-            {
-                ab.VisibleRange = new FRange(min, max);
-                break;
-            }
-            default:
-            {
-                // Unknown axis type - attempt reflection fallback (avoid failure)
-                var prop = axis.GetType().GetProperty("VisibleRange");
-                if (prop != null && prop.CanWrite)
                 {
-                    try
-                    {
-                        prop.SetValue(axis, new FRange(min, max));
-                    }
-                    catch
-                    {
-                        // swallow
-                    }
+                    dta.SetVisibleRange(min, max);
+                    break;
                 }
-                break;
-            }
+            case NumericAxis na:
+                {
+                    na.SetVisibleRange(min, max);
+                    break;
+                }
+            case AxisBase ab:
+                {
+                    ab.VisibleRange = new FRange(min, max);
+                    break;
+                }
+            default:
+                {
+                    // Unknown axis type - attempt reflection fallback (avoid failure)
+                    var prop = axis.GetType().GetProperty("VisibleRange");
+                    if (prop != null && prop.CanWrite)
+                    {
+                        try
+                        {
+                            prop.SetValue(axis, new FRange(min, max));
+                        }
+                        catch
+                        {
+                            // swallow
+                        }
+                    }
+                    break;
+                }
         }
     }
 }

@@ -106,25 +106,25 @@ namespace FastCharts.Core.Tests
             var isValidRange = ValidationHelper.IsValidRange(0.0, 100.0);
             var areValidCoords = ValidationHelper.AreValidCoordinates(10.0, 20.0);
             var isValidZoom = ValidationHelper.IsValidZoomFactor(1.5);
-            
+
             // Assert basic functionality works
             isFinite.Should().BeTrue();
             isValidRange.Should().BeTrue();
             areValidCoords.Should().BeTrue();
             isValidZoom.Should().BeTrue();
-            
+
             // ? ALTERNATIVE: Test that type has static characteristics
             var type = typeof(ValidationHelper);
-            
+
             // A static class should have no public constructors
             var publicConstructors = type.GetConstructors(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             publicConstructors.Should().BeEmpty("because static classes have no public instance constructors");
-            
+
             // All public methods should be static
             var publicMethods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             var methodsFromObject = publicMethods.Where(m => m.DeclaringType == typeof(object)).Count();
             var totalMethods = publicMethods.Length;
-            
+
             // Static classes only have methods inherited from Object (GetType, ToString, etc.)
             totalMethods.Should().Be(methodsFromObject, "because static classes should not have public instance methods except from Object");
         }
@@ -133,13 +133,13 @@ namespace FastCharts.Core.Tests
         public void IsValidRange_WithEdgeCases_HandlesCorrectly()
         {
             // Arrange & Act & Assert
-            
+
             // Very small differences
             ValidationHelper.IsValidRange(0.0, double.Epsilon).Should().BeTrue();
-            
+
             // Very large ranges
             ValidationHelper.IsValidRange(double.MinValue / 2, double.MaxValue / 2).Should().BeTrue();
-            
+
             // Mixed finite/infinite values
             ValidationHelper.IsValidRange(0.0, double.PositiveInfinity).Should().BeFalse();
             ValidationHelper.IsValidRange(double.NegativeInfinity, 0.0).Should().BeFalse();
@@ -149,13 +149,13 @@ namespace FastCharts.Core.Tests
         public void AreValidCoordinates_WithEdgeCases_HandlesCorrectly()
         {
             // Arrange & Act & Assert
-            
+
             // Very small values
             ValidationHelper.AreValidCoordinates(double.Epsilon, -double.Epsilon).Should().BeTrue();
-            
+
             // Very large values
             ValidationHelper.AreValidCoordinates(double.MaxValue / 2, double.MinValue / 2).Should().BeTrue();
-            
+
             // Edge precision values
             ValidationHelper.AreValidCoordinates(1e-300, 1e300).Should().BeTrue();
         }

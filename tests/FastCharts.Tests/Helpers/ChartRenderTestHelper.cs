@@ -41,12 +41,12 @@ internal static class ChartRenderTestHelper
         var width = Math.Min(bitmapA.Width, bitmapB.Width);
         var height = Math.Min(bitmapA.Height, bitmapB.Height);
         var differenceCount = 0;
-        
+
         for (var y = 0; y < height; y++)
         {
             for (var x = 0; x < width; x++)
             {
-                if (bitmapA.GetPixel(x, y) != bitmapB.GetPixel(x, y)) 
+                if (bitmapA.GetPixel(x, y) != bitmapB.GetPixel(x, y))
                 {
                     differenceCount++;
                 }

@@ -25,7 +25,7 @@ internal static class SkiaTestHelper
         for (var dy = -radius; dy <= radius; dy++)
         {
             var y = center.Y + dy;
-            if (y < 0 || y >= bitmap.Height) 
+            if (y < 0 || y >= bitmap.Height)
             {
                 continue;
             }
@@ -33,13 +33,13 @@ internal static class SkiaTestHelper
             for (var dx = -radius; dx <= radius; dx++)
             {
                 var x = center.X + dx;
-                if (x < 0 || x >= bitmap.Width) 
+                if (x < 0 || x >= bitmap.Width)
                 {
                     continue;
                 }
 
                 var color = bitmap.GetPixel(x, y);
-                if (!SameColor(color, forbiddenColor)) 
+                if (!SameColor(color, forbiddenColor))
                 {
                     return true;
                 }

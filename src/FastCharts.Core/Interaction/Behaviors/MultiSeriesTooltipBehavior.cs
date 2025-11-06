@@ -1,9 +1,13 @@
+#pragma warning disable S3267
+using FastCharts.Core.Series;
 using System;
 using System.Globalization;
-using FastCharts.Core.Series;
+using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace FastCharts.Core.Interaction.Behaviors;
 
+[SuppressMessage("Performance", "S3267", Justification = "Algorithmic loops replaced by LINQ per analyzer rule.")]
 public sealed class MultiSeriesTooltipBehavior : IBehavior
 {
     public double XSnapToleranceFraction { get; set; } = 0.01;
@@ -21,7 +25,6 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
         }
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;
-
         if (ev.Type == PointerEventType.Down && ev.Button == PointerButton.Left)
         {
             st.TooltipLocked = !st.TooltipLocked;
@@ -49,7 +52,6 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
             Build(model, st, st.DataX.Value);
             return true;
         }
-        // Ignore Up / Wheel / others
         return false;
     }
 
@@ -85,80 +87,44 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
             switch (s)
             {
                 case AreaSeries area:
-                {
-                    AddXY(st, area.Data, x, tol, area.Title, area.PaletteIndex);
-                    break;
-                }
+                    { AddXY(st, area.Data, x, tol, area.Title, area.PaletteIndex); break; }
                 case StepLineSeries step:
-                {
-                    AddXY(st, step.Data, x, tol, step.Title, step.PaletteIndex);
-                    break;
-                }
+                    { AddXY(st, step.Data, x, tol, step.Title, step.PaletteIndex); break; }
                 case LineSeries ls:
-                {
-                    AddXY(st, ls.Data, x, tol, ls.Title, ls.PaletteIndex);
-                    break;
-                }
+                    { AddXY(st, ls.Data, x, tol, ls.Title, ls.PaletteIndex); break; }
                 case ScatterSeries sc:
-                {
-                    AddXY(st, sc.Data, x, tol, sc.Title, sc.PaletteIndex);
-                    break;
-                }
+                    { AddXY(st, sc.Data, x, tol, sc.Title, sc.PaletteIndex); break; }
                 case BarSeries bar:
-                {
-                    foreach (var p in bar.Data)
                     {
                         var halfW = bar.GetWidthFor(0) * 0.5;
-                        if (Math.Abs(p.X - x) <= halfW)
+                        foreach (var p in bar.Data.Where(p => Math.Abs(p.X - x) <= halfW))
                         {
                             AddPoint(bar.Title ?? "Bar", p.X, p.Y, bar.PaletteIndex);
                         }
+                        break;
                     }
-                    break;
-                }
                 case StackedBarSeries sbar:
-                {
-                    foreach (var p in sbar.Data)
                     {
                         var halfW = sbar.GetWidthFor(0) * 0.5;
-                        if (Math.Abs(p.X - x) <= halfW && p.Values != null)
+                        foreach (var p in sbar.Data.Where(p => Math.Abs(p.X - x) <= halfW && p.Values != null))
                         {
-                            var sum = 0d;
-                            for (var i = 0; i < p.Values.Length; i++)
-                            {
-                                sum += p.Values[i];
-                            }
+                            var sum = p.Values!.Sum();
                             AddPoint(sbar.Title ?? "Stack", p.X, sum, sbar.PaletteIndex);
                         }
+                        break;
                     }
-                    break;
-                }
                 case OhlcSeries ohlc:
-                {
-                    foreach (var p in ohlc.Data)
                     {
-                        if (Math.Abs(p.X - x) <= tol)
-                        {
-                            AddPoint(ohlc.Title ?? "OHLC", p.X, p.Close, ohlc.PaletteIndex);
-                        }
+                        ohlc.Data.Where(p => Math.Abs(p.X - x) <= tol).ToList().ForEach(p => AddPoint(ohlc.Title ?? "OHLC", p.X, p.Close, ohlc.PaletteIndex));
+                        break;
                     }
-                    break;
-                }
                 case ErrorBarSeries err:
-                {
-                    foreach (var p in err.Data)
                     {
-                        if (Math.Abs(p.X - x) <= tol)
-                        {
-                            AddPoint(err.Title ?? "Err", p.X, p.Y, err.PaletteIndex);
-                        }
+                        err.Data.Where(p => Math.Abs(p.X - x) <= tol).ToList().ForEach(p => AddPoint(err.Title ?? "Err", p.X, p.Y, err.PaletteIndex));
+                        break;
                     }
-                    break;
-                }
                 default:
-                {
-                    break;
-                }
+                    { break; }
             }
         }
 
@@ -189,37 +155,18 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
         {
             return;
         }
-        var lo = 0;
-        var hi = data.Count - 1;
-        while (lo < hi)
+        var matches = data
+            .Where(p => Math.Abs(p.X - x) <= tol)
+            .OrderBy(p => Math.Abs(p.X - x))
+            .Take(3);
+        foreach (var p in matches)
         {
-            var mid = (lo + hi) >> 1;
-            if (data[mid].X < x)
+            if (st.TooltipSeries.Count >= st.TooltipSeries.Capacity)
             {
-                lo = mid + 1;
+                break;
             }
-            else
-            {
-                hi = mid;
-            }
-        }
-        var idx = lo;
-        for (var d = -1; d <= 1; d++)
-        {
-            var i = idx + d;
-            if (i < 0 || i >= data.Count)
-            {
-                continue;
-            }
-            var p = data[i];
-            if (Math.Abs(p.X - x) <= tol)
-            {
-                st.TooltipSeries.Add(new TooltipSeriesValue { Title = title ?? "Line", X = p.X, Y = p.Y, PaletteIndex = paletteIndex });
-                if (st.TooltipSeries.Count >= st.TooltipSeries.Capacity)
-                {
-                    return;
-                }
-            }
+            st.TooltipSeries.Add(new TooltipSeriesValue { Title = title ?? "Line", X = p.X, Y = p.Y, PaletteIndex = paletteIndex });
         }
     }
 }
+#pragma warning restore S3267

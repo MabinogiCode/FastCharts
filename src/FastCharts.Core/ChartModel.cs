@@ -13,6 +13,7 @@ using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 using FastCharts.Core.Themes.BuiltIn;
 using FastCharts.Core.Utilities;
+using FastCharts.Core.Services;
 
 namespace FastCharts.Core;
 
@@ -24,6 +25,7 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
 {
     private readonly List<AxisBase> _axesList;
     private readonly ReadOnlyCollection<AxisBase> _axesView;
+    private readonly IDataRangeCalculatorService _dataRangeCalculator;
 
     private ITheme _theme = new LightTheme();
     private IAxis<double> _xAxis;
@@ -34,8 +36,13 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     private string _title = "Chart";
     private bool _disposed;
 
-    public ChartModel()
+    public ChartModel() : this(new DataRangeCalculatorService())
     {
+    }
+
+    public ChartModel(IDataRangeCalculatorService dataRangeCalculator)
+    {
+        _dataRangeCalculator = dataRangeCalculator ?? throw new ArgumentNullException(nameof(dataRangeCalculator));
         _xAxis = new NumericAxis();
         _yAxis = new NumericAxis();
         Viewport = new Interactivity.Viewport(new FRange(0, 1), new FRange(0, 1));
@@ -154,56 +161,33 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
 
     public void AutoFitDataRange()
     {
-        if (Series.Count == 0)
+        var result = _dataRangeCalculator.CalculateDataRanges(Series);
+        ApplyDataRangeResult(result);
+    }
+
+    private void ApplyDataRangeResult(DataRangeCalculationResult result)
+    {
+        if (!result.HasData)
         {
             return;
         }
-        var anyVisible = false;
-        foreach (var s in Series)
+
+        if (result.HasX)
         {
-            if (s != null && s.IsVisible && !s.IsEmpty)
-            {
-                anyVisible = true;
-                break;
-            }
+            XAxis.DataRange = result.XRange;
         }
-        if (!anyVisible)
+
+        if (result.HasPrimary)
         {
-            return;
+            YAxis.DataRange = result.PrimaryYRange;
         }
-        var agg = DataRangeAggregator.Aggregate(Series);
-        if (!agg.HasX)
-        {
-            return;
-        }
-        var xMin = agg.XMin; var xMax = agg.XMax;
-        if (DoubleUtils.AreEqual(xMin, xMax))
-        {
-            xMin -= 0.5;
-            xMax += 0.5;
-        }
-        XAxis.DataRange = new FRange(xMin, xMax);
-        if (agg.HasPrimary)
-        {
-            var yMin = agg.PrimaryYMin; var yMax = agg.PrimaryYMax;
-            if (DoubleUtils.AreEqual(yMin, yMax))
-            {
-                yMin -= 0.5;
-                yMax += 0.5;
-            }
-            YAxis.DataRange = new FRange(yMin, yMax);
-        }
-        if (agg.HasSecondary)
+
+        if (result.HasSecondary)
         {
             EnsureSecondaryYAxis();
-            var y2Min = agg.SecondaryYMin; var y2Max = agg.SecondaryYMax;
-            if (DoubleUtils.AreEqual(y2Min, y2Max))
-            {
-                y2Min -= 0.5;
-                y2Max += 0.5;
-            }
-            YAxisSecondary!.DataRange = new FRange(y2Min, y2Max);
+            YAxisSecondary!.DataRange = result.SecondaryYRange;
         }
+
         Viewport.SetVisible(XAxis.DataRange, YAxis.DataRange);
     }
 

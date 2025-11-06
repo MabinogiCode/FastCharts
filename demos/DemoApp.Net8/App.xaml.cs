@@ -12,7 +12,7 @@ public partial class App : Application
         // ? CRITICAL: Initialize ReactiveUI with proper WPF scheduler
         // This ensures RxApp.MainThreadScheduler uses the WPF Dispatcher
         RxApp.MainThreadScheduler = new DispatcherScheduler(Dispatcher.CurrentDispatcher);
-        
+
         base.OnStartup(e);
     }
 }

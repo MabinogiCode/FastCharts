@@ -26,7 +26,7 @@ public class ChartRenderTestHelperTests
         bitmap.Width.Should().Be(420); // Default width
         bitmap.Height.Should().Be(300); // Default height
         returnedModel.Should().BeSameAs(model);
-        
+
         bitmap.Dispose();
     }
 
@@ -47,7 +47,7 @@ public class ChartRenderTestHelperTests
         bitmap.Width.Should().Be(width);
         bitmap.Height.Should().Be(height);
         returnedModel.Should().BeSameAs(model);
-        
+
         bitmap.Dispose();
     }
 
@@ -69,7 +69,7 @@ public class ChartRenderTestHelperTests
 
         // Assert
         bitmap.Should().NotBeNull();
-        
+
         // Verify bitmap contains some non-transparent pixels (indicating content was rendered)
         var hasContent = false;
         for (var y = 0; y < bitmap.Height && !hasContent; y++)
@@ -84,7 +84,7 @@ public class ChartRenderTestHelperTests
             }
         }
         hasContent.Should().BeTrue("Rendered bitmap should contain visible content");
-        
+
         bitmap.Dispose();
     }
 
@@ -94,7 +94,7 @@ public class ChartRenderTestHelperTests
         // Arrange
         using var bitmap1 = new SKBitmap(10, 10);
         using var bitmap2 = new SKBitmap(10, 10);
-        
+
         // Fill both with same color
         for (var y = 0; y < 10; y++)
         {
@@ -118,7 +118,7 @@ public class ChartRenderTestHelperTests
         // Arrange
         using var bitmap1 = new SKBitmap(10, 10);
         using var bitmap2 = new SKBitmap(10, 10);
-        
+
         // Fill bitmap1 with red, bitmap2 with blue
         for (var y = 0; y < 10; y++)
         {
@@ -142,7 +142,7 @@ public class ChartRenderTestHelperTests
         // Arrange
         using var bitmap1 = new SKBitmap(10, 10); // 100 pixels
         using var bitmap2 = new SKBitmap(5, 8);   // 40 pixels
-        
+
         // Fill with different colors
         for (var y = 0; y < bitmap1.Height; y++)
         {
@@ -151,7 +151,7 @@ public class ChartRenderTestHelperTests
                 bitmap1.SetPixel(x, y, SKColors.Red);
             }
         }
-        
+
         for (var y = 0; y < bitmap2.Height; y++)
         {
             for (var x = 0; x < bitmap2.Width; x++)
@@ -173,7 +173,7 @@ public class ChartRenderTestHelperTests
         // Arrange
         using var bitmap1 = new SKBitmap(10, 10);
         using var bitmap2 = new SKBitmap(10, 10);
-        
+
         // Fill both with red initially
         for (var y = 0; y < 10; y++)
         {
@@ -183,7 +183,7 @@ public class ChartRenderTestHelperTests
                 bitmap2.SetPixel(x, y, SKColors.Red);
             }
         }
-        
+
         // Change a few pixels in bitmap2
         bitmap2.SetPixel(0, 0, SKColors.Blue);
         bitmap2.SetPixel(5, 5, SKColors.Green);
@@ -250,7 +250,7 @@ public class ChartRenderTestHelperTests
         // Arrange
         var emptyModel = new ChartModel();
         ChartRenderTestHelper.SetVisibleRange(emptyModel, 0, 10, 0, 10);
-        
+
         var modelWithData = new ChartModel();
         ChartRenderTestHelper.SetVisibleRange(modelWithData, 0, 10, 0, 10);
         var points = Enumerable.Range(0, 10)
@@ -265,7 +265,7 @@ public class ChartRenderTestHelperTests
 
         // Assert
         differences.Should().BeGreaterThan(0, "Charts with and without data should render differently");
-        
+
         emptyBitmap.Dispose();
         dataBitmap.Dispose();
     }
@@ -282,7 +282,7 @@ public class ChartRenderTestHelperTests
         // Act & Assert
         var renderAction = () => ChartRenderTestHelper.Render(model, 200, 150);
         renderAction.Should().NotThrow();
-        
+
         var (bitmap, _) = renderAction.Invoke();
         bitmap.Should().NotBeNull();
         bitmap.Dispose();

@@ -18,7 +18,7 @@ namespace FastCharts.Rendering.Skia.Rendering
         {
             var vr = axis.VisibleRange; // FRange (double)
             double span = vr.Max - vr.Min;
-            if (span == 0) 
+            if (span == 0)
             {
                 return plotRect.Left;
             }
@@ -33,7 +33,7 @@ namespace FastCharts.Rendering.Skia.Rendering
         {
             var vr = axis.VisibleRange;
             double span = vr.Max - vr.Min;
-            if (span == 0) 
+            if (span == 0)
             {
                 return plotRect.Bottom;
             }
@@ -46,16 +46,16 @@ namespace FastCharts.Rendering.Skia.Rendering
         public static double ToDataX(float px, IAxis<double> axis, SKRect plotRect)
         {
             var vr = axis.VisibleRange;
-            if (plotRect.Width <= 0) 
+            if (plotRect.Width <= 0)
             {
                 return vr.Min;
             }
             double t = (px - plotRect.Left) / plotRect.Width;
-            if (t < 0) 
+            if (t < 0)
             {
-                t = 0; 
+                t = 0;
             }
-            else if (t > 1) 
+            else if (t > 1)
             {
                 t = 1;
             }
@@ -66,16 +66,16 @@ namespace FastCharts.Rendering.Skia.Rendering
         public static double ToDataY(float py, IAxis<double> axis, SKRect plotRect)
         {
             var vr = axis.VisibleRange;
-            if (plotRect.Height <= 0) 
+            if (plotRect.Height <= 0)
             {
                 return vr.Max;
             }
             double t = (py - plotRect.Top) / plotRect.Height;
-            if (t < 0) 
+            if (t < 0)
             {
-                t = 0; 
+                t = 0;
             }
-            else if (t > 1) 
+            else if (t > 1)
             {
                 t = 1;
             }

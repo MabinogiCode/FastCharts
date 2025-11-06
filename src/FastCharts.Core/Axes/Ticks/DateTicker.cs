@@ -100,7 +100,7 @@ public sealed class DateTicker : ITicker<double>
         {
             subdiv = 2;
         }
-        
+
         var minorStep = stepDays / subdiv;
         var majorSet = new HashSet<double>(majorTicks);
         var min = range.Min - (stepDays * 0.25);

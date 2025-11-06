@@ -41,7 +41,7 @@ public sealed class NiceTicker : ITicker<double>
         }
         return list;
     }
-    
+
     public IReadOnlyList<double> GetMinorTicks(FRange range, IReadOnlyList<double> majorTicks)
     {
         var minors = new List<double>();

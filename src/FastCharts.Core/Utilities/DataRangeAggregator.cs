@@ -10,32 +10,7 @@ namespace FastCharts.Core.Utilities
     /// </summary>
     internal static class DataRangeAggregator
     {
-        internal readonly struct Result
-        {
-            public bool HasX { get; }
-            public bool HasPrimary { get; }
-            public bool HasSecondary { get; }
-            public double XMin { get; }
-            public double XMax { get; }
-            public double PrimaryYMin { get; }
-            public double PrimaryYMax { get; }
-            public double SecondaryYMin { get; }
-            public double SecondaryYMax { get; }
-            public Result(bool hasX, bool hasPrimary, bool hasSecondary, double xMin, double xMax, double yMin, double yMax, double y2Min, double y2Max)
-            {
-                HasX = hasX;
-                HasPrimary = hasPrimary;
-                HasSecondary = hasSecondary;
-                XMin = xMin;
-                XMax = xMax;
-                PrimaryYMin = yMin;
-                PrimaryYMax = yMax;
-                SecondaryYMin = y2Min;
-                SecondaryYMax = y2Max;
-            }
-        }
-
-        public static Result Aggregate(IEnumerable<SeriesBase> series)
+        public static DataRangeAggregatorResult Aggregate(IEnumerable<SeriesBase> series)
         {
             var hasX = false; double xMin = 0, xMax = 0;
             var hasPrimary = false; double pyMin = 0, pyMax = 0;
@@ -112,7 +87,7 @@ namespace FastCharts.Core.Utilities
                 }
             }
 
-            return new Result(hasX, hasPrimary, hasSecondary, xMin, xMax, pyMin, pyMax, syMin, syMax);
+            return new DataRangeAggregatorResult(hasX, hasPrimary, hasSecondary, xMin, xMax, pyMin, pyMax, syMin, syMax);
         }
     }
 }
