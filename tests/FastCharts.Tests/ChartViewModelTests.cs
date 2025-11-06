@@ -74,21 +74,20 @@ namespace FastCharts.Tests
         {
             // Arrange
             var model = new ChartModel();
-            model.AddSeries(new LineSeries(new[] 
-            { 
-                new PointD(0, 0), 
-                new PointD(10, 20) 
+            // Capture original range BEFORE adding series (AddSeries triggers auto-fit internally)
+            var originalXRange = model.XAxis.DataRange;
+            model.AddSeries(new LineSeries(new[]
+            {
+                new PointD(0, 0),
+                new PointD(10, 20)
             }));
             var viewModel = new ChartViewModel(model);
-
-            var originalXRange = model.XAxis.DataRange;
 
             // Act
             viewModel.AutoFitCommand.Execute(null);
 
             // Assert
-            // Le range devrait être recalculé
-            model.XAxis.DataRange.Should().NotBe(originalXRange);
+            model.XAxis.DataRange.Should().NotBe(originalXRange); // Range should change from initial default
             model.XAxis.DataRange.Min.Should().Be(0);
             model.XAxis.DataRange.Max.Should().Be(10);
         }
