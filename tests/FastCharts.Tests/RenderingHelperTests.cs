@@ -58,25 +58,25 @@ namespace FastCharts.Tests
             var margin = RenderingHelper.CalculateEffectiveRightMargin(10.0, true);
             var (width, height) = RenderingHelper.EnsureValidPlotDimensions(100, 200);
             var constant = RenderingHelper.DefaultSecondaryAxisMargin;
-            
+
             // Assert basic functionality works
             margin.Should().Be(48.0);
             width.Should().Be(100);
             height.Should().Be(200);
             constant.Should().Be(48.0);
-            
+
             // ? ALTERNATIVE: Test that type has static characteristics
             var type = typeof(RenderingHelper);
-            
+
             // A static class should have no public constructors
             var publicConstructors = type.GetConstructors(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             publicConstructors.Should().BeEmpty("because static classes have no public instance constructors");
-            
+
             // All public methods should be static
             var publicMethods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             var methodsFromObject = publicMethods.Where(m => m.DeclaringType == typeof(object)).Count();
             var totalMethods = publicMethods.Length;
-            
+
             // Static classes only have methods inherited from Object (GetType, ToString, etc.)
             totalMethods.Should().Be(methodsFromObject, "because static classes should not have public instance methods except from Object");
         }

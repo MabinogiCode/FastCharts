@@ -36,26 +36,26 @@ internal sealed class ScatterLayer : ISeriesSubLayer
                 switch (ss.MarkerShape)
                 {
                     case MarkerShape.Circle:
-                    {
-                        ctx.Canvas.DrawCircle(px, py, half, mp);
-                        break;
-                    }
+                        {
+                            ctx.Canvas.DrawCircle(px, py, half, mp);
+                            break;
+                        }
                     case MarkerShape.Square:
-                    {
-                        ctx.Canvas.DrawRect(new SKRect(px - half, py - half, px + half, py + half), mp);
-                        break;
-                    }
+                        {
+                            ctx.Canvas.DrawRect(new SKRect(px - half, py - half, px + half, py + half), mp);
+                            break;
+                        }
                     case MarkerShape.Triangle:
                     default:
-                    {
-                        using var path = new SKPath();
-                        path.MoveTo(px, py - half);
-                        path.LineTo(px - half, py + half);
-                        path.LineTo(px + half, py + half);
-                        path.Close();
-                        ctx.Canvas.DrawPath(path, mp);
-                        break;
-                    }
+                        {
+                            using var path = new SKPath();
+                            path.MoveTo(px, py - half);
+                            path.LineTo(px - half, py + half);
+                            path.LineTo(px + half, py + half);
+                            path.Close();
+                            ctx.Canvas.DrawPath(path, mp);
+                            break;
+                        }
                 }
             }
             ctx.Canvas.Restore();

@@ -93,7 +93,7 @@ public class SkiaTestHelperTests
     {
         // Arrange
         using var bitmap = new SKBitmap(10, 10);
-        
+
         // Fill most of bitmap with red
         for (var y = 0; y < 10; y++)
         {
@@ -102,10 +102,10 @@ public class SkiaTestHelperTests
                 bitmap.SetPixel(x, y, SKColors.Red);
             }
         }
-        
+
         // Set center pixel to blue (different color)
         bitmap.SetPixel(5, 5, SKColors.Blue);
-        
+
         var center = new Point(5, 5);
         var forbiddenColor = SKColors.Red;
         var radius = 2;
@@ -122,7 +122,7 @@ public class SkiaTestHelperTests
     {
         // Arrange
         using var bitmap = new SKBitmap(10, 10);
-        
+
         // Fill entire bitmap with red
         for (var y = 0; y < 10; y++)
         {
@@ -131,7 +131,7 @@ public class SkiaTestHelperTests
                 bitmap.SetPixel(x, y, SKColors.Red);
             }
         }
-        
+
         var center = new Point(5, 5);
         var forbiddenColor = SKColors.Red;
         var radius = 2;
@@ -148,7 +148,7 @@ public class SkiaTestHelperTests
     {
         // Arrange
         using var bitmap = new SKBitmap(5, 5);
-        
+
         // Fill bitmap with red
         for (var y = 0; y < 5; y++)
         {
@@ -157,7 +157,7 @@ public class SkiaTestHelperTests
                 bitmap.SetPixel(x, y, SKColors.Red);
             }
         }
-        
+
         // Test probing near edge - should not crash
         var center = new Point(0, 0); // Top-left corner
         var forbiddenColor = SKColors.Red;
@@ -173,7 +173,7 @@ public class SkiaTestHelperTests
     {
         // Arrange
         using var bitmap = new SKBitmap(10, 10);
-        
+
         // Fill bitmap with red
         for (var y = 0; y < 10; y++)
         {
@@ -182,10 +182,10 @@ public class SkiaTestHelperTests
                 bitmap.SetPixel(x, y, SKColors.Red);
             }
         }
-        
+
         // Set a pixel outside the probe radius to blue
         bitmap.SetPixel(8, 5, SKColors.Blue);
-        
+
         var center = new Point(5, 5);
         var forbiddenColor = SKColors.Red;
         var radius = 2; // Should not reach (8,5)
@@ -202,7 +202,7 @@ public class SkiaTestHelperTests
     {
         // Arrange
         using var bitmap = new SKBitmap(10, 10);
-        
+
         // Fill bitmap with slightly different reds (within tolerance)
         for (var y = 0; y < 10; y++)
         {
@@ -211,7 +211,7 @@ public class SkiaTestHelperTests
                 bitmap.SetPixel(x, y, new SKColor(250, 0, 0, 255)); // Slightly different red
             }
         }
-        
+
         var center = new Point(5, 5);
         var forbiddenColor = new SKColor(255, 0, 0, 255); // Pure red
         var radius = 2;
@@ -231,7 +231,7 @@ public class SkiaTestHelperTests
     {
         // Arrange
         using var bitmap = new SKBitmap(15, 15);
-        
+
         // Fill bitmap with red
         for (var y = 0; y < 15; y++)
         {
@@ -240,7 +240,7 @@ public class SkiaTestHelperTests
                 bitmap.SetPixel(x, y, SKColors.Red);
             }
         }
-        
+
         var center = new Point(7, 7);
         var forbiddenColor = SKColors.Red;
 

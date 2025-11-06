@@ -17,8 +17,8 @@ public class NumericTickerTests
         var t = new NumericTicker();
         var ticks = t.GetTicks(new FRange(0, 10), approxStep: 2);
         ticks.Should().NotBeEmpty();
-        ticks[0].Should().BeLessOrEqualTo(0);
-        ticks[ticks.Count - 1].Should().BeGreaterOrEqualTo(10);
+        ticks[0].Should().BeLessThanOrEqualTo(0);
+        ticks[ticks.Count - 1].Should().BeGreaterThanOrEqualTo(10);
         ticks.Should().OnlyHaveUniqueItems();
         for (var i = 1; i < ticks.Count; i++)
         {

@@ -10,8 +10,8 @@
     <ProjectReference Include="..\..\src\FastCharts.Wpf\FastCharts.Wpf.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="DynamicData" Version="8.*" />
-    <!-- StyleCop Analyzers for strict SA1124 enforcement -->
+    <!-- Updated to match FastCharts.Wpf dependency to avoid NU1605 downgrade warning -->
+    <PackageReference Include="DynamicData" Version="9.4.1" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
   </ItemGroup>
 </Project>

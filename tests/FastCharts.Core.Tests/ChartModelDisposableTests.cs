@@ -30,14 +30,14 @@ public class ChartModelDisposableTests
     {
         // Arrange
         var chartModel = new ChartModel();
-        
+
         // Hack to test: Replace Legend with a mock to count sync calls
         var originalLegend = chartModel.Legend;
-        
+
         // Add a series to trigger initial sync
         var series = new LineSeries(new[] { new PointD(0, 0) });
         chartModel.AddSeries(series);
-        
+
         // Get initial legend item count
         var initialItemCount = originalLegend.Items?.Count ?? 0;
 
@@ -96,7 +96,7 @@ public class ChartModelDisposableTests
         var chartModel = new ChartModel();
         var disposableBehavior = new DisposableTestBehavior();
         var nonDisposableBehavior = new TestBehavior();
-        
+
         chartModel.Behaviors.Add(disposableBehavior);
         chartModel.Behaviors.Add(nonDisposableBehavior);
 
@@ -118,7 +118,7 @@ public class ChartModelDisposableTests
 
         // Act
         chartModel.Dispose();
-        
+
         // Try to trigger the event handler after disposal
         chartModel.Series.Add(new LineSeries(new[] { new PointD(0, 0) }));
 

@@ -13,16 +13,16 @@ public class DoubleUtilsTests
     {
         var a = 1.0;
         var b = 1.0;
-        
+
         DoubleUtils.AreEqual(a, b).Should().BeTrue();
     }
 
-    [Fact] 
+    [Fact]
     public void AreEqual_WithVeryCloseValues_ShouldReturnTrue()
     {
         var a = 0.1 + 0.2;
         var b = 0.3;
-        
+
         DoubleUtils.AreEqual(a, b).Should().BeTrue();
     }
 
@@ -31,7 +31,7 @@ public class DoubleUtilsTests
     {
         var a = 1.0;
         var b = 2.0;
-        
+
         DoubleUtils.AreEqual(a, b).Should().BeFalse();
     }
 
@@ -39,7 +39,7 @@ public class DoubleUtilsTests
     public void IsZero_WithZero_ShouldReturnTrue()
     {
         var value = 0.0;
-        
+
         DoubleUtils.IsZero(value).Should().BeTrue();
     }
 
@@ -47,7 +47,7 @@ public class DoubleUtilsTests
     public void IsZero_WithVerySmallValue_ShouldReturnTrue()
     {
         var value = 1e-16;
-        
+
         DoubleUtils.IsZero(value).Should().BeTrue();
     }
 
@@ -55,7 +55,7 @@ public class DoubleUtilsTests
     public void IsZero_WithNonZeroValue_ShouldReturnFalse()
     {
         var value = 1.0;
-        
+
         DoubleUtils.IsZero(value).Should().BeFalse();
     }
 
@@ -64,7 +64,7 @@ public class DoubleUtilsTests
     {
         var a = double.NaN;
         var b = double.NaN;
-        
+
         DoubleUtils.AreEqual(a, b).Should().BeTrue();
         DoubleUtils.AreEqual(a, 1.0).Should().BeFalse();
     }
@@ -75,7 +75,7 @@ public class DoubleUtilsTests
         var a = double.PositiveInfinity;
         var b = double.PositiveInfinity;
         var c = double.NegativeInfinity;
-        
+
         DoubleUtils.AreEqual(a, b).Should().BeTrue();
         DoubleUtils.AreEqual(a, c).Should().BeFalse();
     }
@@ -86,7 +86,7 @@ public class DoubleUtilsTests
         var a = 1.0;
         var b = 1.0;
         var c = 2.0;
-        
+
         DoubleUtils.AreNotEqual(a, b).Should().BeFalse();
         DoubleUtils.AreNotEqual(a, c).Should().BeTrue();
     }
@@ -96,7 +96,7 @@ public class DoubleUtilsTests
     {
         var zero = 0.0;
         var nonZero = 1.0;
-        
+
         DoubleUtils.IsNotZero(zero).Should().BeFalse();
         DoubleUtils.IsNotZero(nonZero).Should().BeTrue();
     }
@@ -108,7 +108,7 @@ public class DoubleUtilsTests
         var b = 1.1;
         var largeEpsilon = 0.2;
         var smallEpsilon = 0.05;
-        
+
         DoubleUtils.AreEqual(a, b, largeEpsilon).Should().BeTrue();
         DoubleUtils.AreEqual(a, b, smallEpsilon).Should().BeFalse();
     }

@@ -1,4 +1,5 @@
 using System.Linq;
+using FastCharts.Rendering.Skia.Helpers;
 using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers;
@@ -25,11 +26,12 @@ internal sealed class LegendLayer : IRenderLayer
         const float padding = 6f;
         const float swatch = 12f;
         const float gap = 6f;
-        var lineH = paints.Text.TextSize + 4f;
+        float textSize = paints.TextFont.Size;
+        var lineH = textSize + 4f;
         var maxText = 0f;
         foreach (var item in model.Legend.Items)
         {
-            var w = paints.Text.MeasureText(item.Title ?? string.Empty);
+            var w = paints.TextFont.MeasureText(item.Title ?? string.Empty, paints.Text);
             if (w > maxText)
             {
                 maxText = w;
@@ -45,17 +47,17 @@ internal sealed class LegendLayer : IRenderLayer
         using var bgPaint = new SKPaint { Style = SKPaintStyle.Fill, Color = bg, IsAntialias = true };
         using var bdPaint = new SKPaint { Style = SKPaintStyle.Stroke, Color = bd, StrokeWidth = 1, IsAntialias = true };
         using var swPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
-        using var textMuted = new SKPaint { IsAntialias = true, TextSize = paints.Text.TextSize, Color = new SKColor(labelColor.Red, labelColor.Green, labelColor.Blue, (byte)(labelColor.Alpha * 0.4)) };
+        using var textMuted = new SKPaint { IsAntialias = true, Color = new SKColor(labelColor.Red, labelColor.Green, labelColor.Blue, (byte)(labelColor.Alpha * 0.4)) };
         using var swMuted = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
         c.DrawRect(rect, bgPaint);
         c.DrawRect(rect, bdPaint);
         model.InteractionState ??= new FastCharts.Core.Interaction.InteractionState();
         var hits = model.InteractionState.LegendHits;
         hits.Clear();
-        var y = by + padding + paints.Text.TextSize;
+        var y = by + padding + textSize;
         foreach (var item in model.Legend.Items)
         {
-            var col = SkiaChartRenderer.ResolveSeriesColorStatic(model, item.SeriesReference, palette);
+            var col = SeriesColorResolver.ResolveSeriesColor(model, item.SeriesReference, palette);
             var visible = true;
             var seriesRef = item.SeriesReference;
             var s = model.Series.FirstOrDefault(ss => ReferenceEquals(ss, seriesRef));
@@ -63,12 +65,12 @@ internal sealed class LegendLayer : IRenderLayer
             {
                 visible = s.IsVisible;
             }
-            var sr = new SKRect(bx + padding, y - paints.Text.TextSize + 2, bx + padding + swatch, y - paints.Text.TextSize + 2 + swatch);
+            var sr = new SKRect(bx + padding, y - textSize + 2, bx + padding + swatch, y - textSize + 2 + swatch);
             if (visible)
             {
                 swPaint.Color = new SKColor(col.R, col.G, col.B, col.A);
                 c.DrawRect(sr, swPaint);
-                c.DrawText(item.Title ?? string.Empty, sr.Right + gap, y, paints.Text);
+                c.DrawText(item.Title ?? string.Empty, sr.Right + gap, y, SKTextAlign.Left, paints.TextFont, paints.Text);
             }
             else
             {
@@ -76,9 +78,9 @@ internal sealed class LegendLayer : IRenderLayer
                 c.DrawRect(sr, swMuted);
                 using var outline = new SKPaint { Style = SKPaintStyle.Stroke, Color = new SKColor(120, 120, 120, 160), StrokeWidth = 1, IsAntialias = true };
                 c.DrawRect(sr, outline);
-                c.DrawText(item.Title ?? string.Empty, sr.Right + gap, y, textMuted);
+                c.DrawText(item.Title ?? string.Empty, sr.Right + gap, y, SKTextAlign.Left, paints.TextFont, textMuted);
             }
-            hits.Add(new FastCharts.Core.Interaction.LegendHit { X = bx, Y = y - paints.Text.TextSize, Width = boxW, Height = lineH, SeriesReference = item.SeriesReference });
+            hits.Add(new FastCharts.Core.Interaction.LegendHit { X = bx, Y = y - textSize, Width = boxW, Height = lineH, SeriesReference = item.SeriesReference });
             y += lineH;
         }
     }

@@ -54,7 +54,7 @@ public class InteractionClassesSeparationTests
         // Act & Assert
         interactionState.TooltipSeries.Should().NotBeNull();
         interactionState.TooltipSeries.Should().BeEmpty();
-        
+
         interactionState.LegendHits.Should().NotBeNull();
         interactionState.LegendHits.Should().BeEmpty();
 

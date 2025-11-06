@@ -17,33 +17,33 @@ public sealed class CrosshairBehavior : IBehavior
         switch (ev.Type)
         {
             case PointerEventType.Move:
-            {
-                st.ShowCrosshair = true;
-                st.PixelX = ev.PixelX;
-                st.PixelY = ev.PixelY;
-                if (st.DataX.HasValue && st.DataY.HasValue)
                 {
-                    var ci = CultureInfo.InvariantCulture;
-                    st.TooltipText = string.Format(ci, "{0}\n{1}", string.Format(ci, TooltipFormatX, st.DataX.Value), string.Format(ci, TooltipFormatY, st.DataY.Value));
+                    st.ShowCrosshair = true;
+                    st.PixelX = ev.PixelX;
+                    st.PixelY = ev.PixelY;
+                    if (st.DataX.HasValue && st.DataY.HasValue)
+                    {
+                        var ci = CultureInfo.InvariantCulture;
+                        st.TooltipText = string.Format(ci, "{0}\n{1}", string.Format(ci, TooltipFormatX, st.DataX.Value), string.Format(ci, TooltipFormatY, st.DataY.Value));
+                    }
+                    return true;
                 }
-                return true;
-            }
             case PointerEventType.Leave:
-            {
-                st.ShowCrosshair = false;
-                st.TooltipText = null;
-                return true;
-            }
+                {
+                    st.ShowCrosshair = false;
+                    st.TooltipText = null;
+                    return true;
+                }
             case PointerEventType.Down:
             case PointerEventType.Up:
             case PointerEventType.Wheel:
-            {
-                return false;
-            }
+                {
+                    return false;
+                }
             default:
-            {
-                return false;
-            }
+                {
+                    return false;
+                }
         }
     }
 }

@@ -1,9 +1,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
-
 using FastCharts.Core.Axes;
-
 using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers
@@ -26,7 +24,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
 
             var xr = model.XAxis.VisibleRange;
             var yr = model.YAxis.VisibleRange;
-            if (xr.Size <= 0 || yr.Size <= 0) 
+            if (xr.Size <= 0 || yr.Size <= 0)
             {
                 return;
             }
@@ -39,6 +37,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             var y2Ticks = model.YAxisSecondary != null ? model.YAxisSecondary.Ticker.GetTicks(model.YAxisSecondary.VisibleRange, approxYStepData) : null;
             float tickLen = (float)theme.TickLength;
             bool xIsDate = model.XAxis is DateTimeAxis;
+            var font = paints.TextFont;
             foreach (var t in xTicks)
             {
                 float px = PixelMapper.X(t, model.XAxis, pr);
@@ -67,8 +66,8 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     var xf = (model.XAxis as NumericAxis)?.NumberFormatter;
                     lbl = xf != null ? xf.Format(t) : t.ToString((model.XAxis as NumericAxis)?.LabelFormat ?? "G", CultureInfo.InvariantCulture);
                 }
-                float w = paints.Text.MeasureText(lbl);
-                c.DrawText(lbl, px - w / 2f, yBase + tickLen + 3 + paints.Text.TextSize, paints.Text);
+                float w = font.MeasureText(lbl, paints.Text);
+                c.DrawText(lbl, px - w / 2f, yBase + tickLen + 3 + font.Size, SKTextAlign.Left, font, paints.Text);
             }
             foreach (var t in yTicks)
             {
@@ -77,8 +76,8 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 var ny = model.YAxis as NumericAxis;
                 var yf = ny?.NumberFormatter;
                 var lbl = yf != null ? yf.Format(t) : t.ToString(ny?.LabelFormat ?? "G", CultureInfo.InvariantCulture);
-                float w = paints.Text.MeasureText(lbl);
-                c.DrawText(lbl, xBase - tickLen - 6 - w, py + 4, paints.Text);
+                float w = font.MeasureText(lbl, paints.Text);
+                c.DrawText(lbl, xBase - tickLen - 6 - w, py + 4, SKTextAlign.Left, font, paints.Text);
             }
             if (y2Ticks != null)
             {
@@ -90,7 +89,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     var ny2 = model.YAxisSecondary as NumericAxis;
                     var y2f = ny2?.NumberFormatter;
                     var lbl2 = y2f != null ? y2f.Format(t) : t.ToString(ny2?.LabelFormat ?? "G", CultureInfo.InvariantCulture);
-                    c.DrawText(lbl2, xR + tickLen + 4, py + 4, paints.Text);
+                    c.DrawText(lbl2, xR + tickLen + 4, py + 4, SKTextAlign.Left, font, paints.Text);
                 }
             }
             // Border

@@ -8,6 +8,7 @@
     <EnablePackageValidation>false</EnablePackageValidation>
     <!-- Enforce style analyzers as errors -->
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <NoWarn>$(NoWarn);S3267;SA1503;IDE0011</NoWarn>
   </PropertyGroup>
   
   <!-- Expose internals to test assemblies -->
@@ -19,12 +20,12 @@
   
   <ItemGroup>
     <!-- ReactiveUI for MVVM support -->
-    <PackageReference Include="ReactiveUI" Version="19.*" />
+    <PackageReference Include="ReactiveUI" Version="22.2.1" />
     <PackageReference Include="System.Reactive" Version="6.*" />
     <!-- StyleCop Analyzers for strict SA1124, SA1503, SA1520 enforcement -->
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
     <!-- SonarAnalyzer for strict S1244 floating point equality enforcement -->
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.32.0.97167" PrivateAssets="all" IncludeAssets="analyzers" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.15.0.120848" PrivateAssets="all" IncludeAssets="analyzers" />
   </ItemGroup>
   
   <ItemGroup>

@@ -1,25 +1,19 @@
+using FastCharts.Core;
+using FastCharts.Core.Abstractions;
+using FastCharts.Core.Helpers;
+using FastCharts.Core.Series;
+using FastCharts.Rendering.Skia.Helpers;
+using FastCharts.Rendering.Skia.Rendering;
+using FastCharts.Rendering.Skia.Rendering.Layers;
+using SkiaSharp;
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using FastCharts.Core;
-using FastCharts.Core.Abstractions;
-using FastCharts.Core.Helpers;
-using FastCharts.Core.Primitives;
-using FastCharts.Core.Series;
-using FastCharts.Rendering.Skia.Helpers;
-using FastCharts.Rendering.Skia.Rendering;
-using FastCharts.Rendering.Skia.Rendering.Layers;
-
-using SkiaSharp;
-
 namespace FastCharts.Rendering.Skia
 {
-    /// <summary>
-    /// ? UPDATED: Skia-based chart renderer implementing new interfaces for better extensibility
-    /// </summary>
     public sealed class SkiaChartRenderer : IAsyncChartRenderer<SKCanvas>, IChartExporter, IRenderer<SKCanvas>
     {
         private readonly GridLayer _grid = new();
@@ -27,43 +21,31 @@ namespace FastCharts.Rendering.Skia
         private readonly AxesTicksLayer _axesTicks = new();
         private readonly LegendLayer _legend = new();
 
-        /// <summary>
-        /// Render the chart model onto a provided SKCanvas of given pixel size.
-        /// The caller owns the canvas lifecycle.
-        /// </summary>
         public void Render(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight)
         {
-            // ? CRITICAL FIX: Enhanced validation with specific error messages
             if (model == null)
             {
                 throw new ArgumentNullException(nameof(model), "Chart model cannot be null");
             }
-
             if (canvas == null)
             {
                 throw new ArgumentNullException(nameof(canvas), "Canvas cannot be null");
             }
-
-            // ? CRITICAL FIX: Validate dimensions to prevent rendering errors
             if (pixelWidth <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(pixelWidth), pixelWidth, "Pixel width must be positive");
             }
-
             if (pixelHeight <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(pixelHeight), pixelHeight, "Pixel height must be positive");
             }
 
-            // ? CRITICAL FIX: Validate ranges to prevent rendering corruption
             var xRange = model.XAxis.VisibleRange;
             var yRange = model.YAxis.VisibleRange;
-
             if (!ValidationHelper.IsValidRange(xRange))
             {
                 throw new InvalidOperationException($"X-axis visible range is invalid: [{xRange.Min}, {xRange.Max}]");
             }
-
             if (!ValidationHelper.IsValidRange(yRange))
             {
                 throw new InvalidOperationException($"Y-axis visible range is invalid: [{yRange.Min}, {yRange.Max}]");
@@ -73,13 +55,10 @@ namespace FastCharts.Rendering.Skia
             var m = model.PlotMargins;
             var left = (float)m.Left;
             var top = (float)m.Top;
-            
-            // ? SOLID PRINCIPLES: Use helper for margin calculation
             var right = (float)RenderingHelper.CalculateEffectiveRightMargin(m.Right, model.YAxisSecondary != null);
             var bottom = (float)m.Bottom;
-            
-            var plotW = (float)System.Math.Max(0, pixelWidth - (left + right));
-            var plotH = (float)System.Math.Max(0, pixelHeight - (top + bottom));
+            var plotW = (float)Math.Max(0, pixelWidth - (left + right));
+            var plotH = (float)Math.Max(0, pixelHeight - (top + bottom));
             var plotRect = new SKRect(left, top, left + plotW, top + plotH);
             canvas.Clear(new SKColor(theme.SurfaceBackgroundColor.R, theme.SurfaceBackgroundColor.G, theme.SurfaceBackgroundColor.B, theme.SurfaceBackgroundColor.A));
             model.UpdateScales((int)plotW, (int)plotH);
@@ -94,9 +73,6 @@ namespace FastCharts.Rendering.Skia
             RenderOverlay(ctx);
         }
 
-        /// <summary>
-        /// Renders the chart into a new SKBitmap (caller must dispose) with optional transparency.
-        /// </summary>
         public SKBitmap RenderToBitmap(ChartModel model, int pixelWidth, int pixelHeight, bool transparentBackground = false)
         {
             var info = new SKImageInfo(pixelWidth, pixelHeight, SKColorType.Bgra8888, SKAlphaType.Premul);
@@ -111,9 +87,6 @@ namespace FastCharts.Rendering.Skia
             return bmp;
         }
 
-        /// <summary>
-        /// Exports the chart as PNG into a stream. Stream must be writable.
-        /// </summary>
         public void ExportPng(ChartModel model, Stream destination, int pixelWidth, int pixelHeight, int quality = 100, bool transparentBackground = false)
         {
             if (model == null || destination == null || !destination.CanWrite)
@@ -122,47 +95,34 @@ namespace FastCharts.Rendering.Skia
             }
             using var bmp = RenderToBitmap(model, pixelWidth, pixelHeight, transparentBackground);
             using var img = SKImage.FromPixels(bmp.PeekPixels());
-            // quality not used for PNG (lossless) but kept for potential future JPEG/WebP overload
             using var data = img.Encode(SKEncodedImageFormat.Png, quality);
             data.SaveTo(destination);
             destination.Flush();
         }
 
-        /// <summary>
-        /// ? NEW: Asynchronously exports the chart as PNG into a stream with cancellation support
-        /// </summary>
         public async Task ExportPngAsync(ChartModel model, Stream destination, int pixelWidth, int pixelHeight, int quality = 100, bool transparentBackground = false, CancellationToken cancellationToken = default)
         {
             if (model == null)
             {
                 throw new ArgumentNullException(nameof(model));
             }
-
             if (destination == null)
             {
                 throw new ArgumentNullException(nameof(destination));
             }
-
             if (!destination.CanWrite)
             {
                 throw new ArgumentException("Destination stream must be writable", nameof(destination));
             }
-
             cancellationToken.ThrowIfCancellationRequested();
-
-            // Perform heavy rendering on background thread
             var imageData = await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
                 using var bmp = RenderToBitmap(model, pixelWidth, pixelHeight, transparentBackground);
                 using var img = SKImage.FromPixels(bmp.PeekPixels());
                 return img.Encode(SKEncodedImageFormat.Png, quality);
             }, cancellationToken).ConfigureAwait(false);
-
             cancellationToken.ThrowIfCancellationRequested();
-
-            // Write to stream
             using (imageData)
             {
                 using var stream = imageData.AsStream();
@@ -170,7 +130,6 @@ namespace FastCharts.Rendering.Skia
                 await stream.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
                 await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
 #else
-                // .NET Standard 2.0 and .NET Framework don't support CancellationToken in CopyToAsync
                 cancellationToken.ThrowIfCancellationRequested();
                 await stream.CopyToAsync(destination).ConfigureAwait(false);
                 await destination.FlushAsync().ConfigureAwait(false);
@@ -178,18 +137,13 @@ namespace FastCharts.Rendering.Skia
             }
         }
 
-        /// <summary>
-        /// ? NEW: Asynchronously renders the chart into a new SKBitmap with cancellation support
-        /// </summary>
         public async Task<SKBitmap> RenderToBitmapAsync(ChartModel model, int pixelWidth, int pixelHeight, bool transparentBackground = false, CancellationToken cancellationToken = default)
         {
             if (model == null)
             {
                 throw new ArgumentNullException(nameof(model));
             }
-
             cancellationToken.ThrowIfCancellationRequested();
-
             return await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -197,23 +151,17 @@ namespace FastCharts.Rendering.Skia
             }, cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// ? NEW: Asynchronously render the chart model onto a provided SKCanvas
-        /// </summary>
         public async Task RenderAsync(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight, CancellationToken cancellationToken = default)
         {
             if (model == null)
             {
                 throw new ArgumentNullException(nameof(model));
             }
-
             if (canvas == null)
             {
                 throw new ArgumentNullException(nameof(canvas));
             }
-
             cancellationToken.ThrowIfCancellationRequested();
-
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -226,14 +174,14 @@ namespace FastCharts.Rendering.Skia
             var model = ctx.Model;
             var pr = ctx.PlotRect;
             var st = model.InteractionState;
-            if (st == null) 
-            { 
-                return; 
+            if (st == null)
+            {
+                return;
             }
             var tooltipSeries = st.TooltipSeries;
-            if (tooltipSeries == null) 
-            { 
-                return; 
+            if (tooltipSeries == null)
+            {
+                return;
             }
             if (st.ShowSelectionRect)
             {
@@ -243,7 +191,7 @@ namespace FastCharts.Rendering.Skia
                 var y2 = (float)st.SelY2;
                 using var selFill = new SKPaint { Color = new SKColor(30, 120, 220, 40), Style = SKPaintStyle.Fill, IsAntialias = true };
                 using var selStroke = new SKPaint { Color = new SKColor(30, 120, 220, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
-                var rr = SKRect.Create(System.Math.Min(x1, x2), System.Math.Min(y1, y2), System.Math.Abs(x2 - x1), System.Math.Abs(y2 - y1));
+                var rr = SKRect.Create(Math.Min(x1, x2), Math.Min(y1, y2), Math.Abs(x2 - x1), Math.Abs(y2 - y1));
                 ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawRect(rr, selFill); ctx.Canvas.DrawRect(rr, selStroke); ctx.Canvas.Restore();
             }
             if (st.ShowNearest)
@@ -254,32 +202,33 @@ namespace FastCharts.Rendering.Skia
                 using var npFill = new SKPaint { Color = new SKColor(255, 80, 80, 120), Style = SKPaintStyle.Fill, IsAntialias = true };
                 ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawCircle(px, py, 6, npFill); ctx.Canvas.DrawCircle(px, py, 6, npStroke); ctx.Canvas.Restore();
             }
-            if (!st.ShowCrosshair) 
-            { 
-                return; 
-            }
-            var cx = (float)st.PixelX; 
-            var cy = (float)st.PixelY;
-            if (cx < pr.Left) 
+            if (!st.ShowCrosshair)
             {
-                cx = pr.Left; 
+                return;
             }
-            else if (cx > pr.Right) 
+            var cx = (float)st.PixelX;
+            var cy = (float)st.PixelY;
+            if (cx < pr.Left)
+            {
+                cx = pr.Left;
+            }
+            else if (cx > pr.Right)
             {
                 cx = pr.Right;
             }
-            if (cy < pr.Top) 
+            if (cy < pr.Top)
             {
-                cy = pr.Top; 
+                cy = pr.Top;
             }
-            else if (cy > pr.Bottom) 
+            else if (cy > pr.Bottom)
             {
                 cy = pr.Bottom;
             }
             using var cross = new SKPaint { Color = new SKColor(0, 0, 0, 80), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
             using var tipBg = new SKPaint { Color = new SKColor(255, 255, 255, 230), Style = SKPaintStyle.Fill, IsAntialias = true };
             using var tipBd = new SKPaint { Color = new SKColor(0, 0, 0, 120), Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
-            using var tipTx = new SKPaint { Color = new SKColor(30, 30, 30, 255), Style = SKPaintStyle.Fill, IsAntialias = true, TextSize = (float)model.Theme.LabelTextSize };
+            using var tipTxPaint = new SKPaint { Color = new SKColor(30, 30, 30, 255), Style = SKPaintStyle.Fill, IsAntialias = true };
+            using var tipFont = new SKFont(null, (float)model.Theme.LabelTextSize);
             var palette = model.Theme.SeriesPalette;
             ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawLine(pr.Left, cy, pr.Right, cy, cross); ctx.Canvas.DrawLine(cx, pr.Top, cx, pr.Bottom, cross); ctx.Canvas.Restore();
             string[] lines;
@@ -293,121 +242,61 @@ namespace FastCharts.Rendering.Skia
             {
                 lines = (st.TooltipText ?? string.Empty).Split('\n');
             }
-            else 
-            { 
-                return; 
+            else
+            {
+                return;
             }
-            var maxW = 0f; 
-            foreach (var l in lines) 
-            { 
-                var w = tipTx.MeasureText(l); 
-                if (w > maxW) 
+            var maxW = 0f;
+            foreach (var l in lines)
+            {
+                var w = tipFont.MeasureText(l, tipTxPaint);
+                if (w > maxW)
                 {
-                    maxW = w; 
+                    maxW = w;
                 }
             }
-            var lineH = tipTx.TextSize + 2; 
-            var pad = 6f; 
-            var showSwatches = tooltipSeries.Count > 0; 
-            var swatchSize = showSwatches ? tipTx.TextSize * 0.6f : 0f; 
-            var swatchGap = showSwatches ? 4f : 0f; 
+            var lineH = tipFont.Size + 2;
+            var pad = 6f;
+            var showSwatches = tooltipSeries.Count > 0;
+            var swatchSize = showSwatches ? tipFont.Size * 0.6f : 0f;
+            var swatchGap = showSwatches ? 4f : 0f;
             var extra = showSwatches ? (swatchSize + swatchGap) : 0f;
-            var boxW = maxW + pad * 2 + extra; 
-            var boxH = lineH * lines.Length + pad * 2; 
-            var bx = cx + 12; 
-            var by = cy - boxH - 12; 
-            if (bx + boxW > pr.Right) 
+            var boxW = maxW + pad * 2 + extra;
+            var boxH = lineH * lines.Length + pad * 2;
+            var bx = cx + 12;
+            var by = cy - boxH - 12;
+            if (bx + boxW > pr.Right)
             {
-                bx = pr.Right - boxW - 1; 
+                bx = pr.Right - boxW - 1;
             }
-            if (by < pr.Top) 
+            if (by < pr.Top)
             {
                 by = cy + 12;
             }
-            var rect = new SKRect(bx, by, bx + boxW, by + boxH); 
-            ctx.Canvas.DrawRect(rect, tipBg); 
+            var rect = new SKRect(bx, by, bx + boxW, by + boxH);
+            ctx.Canvas.DrawRect(rect, tipBg);
             ctx.Canvas.DrawRect(rect, tipBd);
-            var ty = by + pad + tipTx.TextSize; 
-            tipTx.GetFontMetrics(out var fm); 
-            var textHeight = fm.Descent - fm.Ascent;
+            var ty = by + pad + tipFont.Size;
+            tipFont.GetFontMetrics(out var metrics);
+            var textHeight = metrics.Descent - metrics.Ascent;
             for (var i = 0; i < lines.Length; i++)
             {
                 var tx = bx + pad;
                 if (showSwatches && i > 0 && i - 1 < tooltipSeries.Count)
                 {
-                    var sv = tooltipSeries[i - 1]; 
-                    var col = model.Theme.PrimarySeriesColor;
-                    if (palette != null && sv.PaletteIndex.HasValue && sv.PaletteIndex.Value >= 0 && sv.PaletteIndex.Value < palette.Count)
-                    { 
-                        col = palette[sv.PaletteIndex.Value]; 
-                    }
+                    var sv = tooltipSeries[i - 1];
+                    var col = SeriesColorResolver.ResolveSeriesColor(model, sv, palette);
                     using var sw = new SKPaint { Color = new SKColor(col.R, col.G, col.B, col.A), Style = SKPaintStyle.Fill, IsAntialias = true };
-                    var topText = ty + fm.Ascent; 
-                    var verticalPadding = (textHeight - swatchSize) * 0.5f; 
-                    var swTop = topText + verticalPadding; 
-                    var swRect = new SKRect(tx, swTop, tx + swatchSize, swTop + swatchSize); 
-                    ctx.Canvas.DrawRect(swRect, sw); 
+                    var topText = ty + metrics.Ascent;
+                    var verticalPadding = (textHeight - swatchSize) * 0.5f;
+                    var swTop = topText + verticalPadding;
+                    var swRect = new SKRect(tx, swTop, tx + swatchSize, swTop + swatchSize);
+                    ctx.Canvas.DrawRect(swRect, sw);
                     tx += swatchSize + swatchGap;
                 }
-                ctx.Canvas.DrawText(lines[i], tx, ty, tipTx); 
+                ctx.Canvas.DrawText(lines[i], tx, ty, SKTextAlign.Left, tipFont, tipTxPaint);
                 ty += lineH;
             }
-        }
-
-        /// <summary>
-        /// ? NEW: Validates that a range contains finite, valid values
-        /// </summary>
-        private static bool IsValidRange(FRange range)
-        {
-            return !double.IsNaN(range.Min) && !double.IsNaN(range.Max) &&
-                   !double.IsInfinity(range.Min) && !double.IsInfinity(range.Max) &&
-                   range.Min < range.Max;
-        }
-
-        internal static FastCharts.Core.Primitives.ColorRgba ResolveSeriesColorStatic(ChartModel model, object seriesRef, System.Collections.Generic.IReadOnlyList<FastCharts.Core.Primitives.ColorRgba> palette)
-        {
-            var primary = model.Theme.PrimarySeriesColor;
-            if (palette == null || palette.Count == 0) 
-            {
-                return primary;
-            }
-            if (seriesRef is BandSeries band)
-            {
-                var idx = model.Series.OfType<BandSeries>().ToList().IndexOf(band);
-                if (band.PaletteIndex.HasValue) 
-                {
-                    idx = band.PaletteIndex.Value;
-                }
-                return (idx >= 0 && idx < palette.Count) ? palette[idx] : primary;
-            }
-            if (seriesRef is ScatterSeries sc)
-            {
-                var idx = model.Series.OfType<ScatterSeries>().ToList().IndexOf(sc);
-                if (sc.PaletteIndex.HasValue) 
-                {
-                    idx = sc.PaletteIndex.Value;
-                }
-                return (idx >= 0 && idx < palette.Count) ? palette[idx] : primary;
-            }
-            if (seriesRef is AreaSeries area)
-            {
-                var idx = model.Series.OfType<LineSeries>().ToList().IndexOf(area);
-                if (area.PaletteIndex.HasValue) 
-                {
-                    idx = area.PaletteIndex.Value;
-                }
-                return (idx >= 0 && idx < palette.Count) ? palette[idx] : primary;
-            }
-            if (seriesRef is LineSeries ls)
-            {
-                var idx = model.Series.OfType<LineSeries>().ToList().IndexOf(ls);
-                if (ls.PaletteIndex.HasValue) 
-                {
-                    idx = ls.PaletteIndex.Value;
-                }
-                return (idx >= 0 && idx < palette.Count) ? palette[idx] : primary;
-            }
-            return primary;
         }
     }
 }

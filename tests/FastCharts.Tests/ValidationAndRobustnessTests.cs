@@ -98,14 +98,14 @@ namespace FastCharts.Tests
             // Arrange
             var renderer = new SkiaChartRenderer();
             var model = new ChartModel();
-            
+
             // Set up a valid model first
             model.XAxis.SetVisibleRange(0, 100);
             model.YAxis.SetVisibleRange(0, 100);
-            
+
             // Then directly set an invalid range (bypassing SetVisibleRange validation)
             ((AxisBase)model.XAxis).VisibleRange = new FRange(double.NaN, 100);
-            
+
             using var bitmap = new SKBitmap(100, 100);
             using var canvas = new SKCanvas(bitmap);
 
@@ -125,7 +125,7 @@ namespace FastCharts.Tests
                 .Select(i => new PointD(i, Math.Sin(i * 0.1)))
                 .ToArray();
             model.AddSeries(new LineSeries(points));
-            
+
             using var bitmap = new SKBitmap(1000, 1000);
             using var canvas = new SKCanvas(bitmap);
             using var cts = new CancellationTokenSource();
@@ -146,7 +146,7 @@ namespace FastCharts.Tests
             var model = new ChartModel();
             var points = new[] { new PointD(0, 0), new PointD(100, 100) };
             model.AddSeries(new LineSeries(points));
-            
+
             using var stream = new MemoryStream();
 
             // Act
@@ -155,7 +155,7 @@ namespace FastCharts.Tests
             // Assert
             stream.Length.Should().BeGreaterThan(0);
             stream.Position = 0;
-            
+
             // Verify PNG header
             var header = new byte[8];
             await stream.ReadAsync(header, 0, 8);
@@ -172,7 +172,7 @@ namespace FastCharts.Tests
 
             // Act & Assert - Should not throw
             model.Invoking(m => m.Dispose()).Should().NotThrow();
-            
+
             // Multiple dispose calls should be safe
             model.Invoking(m => m.Dispose()).Should().NotThrow();
         }

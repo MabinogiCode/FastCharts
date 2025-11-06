@@ -12,7 +12,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             int errIndex = 0;
             foreach (var s in model.Series)
             {
-                if (s is not ErrorBarSeries es || es.IsEmpty || !es.IsVisible) 
+                if (s is not ErrorBarSeries es || es.IsEmpty || !es.IsVisible)
                 {
                     continue;
                 }

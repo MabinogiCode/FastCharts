@@ -6,10 +6,19 @@
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>
+    
+    <!-- Expose internals to test assemblies -->
     <ItemGroup>
-        <PackageReference Include="SkiaSharp" Version="2.88.6" />
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>FastCharts.Core.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="SkiaSharp" Version="3.119.1" />
         <!-- StyleCop Analyzers for strict SA1124 enforcement -->
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
+        <PackageReference Include="System.Text.Json" Version="9.0.10" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj" />

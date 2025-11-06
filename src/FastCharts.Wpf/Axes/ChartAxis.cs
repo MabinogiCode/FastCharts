@@ -4,28 +4,28 @@ namespace FastCharts.Wpf.Axes
 {
     public sealed class ChartAxis : DependencyObject
     {
-        public static ChartAxis CreateDefault(AxisPosition pos) 
+        public static ChartAxis CreateDefault(AxisPosition pos)
         {
-            return new ChartAxis 
-            { 
-                Position = pos, 
-                IsVisible = true, 
-                ShowTicks = true, 
-                ShowLabels = true, 
-                ShowGrid = false, 
-                Thickness = 1.0, 
-                Stroke = Brushes.Gray, 
-                TickLength = 4.0, 
-                TickThickness = 1.0, 
-                TickStroke = Brushes.Gray, 
-                LabelBrush = Brushes.Gray, 
-                LabelFontSize = 12.0, 
-                LabelFormat = "G", 
-                DesiredPixelStep = pos is AxisPosition.Bottom or AxisPosition.Top ? 80.0 : 50.0, 
-                MajorStep = 0.0, 
-                GridStroke = Brushes.Gainsboro, 
-                GridThickness = 0.5, 
-                LabelRotation = 0.0 
+            return new ChartAxis
+            {
+                Position = pos,
+                IsVisible = true,
+                ShowTicks = true,
+                ShowLabels = true,
+                ShowGrid = false,
+                Thickness = 1.0,
+                Stroke = Brushes.Gray,
+                TickLength = 4.0,
+                TickThickness = 1.0,
+                TickStroke = Brushes.Gray,
+                LabelBrush = Brushes.Gray,
+                LabelFontSize = 12.0,
+                LabelFormat = "G",
+                DesiredPixelStep = pos is AxisPosition.Bottom or AxisPosition.Top ? 80.0 : 50.0,
+                MajorStep = 0.0,
+                GridStroke = Brushes.Gainsboro,
+                GridThickness = 0.5,
+                LabelRotation = 0.0
             };
         }
         public static readonly DependencyProperty PositionProperty = DependencyProperty.Register(nameof(Position), typeof(AxisPosition), typeof(ChartAxis), new FrameworkPropertyMetadata(AxisPosition.Bottom, FrameworkPropertyMetadataOptions.AffectsRender));

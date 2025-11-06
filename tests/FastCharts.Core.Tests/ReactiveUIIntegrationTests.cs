@@ -196,7 +196,7 @@ public class ReactiveUIIntegrationTests
 
         // Act
         chartModel.Theme = new DarkTheme();
-        
+
         // Assert
         chartModel.Theme.Should().NotBeSameAs(initialTheme);
         chartModel.Theme.Should().BeOfType<DarkTheme>();

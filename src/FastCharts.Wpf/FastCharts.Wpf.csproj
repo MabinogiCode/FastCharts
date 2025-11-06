@@ -12,11 +12,11 @@
         <LangVersion>9.0</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="DynamicData" Version="8.*" />
-        <PackageReference Include="ReactiveUI" Version="19.*" />
+        <PackageReference Include="DynamicData" Version="9.4.1" />
+        <PackageReference Include="ReactiveUI" Version="22.2.1" />
         <PackageReference Include="System.Reactive" Version="6.*" />
-        <PackageReference Include="SkiaSharp" Version="2.88.6" />
-        <PackageReference Include="SkiaSharp.Views.WPF" Version="2.88.6" />
+        <PackageReference Include="SkiaSharp" Version="3.119.1" />
+        <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.1" />
         <!-- StyleCop Analyzers for strict SA1124 enforcement -->
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
     </ItemGroup>

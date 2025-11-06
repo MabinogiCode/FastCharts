@@ -284,7 +284,7 @@ public class DateTickerHelperTests
         result.Hour.Should().Be(0);
         result.Minute.Should().Be(0);
         result.Second.Should().Be(0);
-        result.Day.Should().BeLessOrEqualTo(DateTime.DaysInMonth(input.Year, input.Month));
+        result.Day.Should().BeLessThanOrEqualTo(DateTime.DaysInMonth(input.Year, input.Month));
     }
 
     [Fact]
@@ -293,7 +293,7 @@ public class DateTickerHelperTests
         // Arrange
         var julyInput = new DateTime(2024, 7, 15, 14, 27, 33);
         var novemberInput = new DateTime(2024, 11, 15, 14, 27, 33);
-        
+
         // Act
         var julyResult = DateTickerHelper.Align(julyInput, TimeUnit.Month, 3);
         var novemberResult = DateTickerHelper.Align(novemberInput, TimeUnit.Month, 3);

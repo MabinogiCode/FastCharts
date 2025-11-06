@@ -1,13 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-
 using DynamicData;
-using DynamicData.Binding;
-
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Axes;
 using FastCharts.Core.Interaction;
@@ -16,8 +7,14 @@ using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 using FastCharts.Core.Themes.BuiltIn;
 using FastCharts.Core.Utilities;
-
 using ReactiveUI;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Reactive.Disposables;
+using System.Reactive.Disposables.Fluent;
+using System.Reactive.Linq;
 
 namespace FastCharts.Core;
 
@@ -28,11 +25,11 @@ public sealed class ChartModelEnhanced : ReactiveObject, IChartModel, IDisposabl
 {
     private readonly ReadOnlyCollection<AxisBase> _axesView;
     private readonly CompositeDisposable _disposables = new();
-    
+
     // DynamicData reactive collections
     private readonly SourceList<SeriesBase> _seriesSource = new();
     private readonly SourceList<IBehavior> _behaviorsSource = new();
-    
+
     // Backing fields for reactive properties
     private ITheme _theme = new LightTheme();
     private IAxis<double> _xAxis;
@@ -43,7 +40,7 @@ public sealed class ChartModelEnhanced : ReactiveObject, IChartModel, IDisposabl
     private int _seriesCount;
     private int _visibleSeriesCount;
     private long _totalDataPoints;
-    
+
     // Disposed state tracking
     private bool _disposed;
 
@@ -54,15 +51,15 @@ public sealed class ChartModelEnhanced : ReactiveObject, IChartModel, IDisposabl
         _xAxis = x;
         _yAxis = y;
         Viewport = new Interactivity.Viewport(new FRange(0, 1), new FRange(0, 1));
-        
+
         var axesList = new List<AxisBase> { (AxisBase)XAxis, (AxisBase)YAxis };
         _axesView = new ReadOnlyCollection<AxisBase>(axesList);
         Legend = new LegendModel();
-        
+
         // Initialize the properties with empty collections first
         Series = new ReadOnlyObservableCollection<SeriesBase>(new ObservableCollection<SeriesBase>());
         Behaviors = new ReadOnlyObservableCollection<IBehavior>(new ObservableCollection<IBehavior>());
-        
+
         SetupReactiveCollections();
     }
 
@@ -74,7 +71,7 @@ public sealed class ChartModelEnhanced : ReactiveObject, IChartModel, IDisposabl
             .DisposeMany() // Auto-dispose series if they implement IDisposable
             .Subscribe(_ => { /* Collection changed */ })
             .DisposeWith(_disposables);
-        
+
         Series = seriesBinding;
 
         // ? Auto-sync legend when series change
@@ -114,7 +111,7 @@ public sealed class ChartModelEnhanced : ReactiveObject, IChartModel, IDisposabl
             .DisposeMany() // Auto-dispose behaviors
             .Subscribe()
             .DisposeWith(_disposables);
-        
+
         Behaviors = behaviorsBinding;
     }
 
@@ -360,55 +357,55 @@ public sealed class ChartModelEnhanced : ReactiveObject, IChartModel, IDisposabl
             switch (s)
             {
                 case LineSeries ls:
-                {
-                    xr = ls.GetXRange();
-                    yr = ls.GetYRange();
-                    break;
-                }
+                    {
+                        xr = ls.GetXRange();
+                        yr = ls.GetYRange();
+                        break;
+                    }
                 case ScatterSeries sc:
-                {
-                    xr = sc.GetXRange();
-                    yr = sc.GetYRange();
-                    break;
-                }
+                    {
+                        xr = sc.GetXRange();
+                        yr = sc.GetYRange();
+                        break;
+                    }
                 case BandSeries band:
-                {
-                    var minX = band.Data.Min(p => p.X);
-                    var maxX = band.Data.Max(p => p.X);
-                    var minY = band.Data.Min(p => p.YLow);
-                    var maxY = band.Data.Max(p => p.YHigh);
-                    xr = new FRange(minX, maxX);
-                    yr = new FRange(minY, maxY);
-                    break;
-                }
+                    {
+                        var minX = band.Data.Min(p => p.X);
+                        var maxX = band.Data.Max(p => p.X);
+                        var minY = band.Data.Min(p => p.YLow);
+                        var maxY = band.Data.Max(p => p.YHigh);
+                        xr = new FRange(minX, maxX);
+                        yr = new FRange(minY, maxY);
+                        break;
+                    }
                 case BarSeries bar:
-                {
-                    xr = bar.GetXRange();
-                    yr = bar.GetYRange();
-                    break;
-                }
+                    {
+                        xr = bar.GetXRange();
+                        yr = bar.GetYRange();
+                        break;
+                    }
                 case StackedBarSeries sbar:
-                {
-                    xr = sbar.GetXRange();
-                    yr = sbar.GetYRange();
-                    break;
-                }
+                    {
+                        xr = sbar.GetXRange();
+                        yr = sbar.GetYRange();
+                        break;
+                    }
                 case OhlcSeries ohlc:
-                {
-                    xr = ohlc.GetXRange();
-                    yr = ohlc.GetYRange();
-                    break;
-                }
+                    {
+                        xr = ohlc.GetXRange();
+                        yr = ohlc.GetYRange();
+                        break;
+                    }
                 case ErrorBarSeries err:
-                {
-                    xr = err.GetXRange();
-                    yr = err.GetYRange();
-                    break;
-                }
+                    {
+                        xr = err.GetXRange();
+                        yr = err.GetYRange();
+                        break;
+                    }
                 default:
-                {
-                    continue;
-                }
+                    {
+                        continue;
+                    }
             }
             xs.Add(xr);
             if (s.YAxisIndex == 1)
@@ -514,7 +511,7 @@ public sealed class ChartModelEnhanced : ReactiveObject, IChartModel, IDisposabl
 
         // Dispose all reactive subscriptions
         _disposables.Dispose();
-        
+
         // Dispose DynamicData sources
         _seriesSource.Dispose();
         _behaviorsSource.Dispose();

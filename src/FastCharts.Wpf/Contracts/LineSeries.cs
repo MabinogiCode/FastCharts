@@ -6,7 +6,7 @@ namespace FastCharts.Wpf.Contracts
     public class LineSeries : IReadOnlyLineSeries, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        void Raise([CallerMemberName] string? p = null) 
+        void Raise([CallerMemberName] string? p = null)
         {
             PropertyChanged?.Invoke(this, new(p));
         }
