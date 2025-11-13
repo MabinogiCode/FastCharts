@@ -1,18 +1,51 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows.Input;
+using System.Windows.Threading;
 
 using FastCharts.Core;
 using FastCharts.Core.Axes;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
+using FastCharts.Core.Themes; // ajout pour ITheme
 using FastCharts.Core.Themes.BuiltIn;
 
 namespace DemoApp.Net48.ViewModels
 {
-    public sealed class MainViewModel
+    public sealed class MainViewModel : System.ComponentModel.INotifyPropertyChanged
     {
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
         public ObservableCollection<ChartModel> Charts { get; } = new ObservableCollection<ChartModel>();
+
+        public ICommand ToggleThemeCommand { get; }
+        public ICommand AddRandomSeriesCommand { get; }
+
+        private string _selectedTheme = "Dark";
+        public string SelectedTheme
+        {
+            get => _selectedTheme;
+            set => UpdateSelectedTheme(value);
+        }
+
+        private bool UpdateSelectedTheme(string value)
+        {
+            if (_selectedTheme == value)
+            {
+                return false;
+            }
+            _selectedTheme = value;
+            Raise(nameof(SelectedTheme));
+            return true;
+        }
+
+        private void Raise(string name)
+        {
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
+        }
+
+        private readonly Dispatcher _dispatcher = Dispatcher.CurrentDispatcher;
 
         public MainViewModel()
         {
@@ -29,6 +62,41 @@ namespace DemoApp.Net48.ViewModels
             Charts.Add(BuildStacked100());
             Charts.Add(BuildOhlcWithErrorOverlay());
             Charts.Add(BuildMultiSeriesTooltipShowcase());
+            Charts.Add(BuildLogYAxisGrowth());
+            Charts.Add(BuildLogLogScatter());
+            Charts.Add(BuildDualYAxisLogSecondary());
+
+            ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
+            AddRandomSeriesCommand = new RelayCommand(_ => AddRandomSeries(), _ => Charts.Count > 0);
+        }
+
+        private void ToggleTheme()
+        {
+            SelectedTheme = SelectedTheme == "Dark" ? "Light" : "Dark";
+            _dispatcher.Invoke(() =>
+            {
+                foreach (var c in Charts)
+                {
+                    c.Theme = SelectedTheme == "Dark" ? new DarkTheme() : new LightTheme();
+                }
+            });
+        }
+
+        private void AddRandomSeries()
+        {
+            if (Charts.Count == 0)
+            {
+                return;
+            }
+            var rand = new Random();
+            var target = Charts[0]; // simple: ajoute sur le premier graphique
+            var pts = Enumerable.Range(0, 40).Select(i => new PointD(i, rand.NextDouble() * 100)).ToArray();
+            var series = new LineSeries(pts) { Title = "Rand " + (target.Series.Count + 1) };
+            _dispatcher.Invoke(() =>
+            {
+                target.AddSeries(series);
+                target.UpdateScales(800, 400);
+            });
         }
 
         private ChartModel CreateBase(DateTime start, DateTime end)
@@ -265,6 +333,87 @@ namespace DemoApp.Net48.ViewModels
             m.AddSeries(new BarSeries(bars) { Title = "Bars D", FillOpacity = 0.6 });
             m.UpdateScales(800, 400);
             return m;
+        }
+
+        // Nouvel exemple : croissance exponentielle avec axe Y logarithmique
+        private ChartModel BuildLogYAxisGrowth()
+        {
+            var start = DateTime.Today.AddDays(-7);
+            var end = DateTime.Today.AddDays(0.5);
+            var m = CreateBase(start, end);
+            m.Title = "Croissance (Y Log)";
+            var logY = new LogarithmicAxis { LogBase = 10.0 };
+            logY.SetVisibleRange(1, 10000); // 10^0 à 10^4
+            m.ReplaceYAxis(logY);
+            var n = 120;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 1.2)).ToArray();
+            // y augmente ~exp pour démonstration
+            var pts = xs.Select((x, i) => new PointD(x.ToOADate(), Math.Pow(10, i / 30.0))).ToArray();
+            m.AddSeries(new LineSeries(pts) { Title = "Exp", StrokeThickness = 1.6 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        // Nouvel exemple : scatter log-log (axes X et Y logarithmiques)
+        private ChartModel BuildLogLogScatter()
+        {
+            var m = new ChartModel { Theme = new DarkTheme(), Title = "Scatter Log-Log" };
+            var logX = new LogarithmicAxis { LogBase = 10.0 }; logX.SetVisibleRange(1, 1000);
+            var logY = new LogarithmicAxis { LogBase = 10.0 }; logY.SetVisibleRange(1, 100000);
+            m.ReplaceXAxis(logX);
+            m.ReplaceYAxis(logY);
+            var xs = Enumerable.Range(0, 60).Select(i => 1.0 + i * (999.0 / 59.0)).ToArray();
+            // relation puissance y = x^2.5 environ
+            var pts = xs.Select(x => new PointD(x, Math.Pow(x, 2.5))).ToArray();
+            m.AddSeries(new ScatterSeries(pts) { Title = "x^2.5", MarkerSize = 4 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        // Nouvel exemple : axe Y secondaire logarithmique
+        private ChartModel BuildDualYAxisLogSecondary()
+        {
+            var start = DateTime.Today.AddDays(-5);
+            var end = DateTime.Today.AddDays(0.2);
+            var m = CreateBase(start, end);
+            m.Title = "Dual Y (secondaire log)";
+            // Série linéaire sur axe primaire
+            var n = 80;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 1.5)).ToArray();
+            var linear = xs.Select((x, i) => new PointD(x.ToOADate(), 50 + Math.Sin(i * 0.2) * 10)).ToArray();
+            m.AddSeries(new LineSeries(linear) { Title = "Lin", StrokeThickness = 1.4, YAxisIndex = 0 });
+            // Série exponentielle sur axe secondaire log
+            m.EnsureSecondaryYAxis();
+            var logAxis = new LogarithmicAxis { LogBase = 10.0 }; logAxis.SetVisibleRange(1, 10000);
+            m.ReplaceSecondaryYAxis(logAxis);
+            var exp = xs.Select((x, i) => new PointD(x.ToOADate(), Math.Pow(10, i / 20.0))).ToArray();
+            m.AddSeries(new LineSeries(exp) { Title = "Exp", StrokeThickness = 1.6, YAxisIndex = 1 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+    }
+
+    internal sealed class RelayCommand : ICommand
+    {
+        private readonly Action<object?> _execute;
+        private readonly Func<object?, bool>? _canExecute;
+        public RelayCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
+        {
+            _execute = execute;
+            _canExecute = canExecute;
+        }
+        public bool CanExecute(object? parameter)
+        {
+            return _canExecute == null ? true : _canExecute(parameter);
+        }
+        public void Execute(object? parameter)
+        {
+            _execute(parameter);
+        }
+        public event EventHandler? CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
         }
     }
 }

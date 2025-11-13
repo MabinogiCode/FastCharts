@@ -9,7 +9,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Reactive.Concurrency; // ajout
 using System.Windows.Input;
+using System.Windows; // Dispatcher
 
 namespace DemoApp.Net8.ViewModels;
 
@@ -28,19 +30,21 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
     {
         Charts = new ObservableCollection<ChartModel>();
 
-        // Initialize charts
+        // UI scheduler (WPF dispatcher)
+        var uiScheduler = DispatcherScheduler.Current;
+
+        // CanExecute observables
+        var canToggleTheme = this.WhenAnyValue(_ => _.SelectedTheme).Select(_ => true).ObserveOn(uiScheduler);
+        var canAddSeries = this.WhenAnyValue(_ => _.SelectedChart).Select(c => c != null).ObserveOn(uiScheduler);
+        var canReset = this.WhenAnyValue(_ => _.SelectedChart).Select(c => c != null).ObserveOn(uiScheduler);
+
+        ToggleThemeCommand = ReactiveCommand.Create(ToggleTheme, canToggleTheme, uiScheduler);
+        AddRandomSeriesCommand = ReactiveCommand.Create(AddRandomSeries, canAddSeries, uiScheduler);
+        ResetViewCommand = ReactiveCommand.Create(ResetView, canReset, uiScheduler);
+
         InitializeCharts();
-
-        // Select first chart by default
         SelectedChart = Charts.FirstOrDefault();
-
-        // Setup reactive commands
-        ToggleThemeCommand = ReactiveCommand.Create(ToggleTheme);
-        AddRandomSeriesCommand = ReactiveCommand.Create(AddRandomSeries);
-        ResetViewCommand = ReactiveCommand.Create(ResetView);
-
-        // Setup reactive properties and animations
-        SetupReactiveBindings();
+        SetupReactiveBindings(uiScheduler);
     }
 
     /// <summary>
@@ -92,162 +96,132 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
     public ICommand AddRandomSeriesCommand { get; }
     public ICommand ResetViewCommand { get; }
 
-    private void SetupReactiveBindings()
+    private static void RunOnUi(Action action)
     {
-        // React to theme changes - now properly marshalled to UI thread
+        var disp = Application.Current?.Dispatcher;
+        if (disp == null || disp.CheckAccess())
+        {
+            action();
+        }
+        else
+        {
+            disp.Invoke(action);
+        }
+    }
+
+    private void SetupReactiveBindings(IScheduler uiScheduler)
+    {
         this.WhenAnyValue(x => x.SelectedTheme)
             .Where(theme => !string.IsNullOrEmpty(theme))
-            .ObserveOn(RxApp.MainThreadScheduler) // ✅ Now correctly maps to WPF Dispatcher
+            .ObserveOn(uiScheduler)
             .Subscribe(ApplyThemeToAllCharts);
 
-        // React to interaction changes - now properly marshalled to UI thread
         this.WhenAnyValue(x => x.AllowInteraction)
-            .ObserveOn(RxApp.MainThreadScheduler) // ✅ Now correctly maps to WPF Dispatcher
-            .Subscribe(enabled =>
-            {
-                // Collection access is now safe - we're guaranteed to be on UI thread
-                foreach (var chart in Charts)
-                {
-                    // Could disable behaviors here if needed
-                }
-            });
+            .ObserveOn(uiScheduler)
+            .Subscribe(_ => { });
 
-        // React to chart selection changes for better UX
         this.WhenAnyValue(x => x.SelectedChart)
             .Where(chart => chart != null)
-            .ObserveOn(RxApp.MainThreadScheduler) // ✅ Now correctly maps to WPF Dispatcher
-            .Subscribe(chart =>
-            {
-                // Could highlight the selected chart or show additional info
-                System.Diagnostics.Debug.WriteLine($"Selected chart changed to: {chart!.Title}");
-            });
+            .ObserveOn(uiScheduler)
+            .Subscribe(chart => System.Diagnostics.Debug.WriteLine($"Selected chart changed to: {chart!.Title}"));
 
-        // ✅ FIXED: Animation with proper WPF Dispatcher scheduling
         _animationSubscription = Observable.Interval(TimeSpan.FromMilliseconds(100))
-            .ObserveOn(RxApp.MainThreadScheduler) // ✅ Now correctly maps to WPF Dispatcher
+            .ObserveOn(uiScheduler)
             .Subscribe(_ => UpdateAnimation());
     }
 
     private void InitializeCharts()
     {
-        Charts.Add(BuildMixedChart());          // 0
-        Charts.Add(BuildBarsChart());           // 1
-        Charts.Add(BuildStackedBarsChart());    // 2
-        Charts.Add(BuildOhlcChart());           // 3
-        Charts.Add(BuildErrorBarChart());       // 4
-        Charts.Add(BuildMinimalLineChart());    // 5
-        Charts.Add(BuildAreaOnly());            // 6
-        Charts.Add(BuildScatterOnly());         // 7
-        Charts.Add(BuildStepLine());            // 8
-        Charts.Add(BuildSingleBars());          // 9
-        Charts.Add(BuildStacked100());          //10
-        Charts.Add(BuildOhlcWithErrorOverlay());//11
-        Charts.Add(BuildMultiSeriesTooltipShowcase()); //12
-        Charts.Add(BuildRealtimeChart());       //13 - New reactive chart
+        RunOnUi(() =>
+        {
+            Charts.Add(BuildMixedChart());          // 0
+            Charts.Add(BuildBarsChart());           // 1
+            Charts.Add(BuildStackedBarsChart());    // 2
+            Charts.Add(BuildOhlcChart());           // 3
+            Charts.Add(BuildErrorBarChart());       // 4
+            Charts.Add(BuildMinimalLineChart());    // 5
+            Charts.Add(BuildAreaOnly());            // 6
+            Charts.Add(BuildScatterOnly());         // 7
+            Charts.Add(BuildStepLine());            // 8
+            Charts.Add(BuildSingleBars());          // 9
+            Charts.Add(BuildStacked100());          //10
+            Charts.Add(BuildOhlcWithErrorOverlay());//11
+            Charts.Add(BuildMultiSeriesTooltipShowcase()); //12
+            Charts.Add(BuildRealtimeChart());       //13 - New reactive chart
+            Charts.Add(BuildLogYAxisGrowth());      //14 - New logarithmic chart
+            Charts.Add(BuildLogLogScatter());       //15 - New log-log scatter chart
+            Charts.Add(BuildDualYAxisLogSecondary());//16 - New dual Y secondary log chart
+        });
     }
 
     private void ToggleTheme()
     {
-        // ✅ SIMPLIFIED: ReactiveUI commands automatically execute on UI thread
         SelectedTheme = SelectedTheme == "Light" ? "Dark" : "Light";
     }
 
     private void AddRandomSeries()
     {
-        // ✅ SIMPLIFIED: ReactiveUI commands automatically execute on UI thread
         if (SelectedChart == null)
         {
             return;
         }
-
         var random = new Random();
-        var points = Enumerable.Range(0, 50)
-            .Select(i => new PointD(i, random.NextDouble() * 100))
-            .ToArray();
-
-        var series = new LineSeries(points)
+        var points = Enumerable.Range(0, 50).Select(i => new PointD(i, random.NextDouble() * 100)).ToArray();
+        RunOnUi(() =>
         {
-            Title = $"Random Series {SelectedChart.Series.Count + 1}",
-            StrokeThickness = 2.0
-        };
-        SelectedChart.AddSeries(series);
+            SelectedChart.AddSeries(new LineSeries(points)
+            {
+                Title = "Random " + (SelectedChart.Series.Count + 1),
+                StrokeThickness = 2.0
+            });
+        });
     }
 
     private void ResetView()
     {
-        // ✅ SIMPLIFIED: ReactiveUI commands automatically execute on UI thread
-        SelectedChart?.AutoFitDataRange();
+        RunOnUi(() => SelectedChart?.AutoFitDataRange());
     }
 
     private void ApplyThemeToAllCharts(string themeName)
     {
-        // ✅ SIMPLIFIED: Called from ObserveOn(RxApp.MainThreadScheduler), guaranteed UI thread
-        ITheme theme = themeName switch
+        RunOnUi(() =>
         {
-            "Dark" => new DarkTheme(),
-            _ => new LightTheme()
-        };
-
-        foreach (var chart in Charts)
-        {
-            chart.Theme = theme; // This triggers reactive notification!
-        }
+            foreach (var c in Charts)
+            {
+                c.Theme = themeName == "Dark" ? new DarkTheme() : new LightTheme();
+            }
+        });
     }
 
     private void UpdateAnimation()
     {
-        // ✅ Already on UI thread thanks to ObserveOn(RxApp.MainThreadScheduler)
-        // But let's be extra safe for complex operations
         AnimationProgress = (AnimationProgress + 0.02) % 1.0;
-
-        // ✅ FIXED: Add bounds check here as well for defense in depth
         if (Charts.Count > 13)
         {
             UpdateRealtimeChart();
         }
     }
-
     private void UpdateRealtimeChart()
     {
-        // ✅ SIMPLIFIED: Called from ObserveOn(RxApp.MainThreadScheduler), guaranteed UI thread
-        // ✅ FIXED: Bounds checking to prevent IndexOutOfRangeException
         if (Charts.Count <= 13)
         {
-            return; // Chart collection doesn't have enough items
+            return;
         }
-
-        var realtimeChart = Charts[13];
-        if (realtimeChart.Series.FirstOrDefault() is LineSeries)
-        {
-            // Simulate real-time data update
-            // In a real app, you'd update the underlying data and trigger refresh
-            // This is just for demo purposes showing reactive binding capabilities
-        }
+        // realtime update placeholder
     }
 
     // Chart builders (same as before but with reactive theme applied)
-    private static ChartModel CreateBase(DateTime start, DateTime end, string title = "Chart")
+    private static ChartModel CreateBase(DateTime start, DateTime end, string title)
     {
-        var m = new ChartModel
-        {
-            Theme = new LightTheme(),
-            Title = title
-        };
-
+        var m = new ChartModel { Theme = new LightTheme(), Title = title };
         var dtAxis = new DateTimeAxis();
         dtAxis.SetVisibleRange(start, end);
         m.ReplaceXAxis(dtAxis);
         return m;
     }
-
-    private static ChartModel CreateBaseNumeric(string title = "Chart")
+    private static ChartModel CreateBaseNumeric(string title)
     {
-        var m = new ChartModel
-        {
-            Theme = new LightTheme(),
-            Title = title
-        };
-        return m;
+        return new ChartModel { Theme = new LightTheme(), Title = title };
     }
 
     private static ChartModel BuildMixedChart()
@@ -300,7 +274,6 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
         return m;
     }
 
-    // ✅ CORRECTED: Complete chart builders with actual data
     private static ChartModel BuildBarsChart()
     {
         var m = CreateBaseNumeric("Bar Chart");
@@ -452,26 +425,72 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
         return m;
     }
 
+    // Nouveaux builders logarithmiques
+    private static ChartModel BuildLogYAxisGrowth()
+    {
+        var start = DateTime.Today.AddDays(-7);
+        var end = DateTime.Today.AddDays(0.5);
+        var m = CreateBase(start, end, "Croissance (Y Log)");
+
+        var logY = new LogarithmicAxis { LogBase = 10.0 };
+        logY.SetVisibleRange(1, 10000);
+        m.ReplaceYAxis(logY);
+
+        var n = 120;
+        var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 1.2)).ToArray();
+        var pts = xs.Select((x, i) => new PointD(x.ToOADate(), Math.Pow(10, i / 30.0))).ToArray();
+        m.AddSeries(new LineSeries(pts) { Title = "Exp", StrokeThickness = 1.6 });
+
+        m.UpdateScales(800, 400);
+        return m;
+    }
+
+    private static ChartModel BuildLogLogScatter()
+    {
+        var m = new ChartModel { Theme = new LightTheme(), Title = "Scatter Log-Log" };
+
+        var logX = new LogarithmicAxis { LogBase = 10.0 };
+        logX.SetVisibleRange(1, 1000);
+        var logY = new LogarithmicAxis { LogBase = 10.0 };
+        logY.SetVisibleRange(1, 100000);
+        m.ReplaceXAxis(logX);
+        m.ReplaceYAxis(logY);
+
+        var xs = Enumerable.Range(0, 60).Select(i => 1.0 + i * (999.0 / 59.0)).ToArray();
+        var pts = xs.Select(x => new PointD(x, Math.Pow(x, 2.5))).ToArray();
+        m.AddSeries(new ScatterSeries(pts) { Title = "x^2.5", MarkerSize = 4 });
+
+        m.UpdateScales(800, 400);
+        return m;
+    }
+
+    private static ChartModel BuildDualYAxisLogSecondary()
+    {
+        var start = DateTime.Today.AddDays(-5);
+        var end = DateTime.Today.AddDays(0.2);
+        var m = CreateBase(start, end, "Dual Y (secondaire log)");
+
+        var n = 80;
+        var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 1.5)).ToArray();
+        var linear = xs.Select((x, i) => new PointD(x.ToOADate(), 50 + Math.Sin(i * 0.2) * 10)).ToArray();
+        m.AddSeries(new LineSeries(linear) { Title = "Lin", StrokeThickness = 1.4, YAxisIndex = 0 });
+
+        m.EnsureSecondaryYAxis();
+        var logAxis = new LogarithmicAxis { LogBase = 10.0 };
+        logAxis.SetVisibleRange(1, 10000);
+        m.ReplaceSecondaryYAxis(logAxis);
+
+        var exp = xs.Select((x, i) => new PointD(x.ToOADate(), Math.Pow(10, i / 20.0))).ToArray();
+        m.AddSeries(new LineSeries(exp) { Title = "Exp", StrokeThickness = 1.6, YAxisIndex = 1 });
+
+        m.UpdateScales(800, 400);
+        return m;
+    }
+
     public void Dispose()
     {
-        // ✅ CRITICAL FIX: Enhanced dispose pattern for ViewModels
         _animationSubscription?.Dispose();
-
-        // ✅ CRITICAL FIX: Dispose all charts with proper error handling
-        foreach (var chart in Charts)
-        {
-            try
-            {
-                chart.Dispose();
-            }
-            catch (Exception ex)
-            {
-                // Log but don't throw in Dispose
-                System.Diagnostics.Debug.WriteLine($"Error disposing chart '{chart.Title}': {ex.Message}");
-            }
-        }
-
-        // ✅ CRITICAL FIX: Clear collection after disposing items
+        foreach (var chart in Charts) { try { chart.Dispose(); } catch { } }
         Charts.Clear();
     }
 }
