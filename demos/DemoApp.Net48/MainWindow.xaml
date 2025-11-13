@@ -6,20 +6,40 @@
         xmlns:controls="clr-namespace:FastCharts.Wpf.Controls;assembly=FastCharts.Wpf"
         mc:Ignorable="d"
         Title="FastCharts Demo (.NET 4.8)" Height="1200" Width="1800">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-        <UniformGrid Rows="3" Columns="4" Margin="16" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <controls:FastChart Margin="8" Model="{Binding Charts[0]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[1]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[2]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[3]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[4]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[5]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[6]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[7]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[8]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[9]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[10]}" />
-            <controls:FastChart Margin="8" Model="{Binding Charts[11]}" />
-        </UniformGrid>
-    </ScrollViewer>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <!-- Barre commandes -->
+        <DockPanel Grid.Row="0" LastChildFill="False" Margin="8" Background="#222" >
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <TextBlock Text="Demo .NET 4.8" Foreground="White" FontWeight="Bold" Margin="0,0,16,0" />
+                <Button Content="Toggle Theme" Command="{Binding ToggleThemeCommand}" Margin="0,0,8,0" />
+                <Button Content="Add Random Series" Command="{Binding AddRandomSeriesCommand}" Margin="0,0,16,0" />
+                <TextBlock Text="Theme:" Foreground="White" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding SelectedTheme}" Foreground="Orange" FontWeight="Bold" Margin="4,0,16,0" />
+            </StackPanel>
+        </DockPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <UniformGrid Rows="4" Columns="4" Margin="16" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <controls:FastChart Margin="8" Model="{Binding Charts[0]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[1]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[2]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[3]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[4]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[5]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[6]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[7]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[8]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[9]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[10]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[11]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[12]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[13]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[14]}" />
+                <controls:FastChart Margin="8" Model="{Binding Charts[15]}" />
+            </UniformGrid>
+        </ScrollViewer>
+    </Grid>
 </Window>
