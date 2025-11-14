@@ -9,10 +9,6 @@ public sealed class NearestPointBehavior : IBehavior
 
     public bool OnEvent(ChartModel model, InteractionEvent ev)
     {
-        if (model == null)
-        {
-            return false;
-        }
         switch (ev.Type)
         {
             case PointerEventType.Move:

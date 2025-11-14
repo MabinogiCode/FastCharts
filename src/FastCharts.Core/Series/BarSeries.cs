@@ -69,8 +69,13 @@ public sealed class BarSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minX = Data.Min(p => p.X);
-        var maxX = Data.Max(p => p.X);
+        var minX = double.MaxValue;
+        var maxX = double.MinValue;
+        foreach (var point in Data)
+        {
+            if (point.X < minX) minX = point.X;
+            if (point.X > maxX) maxX = point.X;
+        }
         var w0 = GetWidthFor(0) * 0.5;
         var wN = GetWidthFor(Data.Count - 1) * 0.5;
         return new FRange(minX - w0, maxX + wN);
@@ -82,8 +87,15 @@ public sealed class BarSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minY = Data.Min(p => System.Math.Min(p.Y, Baseline));
-        var maxY = Data.Max(p => System.Math.Max(p.Y, Baseline));
+        var minY = double.MaxValue;
+        var maxY = double.MinValue;
+        foreach (var point in Data)
+        {
+            var yMin = System.Math.Min(point.Y, Baseline);
+            var yMax = System.Math.Max(point.Y, Baseline);
+            if (yMin < minY) minY = yMin;
+            if (yMax > maxY) maxY = yMax;
+        }
         return new FRange(minY, maxY);
     }
 

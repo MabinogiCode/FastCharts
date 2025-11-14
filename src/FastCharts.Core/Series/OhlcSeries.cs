@@ -50,8 +50,13 @@ public sealed class OhlcSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minX = Data.Min(p => p.X);
-        var maxX = Data.Max(p => p.X);
+        var minX = double.MaxValue;
+        var maxX = double.MinValue;
+        foreach (var point in Data)
+        {
+            if (point.X < minX) minX = point.X;
+            if (point.X > maxX) maxX = point.X;
+        }
         var half = GetWidthFor(0) * 0.5;
         return new FRange(minX - half, maxX + half);
     }
@@ -62,8 +67,13 @@ public sealed class OhlcSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minY = Data.Min(p => p.Low);
-        var maxY = Data.Max(p => p.High);
+        var minY = double.MaxValue;
+        var maxY = double.MinValue;
+        foreach (var point in Data)
+        {
+            if (point.Low < minY) minY = point.Low;
+            if (point.High > maxY) maxY = point.High;
+        }
         return new FRange(minY, maxY);
     }
 

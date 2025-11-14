@@ -63,8 +63,13 @@ public sealed class StackedBarSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minX = Data.Min(p => p.X);
-        var maxX = Data.Max(p => p.X);
+        var minX = double.MaxValue;
+        var maxX = double.MinValue;
+        foreach (var point in Data)
+        {
+            if (point.X < minX) minX = point.X;
+            if (point.X > maxX) maxX = point.X;
+        }
         var w0 = GetWidthFor(0) * 0.5;
         var wN = GetWidthFor(Data.Count - 1) * 0.5;
         return new FRange(minX - w0, maxX + wN);
@@ -77,7 +82,7 @@ public sealed class StackedBarSeries : SeriesBase, ISeriesRangeProvider
         }
         var minY = Baseline;
         var maxY = Baseline;
-        var ranges = Data.Select(p =>
+        foreach (var p in Data)
         {
             var pos = 0.0;
             var neg = 0.0;
@@ -98,17 +103,13 @@ public sealed class StackedBarSeries : SeriesBase, ISeriesRangeProvider
             }
             var top = System.Math.Max(Baseline, Baseline + pos);
             var bot = System.Math.Min(Baseline, Baseline + neg);
-            return new { Top = top, Bot = bot };
-        }).ToList();
-        foreach (var range in ranges)
-        {
-            if (range.Top > maxY)
+            if (top > maxY)
             {
-                maxY = range.Top;
+                maxY = top;
             }
-            if (range.Bot < minY)
+            if (bot < minY)
             {
-                minY = range.Bot;
+                minY = bot;
             }
         }
         return new FRange(minY, maxY);

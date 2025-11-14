@@ -8,10 +8,6 @@ public sealed class CrosshairBehavior : IBehavior
     public string TooltipFormatY { get; set; } = "Y: {0}";
     public bool OnEvent(ChartModel model, InteractionEvent ev)
     {
-        if (model == null)
-        {
-            return false;
-        }
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;
         switch (ev.Type)

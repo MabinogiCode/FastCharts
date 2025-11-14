@@ -10,11 +10,6 @@ public sealed class PanBehavior : IBehavior
 
     public bool OnEvent(ChartModel model, InteractionEvent ev)
     {
-        if (model == null)
-        {
-            return false;
-        }
-
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;
 

@@ -6,10 +6,6 @@ public sealed class LegendToggleBehavior : IBehavior
 {
     public bool OnEvent(ChartModel model, InteractionEvent ev)
     {
-        if (model == null)
-        {
-            return false;
-        }
         if (ev.Type != PointerEventType.Down || ev.Button != PointerButton.Left)
         {
             return false;
