@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Series;
 
@@ -25,13 +26,7 @@ public class LineSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var min = double.MaxValue;
-        var max = double.MinValue;
-        foreach (var point in Data)
-        {
-            if (point.X < min) min = point.X;
-            if (point.X > max) max = point.X;
-        }
+        var (min, max) = DataHelper.GetMinMax(Data, p => p.X);
         return new FRange(min, max);
     }
     public FRange GetYRange()
@@ -40,13 +35,7 @@ public class LineSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var min = double.MaxValue;
-        var max = double.MinValue;
-        foreach (var point in Data)
-        {
-            if (point.Y < min) min = point.Y;
-            if (point.Y > max) max = point.Y;
-        }
+        var (min, max) = DataHelper.GetMinMax(Data, p => p.Y);
         return new FRange(min, max);
     }
     bool ISeriesRangeProvider.TryGetRanges(out FRange xRange, out FRange yRange)
