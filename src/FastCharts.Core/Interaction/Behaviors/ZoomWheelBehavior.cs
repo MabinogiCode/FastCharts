@@ -7,10 +7,6 @@ public sealed class ZoomWheelBehavior : IBehavior
     public double Step { get; set; } = 1.1;
     public bool OnEvent(ChartModel model, InteractionEvent ev)
     {
-        if (model == null)
-        {
-            return false;
-        }
         if (ev.Type != PointerEventType.Wheel)
         {
             return false;

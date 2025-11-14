@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Series;
 
@@ -58,8 +59,7 @@ public sealed class ErrorBarSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minX = Data.Min(p => p.X);
-        var maxX = Data.Max(p => p.X);
+        var (minX, maxX) = DataHelper.GetMinMax(Data, p => p.X);
         var half = GetCapWidth() * 0.5;
         return new FRange(minX - half, maxX + half);
     }
@@ -70,8 +70,10 @@ public sealed class ErrorBarSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minY = Data.Min(p => p.Y - (p.NegativeError ?? p.PositiveError));
-        var maxY = Data.Max(p => p.Y + p.PositiveError);
+        var (minY, maxY) = DataHelper.GetMinMax(
+            Data,
+            p => p.Y - (p.NegativeError ?? p.PositiveError),
+            p => p.Y + p.PositiveError);
         return new FRange(minY, maxY);
     }
 

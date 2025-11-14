@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Series;
 
@@ -32,8 +33,7 @@ public sealed class ScatterSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var min = Data.Min(p => p.X);
-        var max = Data.Max(p => p.X);
+        var (min, max) = DataHelper.GetMinMax(Data, p => p.X);
         return new FRange(min, max);
     }
 
@@ -43,8 +43,7 @@ public sealed class ScatterSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var min = Data.Min(p => p.Y);
-        var max = Data.Max(p => p.Y);
+        var (min, max) = DataHelper.GetMinMax(Data, p => p.Y);
         return new FRange(min, max);
     }
 

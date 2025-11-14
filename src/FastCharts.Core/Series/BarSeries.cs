@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Series;
 
@@ -69,8 +70,7 @@ public sealed class BarSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minX = Data.Min(p => p.X);
-        var maxX = Data.Max(p => p.X);
+        var (minX, maxX) = DataHelper.GetMinMax(Data, p => p.X);
         var w0 = GetWidthFor(0) * 0.5;
         var wN = GetWidthFor(Data.Count - 1) * 0.5;
         return new FRange(minX - w0, maxX + wN);
@@ -82,8 +82,10 @@ public sealed class BarSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minY = Data.Min(p => System.Math.Min(p.Y, Baseline));
-        var maxY = Data.Max(p => System.Math.Max(p.Y, Baseline));
+        var (minY, maxY) = DataHelper.GetMinMax(
+            Data,
+            p => System.Math.Min(p.Y, Baseline),
+            p => System.Math.Max(p.Y, Baseline));
         return new FRange(minY, maxY);
     }
 

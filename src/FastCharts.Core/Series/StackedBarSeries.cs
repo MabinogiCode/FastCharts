@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Series;
 
@@ -63,8 +64,7 @@ public sealed class StackedBarSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minX = Data.Min(p => p.X);
-        var maxX = Data.Max(p => p.X);
+        var (minX, maxX) = DataHelper.GetMinMax(Data, p => p.X);
         var w0 = GetWidthFor(0) * 0.5;
         var wN = GetWidthFor(Data.Count - 1) * 0.5;
         return new FRange(minX - w0, maxX + wN);
@@ -75,42 +75,34 @@ public sealed class StackedBarSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minY = Baseline;
-        var maxY = Baseline;
-        var ranges = Data.Select(p =>
+
+        double CalculateBottom(StackedBarPoint p)
         {
-            var pos = 0.0;
             var neg = 0.0;
             if (p.Values != null)
             {
                 for (var i = 0; i < p.Values.Length; i++)
                 {
-                    var v = p.Values[i];
-                    if (v >= 0)
-                    {
-                        pos += v;
-                    }
-                    else
-                    {
-                        neg += v;
-                    }
+                    if (p.Values[i] < 0) neg += p.Values[i];
                 }
             }
-            var top = System.Math.Max(Baseline, Baseline + pos);
-            var bot = System.Math.Min(Baseline, Baseline + neg);
-            return new { Top = top, Bot = bot };
-        }).ToList();
-        foreach (var range in ranges)
-        {
-            if (range.Top > maxY)
-            {
-                maxY = range.Top;
-            }
-            if (range.Bot < minY)
-            {
-                minY = range.Bot;
-            }
+            return System.Math.Min(Baseline, Baseline + neg);
         }
+
+        double CalculateTop(StackedBarPoint p)
+        {
+            var pos = 0.0;
+            if (p.Values != null)
+            {
+                for (var i = 0; i < p.Values.Length; i++)
+                {
+                    if (p.Values[i] >= 0) pos += p.Values[i];
+                }
+            }
+            return System.Math.Max(Baseline, Baseline + pos);
+        }
+
+        var (minY, maxY) = DataHelper.GetMinMax(Data, CalculateBottom, CalculateTop);
         return new FRange(minY, maxY);
     }
     bool ISeriesRangeProvider.TryGetRanges(out FRange xRange, out FRange yRange)

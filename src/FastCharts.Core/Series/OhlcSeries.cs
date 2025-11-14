@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using FastCharts.Core.Primitives;
 using System.Linq;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Series;
 
@@ -50,8 +51,7 @@ public sealed class OhlcSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minX = Data.Min(p => p.X);
-        var maxX = Data.Max(p => p.X);
+        var (minX, maxX) = DataHelper.GetMinMax(Data, p => p.X);
         var half = GetWidthFor(0) * 0.5;
         return new FRange(minX - half, maxX + half);
     }
@@ -62,8 +62,7 @@ public sealed class OhlcSeries : SeriesBase, ISeriesRangeProvider
         {
             return new FRange(0, 0);
         }
-        var minY = Data.Min(p => p.Low);
-        var maxY = Data.Max(p => p.High);
+        var (minY, maxY) = DataHelper.GetMinMax(Data, p => p.Low, p => p.High);
         return new FRange(minY, maxY);
     }
 

@@ -84,14 +84,49 @@ namespace FastCharts.Core.DependencyInjection
         private object CreateInstance(Type type)
         {
             var constructors = type.GetConstructors();
-            var constructor = constructors[0]; // Simplified: take the first constructor
-
-            var parameters = constructor.GetParameters();
-            var args = new object[parameters.Length];
-
-            for (var i = 0; i < parameters.Length; i++)
+            if (constructors.Length == 0)
             {
-                args[i] = Resolve(parameters[i].ParameterType);
+                throw new InvalidOperationException($"Type {type.Name} has no public constructors.");
+            }
+
+            // Select the constructor with the most resolvable parameters
+            System.Reflection.ConstructorInfo? bestConstructor = null;
+            var maxResolvableParams = -1;
+
+            foreach (var ctor in constructors)
+            {
+                var parameters = ctor.GetParameters();
+                var resolvableCount = 0;
+
+                foreach (var param in parameters)
+                {
+                    if (_services.ContainsKey(param.ParameterType))
+                    {
+                        resolvableCount++;
+                    }
+                }
+
+                // Select constructor with all parameters resolvable and most parameters
+                if (resolvableCount == parameters.Length && resolvableCount > maxResolvableParams)
+                {
+                    bestConstructor = ctor;
+                    maxResolvableParams = resolvableCount;
+                }
+            }
+
+            if (bestConstructor == null)
+            {
+                throw new InvalidOperationException(
+                    $"Unable to find a suitable constructor for type {type.Name}. " +
+                    "Ensure all constructor parameters are registered in the container.");
+            }
+
+            var ctorParameters = bestConstructor.GetParameters();
+            var args = new object[ctorParameters.Length];
+
+            for (var i = 0; i < ctorParameters.Length; i++)
+            {
+                args[i] = Resolve(ctorParameters[i].ParameterType);
             }
 
             return Activator.CreateInstance(type, args)!;
