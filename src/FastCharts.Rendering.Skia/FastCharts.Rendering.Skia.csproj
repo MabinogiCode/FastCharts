@@ -18,7 +18,7 @@
         <PackageReference Include="SkiaSharp" Version="3.119.1" />
         <!-- StyleCop Analyzers for strict SA1124 enforcement -->
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
-        <PackageReference Include="System.Text.Json" Version="9.0.10" />
+        <PackageReference Include="System.Text.Json" Version="10.0.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj" />
