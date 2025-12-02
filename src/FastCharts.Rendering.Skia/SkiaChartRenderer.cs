@@ -133,7 +133,11 @@ namespace FastCharts.Rendering.Skia
 
         public void ExportPng(ChartModel model, Stream destination, int pixelWidth, int pixelHeight, int quality = 100, bool transparentBackground = false)
         {
-            if (model == null || destination == null || !destination.CanWrite)
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+            if (destination == null || !destination.CanWrite)
             {
                 return;
             }

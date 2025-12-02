@@ -45,6 +45,19 @@
                 <Button Content="🔄 Reset View" Command="{Binding ResetViewCommand}" Margin="5"
                         ToolTip="Reset the zoom/pan of the selected chart"/>
                 
+                <!-- P1-EXPORT-PNG: Export Actions -->
+                <Border Background="LightBlue" BorderBrush="Navy" BorderThickness="1" CornerRadius="3" Padding="5" Margin="10,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="💾 Export:" VerticalAlignment="Center" Margin="0,0,5,0" FontWeight="Bold" Foreground="Navy"/>
+                        <Button Content="📁 Save PNG" Command="{Binding ExportSelectedChartCommand}" Margin="2"
+                                ToolTip="Export the selected chart to a PNG file"/>
+                        <Button Content="📋 Copy" Command="{Binding CopySelectedChartToClipboardCommand}" Margin="2"
+                                ToolTip="Copy the selected chart to clipboard"/>
+                        <Button Content="📂 Export All" Command="{Binding ExportAllChartsCommand}" Margin="2"
+                                ToolTip="Export all charts to PNG files"/>
+                    </StackPanel>
+                </Border>
+                
                 <!-- Animation Progress -->
                 <TextBlock Text="Animation:" VerticalAlignment="Center" Margin="10,0,5,0"/>
                 <ProgressBar Value="{Binding AnimationProgress, Mode=OneWay}" Maximum="1" Width="100" Height="20" Margin="5"/>

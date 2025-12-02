@@ -1,6 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
 using FastCharts.Core;
@@ -10,11 +12,13 @@ using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 using FastCharts.Core.Themes.BuiltIn;
 using FastCharts.Core.Annotations;
+using FastCharts.Rendering.Skia;
 using DemoApp.Net48.ViewModels.Base;
 using DemoApp.Net48.Commands;
 using DemoApp.Net48.Constants;
 using DemoApp.Net48.Services.Abstractions;
 using DemoApp.Net48.Services;
+using Microsoft.Win32;
 
 namespace DemoApp.Net48.ViewModels
 {
@@ -25,7 +29,9 @@ namespace DemoApp.Net48.ViewModels
     {
         private readonly IChartCreationService _chartCreationService;
         private readonly Dispatcher _dispatcher;
+        private readonly SkiaChartRenderer _renderer;
         private string _selectedTheme = ThemeConstants.Dark;
+        private ChartModel? _selectedChart;
 
         /// <summary>
         /// Initializes a new instance of the MainViewModel class
@@ -42,16 +48,29 @@ namespace DemoApp.Net48.ViewModels
         {
             _chartCreationService = chartCreationService ?? throw new ArgumentNullException(nameof(chartCreationService));
             _dispatcher = Dispatcher.CurrentDispatcher;
+            _renderer = new SkiaChartRenderer();
 
             Charts = new ObservableCollection<ChartModel>();
             InitializeCommands();
             LoadCharts();
+            
+            // Select first chart by default
+            SelectedChart = Charts.FirstOrDefault();
         }
 
         /// <summary>
         /// Gets the collection of charts displayed in the UI
         /// </summary>
         public ObservableCollection<ChartModel> Charts { get; }
+
+        /// <summary>
+        /// Gets or sets the currently selected chart for export operations
+        /// </summary>
+        public ChartModel? SelectedChart
+        {
+            get => _selectedChart;
+            set => SetProperty(ref _selectedChart, value);
+        }
 
         /// <summary>
         /// Gets the command for toggling between themes
@@ -62,6 +81,21 @@ namespace DemoApp.Net48.ViewModels
         /// Gets the command for adding random series to charts
         /// </summary>
         public ICommand AddRandomSeriesCommand { get; private set; } = null!;
+
+        /// <summary>
+        /// Gets the command for exporting the selected chart to PNG
+        /// </summary>
+        public ICommand ExportSelectedChartCommand { get; private set; } = null!;
+
+        /// <summary>
+        /// Gets the command for exporting all charts to PNG files
+        /// </summary>
+        public ICommand ExportAllChartsCommand { get; private set; } = null!;
+
+        /// <summary>
+        /// Gets the command for copying the selected chart to clipboard
+        /// </summary>
+        public ICommand CopySelectedChartToClipboardCommand { get; private set; } = null!;
 
         /// <summary>
         /// Gets or sets the selected theme name
@@ -78,6 +112,15 @@ namespace DemoApp.Net48.ViewModels
             AddRandomSeriesCommand = new RelayCommand(
                 _ => AddRandomSeries(), 
                 _ => Charts.Count > 0);
+            
+            // P1-EXPORT-PNG: Add export commands
+            ExportSelectedChartCommand = new AsyncRelayCommand(
+                _ => ExportSelectedChart(),
+                _ => SelectedChart != null);
+            ExportAllChartsCommand = new AsyncRelayCommand(_ => ExportAllCharts());
+            CopySelectedChartToClipboardCommand = new AsyncRelayCommand(
+                _ => CopySelectedChartToClipboard(),
+                _ => SelectedChart != null);
         }
 
         private void LoadCharts()
@@ -102,6 +145,12 @@ namespace DemoApp.Net48.ViewModels
             
             // P1-ANN-LINE: Add Annotation demo
             Charts.Add(BuildAnnotationDemo());
+            
+            // P1-AX-MULTI: Add Multi-Axis demo
+            Charts.Add(BuildMultiAxisDemo());
+            
+            // P1-ANN-RANGE: Add Range Annotation demo
+            Charts.Add(BuildRangeAnnotationDemo());
             
             // Add demo charts from service
             var demoCharts = _chartCreationService.CreateDemoCharts();
@@ -160,6 +209,145 @@ namespace DemoApp.Net48.ViewModels
             foreach (var chart in Charts)
             {
                 chart.Theme = theme;
+            }
+        }
+
+        // P1-EXPORT-PNG: Export functionality for .NET Framework 4.8
+        private async Task ExportSelectedChart()
+        {
+            if (SelectedChart == null)
+            {
+                return;
+            }
+
+            var saveFileDialog = new SaveFileDialog
+            {
+                Title = "Export Chart to PNG",
+                Filter = "PNG Images (*.png)|*.png|All files (*.*)|*.*",
+                FileName = $"{SelectedChart.Title?.Replace(" ", "_") ?? "Chart"}.png",
+                DefaultExt = ".png"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    using (var fileStream = new FileStream(saveFileDialog.FileName, FileMode.Create))
+                    {
+                        await _renderer.ExportPngAsync(SelectedChart, fileStream, 1200, 800, quality: 95);
+                    }
+                    
+                    // Show success message
+                    System.Windows.MessageBox.Show(
+                        $"Chart '{SelectedChart.Title}' exported successfully to:\n{saveFileDialog.FileName}",
+                        "Export Successful",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Failed to export chart:\n{ex.Message}",
+                        "Export Failed",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async Task ExportAllCharts()
+        {
+            using (var folderDialog = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description = "Select folder for exporting all charts",
+                ShowNewFolderButton = true
+            })
+            {
+                if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    var folderPath = folderDialog.SelectedPath;
+                    
+                    try
+                    {
+                        var exportTasks = Charts.Select(async (chart, index) =>
+                        {
+                            var fileName = $"{index:00}_{chart.Title?.Replace(" ", "_") ?? "Chart"}.png";
+                            var fullPath = Path.Combine(folderPath, fileName);
+                            
+                            using (var fileStream = new FileStream(fullPath, FileMode.Create))
+                            {
+                                await _renderer.ExportPngAsync(chart, fileStream, 1200, 800, quality: 95);
+                            }
+                            
+                            return fullPath;
+                        });
+
+                        var exportedFiles = await Task.WhenAll(exportTasks);
+                        
+                        System.Windows.MessageBox.Show(
+                            $"Successfully exported {exportedFiles.Length} charts to:\n{folderPath}",
+                            "Batch Export Successful",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show(
+                            $"Failed to export charts:\n{ex.Message}",
+                            "Batch Export Failed",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Error);
+                    }
+                }
+            }
+        }
+
+        private async Task CopySelectedChartToClipboard()
+        {
+            if (SelectedChart == null)
+            {
+                return;
+            }
+
+            try
+            {
+                // Render to bitmap
+                var bitmap = await _renderer.RenderToBitmapAsync(SelectedChart, 1200, 800, transparentBackground: true);
+                
+                // Convert SKBitmap to System.Drawing.Bitmap for clipboard
+                using (var memoryStream = new MemoryStream())
+                using (var image = SkiaSharp.SKImage.FromPixels(bitmap.PeekPixels()))
+                using (var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100))
+                {
+                    data.SaveTo(memoryStream);
+                    memoryStream.Position = 0;
+                    var drawingBitmap = new System.Drawing.Bitmap(memoryStream);
+                    
+                    // Copy to clipboard
+                    System.Windows.Clipboard.SetImage(System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                        drawingBitmap.GetHbitmap(),
+                        IntPtr.Zero,
+                        System.Windows.Int32Rect.Empty,
+                        System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions()));
+                    
+                    drawingBitmap.Dispose();
+                }
+                
+                bitmap.Dispose();
+                
+                System.Windows.MessageBox.Show(
+                    $"Chart '{SelectedChart.Title}' copied to clipboard!",
+                    "Copy Successful",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Failed to copy chart to clipboard:\n{ex.Message}",
+                    "Copy Failed",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
             }
         }
 
@@ -492,29 +680,208 @@ namespace DemoApp.Net48.ViewModels
             });
 
             // Add horizontal annotations for key levels
-            var supportLevel = AnnotationLine.Horizontal(100.0, "Support Level ($100)");
-            supportLevel.Color = new ColorRgba(0, 255, 0, 180); // Green
-            supportLevel.LineStyle = LineStyle.Dashed;
-            supportLevel.Thickness = 2.0;
-            supportLevel.LabelPosition = LabelPosition.Start;
+            var supportLevel = new AnnotationLine(100.0, AnnotationOrientation.Horizontal, "Support Level ($100)")
+            {
+                Color = new ColorRgba(0, 255, 0, 180), // Green
+                LineStyle = LineStyle.Dashed,
+                Thickness = 2.0,
+                LabelPosition = LabelPosition.Start
+            };
 
-            var resistanceLevel = AnnotationLine.Horizontal(115.0, "Resistance Level ($115)");
-            resistanceLevel.Color = new ColorRgba(255, 0, 0, 180); // Red
-            resistanceLevel.LineStyle = LineStyle.Dashed;
-            resistanceLevel.Thickness = 2.0;
-            resistanceLevel.LabelPosition = LabelPosition.Start;
+            var resistanceLevel = new AnnotationLine(115.0, AnnotationOrientation.Horizontal, "Resistance Level ($115)")
+            {
+                Color = new ColorRgba(255, 0, 0, 180), // Red
+                LineStyle = LineStyle.Dashed,
+                Thickness = 2.0,
+                LabelPosition = LabelPosition.Start
+            };
 
             // Add vertical annotations for important events
-            var earnings = AnnotationLine.Vertical(3.0, "Earnings Report");
-            earnings.Color = new ColorRgba(128, 0, 128, 160); // Purple
-            earnings.LineStyle = LineStyle.Dotted;
-            earnings.Thickness = 2.0;
-            earnings.LabelPosition = LabelPosition.Middle;
+            var earnings = new AnnotationLine(3.0, AnnotationOrientation.Vertical, "Earnings Report")
+            {
+                Color = new ColorRgba(128, 0, 128, 160), // Purple
+                LineStyle = LineStyle.Dotted,
+                Thickness = 2.0,
+                LabelPosition = LabelPosition.Middle
+            };
 
             // Add all annotations
             model.AddAnnotation(supportLevel);
             model.AddAnnotation(resistanceLevel);
             model.AddAnnotation(earnings);
+
+            model.UpdateScales(800, 400);
+            return model;
+        }
+
+        /// <summary>
+        /// Demonstrates multiple Y axes functionality (P1-AX-MULTI)
+        /// Shows price data on primary axis and volume on secondary axis
+        /// </summary>
+        private static ChartModel BuildMultiAxisDemo()
+        {
+            var model = new ChartModel 
+            { 
+                Theme = new LightTheme(),
+                Title = "Stock Price & Volume (Multi-Axis Demo P1-AX-MULTI)"
+            };
+
+            // Ensure secondary Y axis exists
+            model.EnsureSecondaryYAxis();
+
+            // Stock price data (primary Y axis)
+            var priceData = new[]
+            {
+                new PointD(0, 100.0), // Day 0: $100
+                new PointD(1, 102.5), // Day 1: $102.50
+                new PointD(2, 98.2),  // Day 2: $98.20
+                new PointD(3, 105.8), // Day 3: $105.80
+                new PointD(4, 108.1), // Day 4: $108.10
+                new PointD(5, 103.5), // Day 5: $103.50
+                new PointD(6, 110.3), // Day 6: $110.30
+                new PointD(7, 115.7), // Day 7: $115.70
+                new PointD(8, 112.4), // Day 8: $112.40
+                new PointD(9, 118.9), // Day 9: $118.90
+            };
+
+            // Volume data (secondary Y axis) - much larger scale
+            var volumeData = new[]
+            {
+                new BarPoint(0, 1200000), // Day 0: 1.2M shares
+                new BarPoint(1, 850000),  // Day 1: 850K shares
+                new BarPoint(2, 1800000), // Day 2: 1.8M shares (high volume on price drop)
+                new BarPoint(3, 1100000), // Day 3: 1.1M shares
+                new BarPoint(4, 950000),  // Day 4: 950K shares
+                new BarPoint(5, 1350000), // Day 5: 1.35M shares
+                new BarPoint(6, 1050000), // Day 6: 1.05M shares
+                new BarPoint(7, 1600000), // Day 7: 1.6M shares (breakout volume)
+                new BarPoint(8, 1000000), // Day 8: 1M shares
+                new BarPoint(9, 1750000), // Day 9: 1.75M shares
+            };
+
+            // Add price series to primary Y axis (YAxisIndex = 0)
+            var priceSeries = new LineSeries(priceData)
+            {
+                Title = "Price ($)",
+                StrokeThickness = 3,
+                YAxisIndex = 0 // Primary Y axis
+            };
+            model.Series.Add(priceSeries);
+
+            // Add volume series to secondary Y axis (YAxisIndex = 1)
+            var volumeSeries = new BarSeries(volumeData)
+            {
+                Title = "Volume (shares)",
+                YAxisIndex = 1 // Secondary Y axis
+            };
+            model.Series.Add(volumeSeries);
+
+            // Auto fit the ranges
+            model.AutoFitDataRange();
+
+            return model;
+        }
+
+        /// <summary>
+        /// Demonstrates range annotation functionality (P1-ANN-RANGE)
+        /// Shows horizontal and vertical range highlights with different styles
+        /// </summary>
+        private static ChartModel BuildRangeAnnotationDemo()
+        {
+            var model = new ChartModel 
+            { 
+                Theme = new LightTheme(),
+                Title = "Temperature Monitoring with Range Annotations (P1-ANN-RANGE)"
+            };
+
+            // Temperature data over 24 hours (simulated)
+            var temperatureData = new[]
+            {
+                new PointD(0, 18.5),    // Midnight: 18.5°C
+                new PointD(2, 16.8),    // 2 AM: 16.8°C
+                new PointD(4, 15.2),    // 4 AM: 15.2°C
+                new PointD(6, 14.5),    // 6 AM: 14.5°C (coldest)
+                new PointD(8, 17.3),    // 8 AM: 17.3°C
+                new PointD(10, 22.1),   // 10 AM: 22.1°C
+                new PointD(12, 26.8),   // Noon: 26.8°C
+                new PointD(14, 29.5),   // 2 PM: 29.5°C (hottest)
+                new PointD(16, 28.2),   // 4 PM: 28.2°C
+                new PointD(18, 25.4),   // 6 PM: 25.4°C
+                new PointD(20, 22.7),   // 8 PM: 22.7°C
+                new PointD(22, 20.1),   // 10 PM: 20.1°C
+                new PointD(24, 18.9)    // Midnight: 18.9°C
+            };
+
+            model.AddSeries(new LineSeries(temperatureData)
+            {
+                Title = "Temperature (°C)",
+                StrokeThickness = 3
+            });
+
+            // Add horizontal range annotations for temperature zones
+            
+            // Comfort zone (20°C - 25°C)
+            var comfortZone = new AnnotationRange(20.0, 25.0, AnnotationOrientation.Horizontal, "Comfort Zone (20-25°C)")
+            {
+                FillColor = new ColorRgba(0, 255, 0, 40),     // Light green
+                BorderColor = new ColorRgba(0, 200, 0, 120),  // Green border
+                BorderThickness = 1.5,
+                LabelPosition = LabelPosition.Start
+            };
+
+            // Warning zone (25°C - 30°C)
+            var warningZone = new AnnotationRange(25.0, 30.0, AnnotationOrientation.Horizontal, "Warning Zone (25-30°C)")
+            {
+                FillColor = new ColorRgba(255, 165, 0, 50),   // Light orange
+                BorderColor = new ColorRgba(255, 140, 0, 150), // Orange border
+                BorderThickness = 1.5,
+                LabelPosition = LabelPosition.Start
+            };
+
+            // Cold zone (below 15°C)
+            var coldZone = new AnnotationRange(10.0, 15.0, AnnotationOrientation.Horizontal, "Cold Zone (<15°C)")
+            {
+                FillColor = new ColorRgba(0, 100, 255, 40),      // Light blue
+                BorderColor = new ColorRgba(0, 80, 200, 120),    // Blue border
+                BorderThickness = 1.5,
+                LabelPosition = LabelPosition.Start
+            };
+
+            // Add vertical range annotations for time periods
+
+            // Night time (0-6 hours and 22-24 hours)
+            var nightTime1 = new AnnotationRange(0.0, 6.0, AnnotationOrientation.Vertical, "Night")
+            {
+                FillColor = new ColorRgba(25, 25, 112, 30),    // Dark blue, very transparent
+                BorderColor = new ColorRgba(25, 25, 112, 80),
+                BorderThickness = 1.0,
+                LabelPosition = LabelPosition.End
+            };
+
+            var nightTime2 = new AnnotationRange(22.0, 24.0, AnnotationOrientation.Vertical, "Night")
+            {
+                FillColor = new ColorRgba(25, 25, 112, 30),    // Dark blue, very transparent
+                BorderColor = new ColorRgba(25, 25, 112, 80),
+                BorderThickness = 1.0,
+                LabelPosition = LabelPosition.End
+            };
+
+            // Peak heat time (12-16 hours)
+            var peakHeat = new AnnotationRange(12.0, 16.0, AnnotationOrientation.Vertical, "Peak Heat Period")
+            {
+                FillColor = new ColorRgba(255, 69, 0, 25),       // Red-orange, very transparent
+                BorderColor = new ColorRgba(255, 69, 0, 100),
+                BorderThickness = 1.0,
+                LabelPosition = LabelPosition.Start
+            };
+
+            // Add all annotations with proper Z-ordering
+            model.AddAnnotation(nightTime1);      // Background ranges first
+            model.AddAnnotation(nightTime2);
+            model.AddAnnotation(peakHeat);
+            model.AddAnnotation(coldZone);        // Temperature zones on top
+            model.AddAnnotation(comfortZone);
+            model.AddAnnotation(warningZone);
 
             model.UpdateScales(800, 400);
             return model;

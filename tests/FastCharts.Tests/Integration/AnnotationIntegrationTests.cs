@@ -33,7 +33,7 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add horizontal annotation
-            var horizontalLine = AnnotationLine.Horizontal(20.0, "Target Level");
+            var horizontalLine = new AnnotationLine(20.0, AnnotationOrientation.Horizontal, "Target Level");
             model.AddAnnotation(horizontalLine);
 
             // Act
@@ -63,7 +63,7 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add vertical annotation
-            var verticalLine = AnnotationLine.Vertical(2.5, "Event Time");
+            var verticalLine = new AnnotationLine(2.5, AnnotationOrientation.Vertical, "Event Time");
             model.AddAnnotation(verticalLine);
 
             // Act
@@ -94,14 +94,20 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add multiple annotations with different Z-indices
-            var line1 = AnnotationLine.Horizontal(30.0, "Level 1");
-            line1.ZIndex = 1;
+            var line1 = new AnnotationLine(30.0, AnnotationOrientation.Horizontal, "Level 1")
+            {
+                ZIndex = 1
+            };
             
-            var line2 = AnnotationLine.Horizontal(40.0, "Level 2");
-            line2.ZIndex = 0;
+            var line2 = new AnnotationLine(40.0, AnnotationOrientation.Horizontal, "Level 2")
+            {
+                ZIndex = 0
+            };
             
-            var line3 = AnnotationLine.Vertical(2.5, "Milestone");
-            line3.ZIndex = 2;
+            var line3 = new AnnotationLine(2.5, AnnotationOrientation.Vertical, "Milestone")
+            {
+                ZIndex = 2
+            };
 
             model.AddAnnotation(line1);
             model.AddAnnotation(line2);
@@ -132,17 +138,23 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add annotations with different styles
-            var solidLine = AnnotationLine.Horizontal(20.0, "Solid");
-            solidLine.LineStyle = LineStyle.Solid;
-            solidLine.Thickness = 2.0;
+            var solidLine = new AnnotationLine(20.0, AnnotationOrientation.Horizontal, "Solid")
+            {
+                LineStyle = LineStyle.Solid,
+                Thickness = 2.0
+            };
             
-            var dashedLine = AnnotationLine.Horizontal(30.0, "Dashed");
-            dashedLine.LineStyle = LineStyle.Dashed;
-            dashedLine.Thickness = 1.5;
+            var dashedLine = new AnnotationLine(30.0, AnnotationOrientation.Horizontal, "Dashed")
+            {
+                LineStyle = LineStyle.Dashed,
+                Thickness = 1.5
+            };
             
-            var dottedLine = AnnotationLine.Horizontal(40.0, "Dotted");
-            dottedLine.LineStyle = LineStyle.Dotted;
-            dottedLine.Color = new ColorRgba(255, 0, 0, 200); // Red
+            var dottedLine = new AnnotationLine(40.0, AnnotationOrientation.Horizontal, "Dotted")
+            {
+                LineStyle = LineStyle.Dotted,
+                Color = new ColorRgba(255, 0, 0, 200) // Red
+            };
 
             model.AddAnnotation(solidLine);
             model.AddAnnotation(dashedLine);
@@ -172,8 +184,10 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add annotation without label
-            var line = AnnotationLine.Horizontal(15.0, "Hidden Label");
-            line.ShowLabel = false;
+            var line = new AnnotationLine(15.0, AnnotationOrientation.Horizontal, "Hidden Label")
+            {
+                ShowLabel = false
+            };
             model.AddAnnotation(line);
 
             // Act
@@ -200,8 +214,10 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add invisible annotation
-            var line = AnnotationLine.Horizontal(15.0, "Invisible");
-            line.IsVisible = false;
+            var line = new AnnotationLine(15.0, AnnotationOrientation.Horizontal, "Invisible")
+            {
+                IsVisible = false
+            };
             model.AddAnnotation(line);
 
             // Act & Assert - should not throw
@@ -229,8 +245,8 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add annotations outside visible range
-            var farHorizontal = AnnotationLine.Horizontal(1000.0, "Far Above");
-            var farVertical = AnnotationLine.Vertical(-100.0, "Far Left");
+            var farHorizontal = new AnnotationLine(1000.0, AnnotationOrientation.Horizontal, "Far Above");
+            var farVertical = new AnnotationLine(-100.0, AnnotationOrientation.Vertical, "Far Left");
 
             model.AddAnnotation(farHorizontal);
             model.AddAnnotation(farVertical);
@@ -262,8 +278,8 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new BarSeries(barData) { Title = "Sales Data" });
 
             // Add annotations
-            var targetLine = AnnotationLine.Horizontal(20.0, "Sales Target");
-            var quarterEnd = AnnotationLine.Vertical(2.0, "Q1 End");
+            var targetLine = new AnnotationLine(20.0, AnnotationOrientation.Horizontal, "Sales Target");
+            var quarterEnd = new AnnotationLine(2.0, AnnotationOrientation.Vertical, "Q1 End");
 
             model.AddAnnotation(targetLine);
             model.AddAnnotation(quarterEnd);
@@ -283,8 +299,8 @@ namespace FastCharts.Tests.Integration
             // Arrange
             var model = new ChartModel { Title = "Add/Remove Test" };
             
-            var line1 = AnnotationLine.Horizontal(10.0, "Line 1");
-            var line2 = AnnotationLine.Vertical(5.0, "Line 2");
+            var line1 = new AnnotationLine(10.0, AnnotationOrientation.Horizontal, "Line 1");
+            var line2 = new AnnotationLine(5.0, AnnotationOrientation.Vertical, "Line 2");
 
             // Act & Assert
             model.AddAnnotation(line1);
@@ -320,8 +336,10 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add annotation with specific label position
-            var line = AnnotationLine.Horizontal(20.0, $"Label at {position}");
-            line.LabelPosition = position;
+            var line = new AnnotationLine(20.0, AnnotationOrientation.Horizontal, $"Label at {position}")
+            {
+                LabelPosition = position
+            };
             model.AddAnnotation(line);
 
             // Act
