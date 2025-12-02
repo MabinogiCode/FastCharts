@@ -18,6 +18,7 @@ namespace FastCharts.Rendering.Skia
     {
         private readonly GridLayer _grid = new();
         private readonly SeriesLayer _series = new();
+        private readonly AnnotationLayer _annotations = new(); // P1-ANN-LINE
         private readonly AxesTicksLayer _axesTicks = new();
         private readonly LegendLayer _legend = new();
 
@@ -68,6 +69,7 @@ namespace FastCharts.Rendering.Skia
             var ctx = new RenderContext(model, canvas, plotRect, paints, pixelWidth, pixelHeight);
             _grid.Render(ctx);
             _series.Render(ctx);
+            _annotations.Render(ctx); // P1-ANN-LINE: Render annotations after series, before axes
             _axesTicks.Render(ctx);
             _legend.Render(ctx);
             RenderOverlay(ctx);

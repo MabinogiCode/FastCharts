@@ -13,21 +13,34 @@ namespace FastCharts.Core.Tests
     /// </summary>
     public class ChartModelFactoryTests
     {
-        private readonly IDataRangeCalculatorService _mockService;
+        private readonly IDataRangeCalculatorService _dataRangeService;
+        private readonly IInteractionService _interactionService;
+        private readonly ILegendSyncService _legendSyncService;
+        private readonly IAxisManagementService _axisManagementService;
         private readonly ChartModelFactory _factory;
 
         public ChartModelFactoryTests()
         {
-            _mockService = new DataRangeCalculatorService();
-            _factory = new ChartModelFactory(_mockService);
+            _dataRangeService = new DataRangeCalculatorService();
+            _interactionService = new InteractionService();
+            _legendSyncService = new LegendSyncService();
+            _axisManagementService = new AxisManagementService();
+            _factory = new ChartModelFactory(_dataRangeService, _interactionService, _legendSyncService, _axisManagementService);
         }
 
         [Fact]
         public void ConstructorWithNullServiceThrowsArgumentNullException()
         {
             // Act & Assert
-            Action act = () => new ChartModelFactory(null!);
-            act.Should().Throw<ArgumentNullException>();
+            var act1 = () => new ChartModelFactory(null!, _interactionService, _legendSyncService, _axisManagementService);
+            var act2 = () => new ChartModelFactory(_dataRangeService, null!, _legendSyncService, _axisManagementService);
+            var act3 = () => new ChartModelFactory(_dataRangeService, _interactionService, null!, _axisManagementService);
+            var act4 = () => new ChartModelFactory(_dataRangeService, _interactionService, _legendSyncService, null!);
+            
+            act1.Should().Throw<ArgumentNullException>();
+            act2.Should().Throw<ArgumentNullException>();
+            act3.Should().Throw<ArgumentNullException>();
+            act4.Should().Throw<ArgumentNullException>();
         }
 
         [Fact]
@@ -48,7 +61,7 @@ namespace FastCharts.Core.Tests
         public void CreateWithConfigurationWithNullConfigurationThrowsArgumentNullException()
         {
             // Act & Assert
-            Action act = () => _factory.CreateWithConfiguration(null!);
+            var act = () => _factory.CreateWithConfiguration(null!);
             act.Should().Throw<ArgumentNullException>();
         }
 

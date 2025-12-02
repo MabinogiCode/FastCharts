@@ -19,13 +19,16 @@ namespace FastCharts.Core;
 
 /// <summary>
 /// Central mutable chart state (axes, series, viewport, legend, behaviors, interaction state).
-/// Roadmap: extract sub-services (range calc, interaction, legend sync) for cleaner architecture.
+/// Uses extracted services for cleaner separation of concerns.
 /// </summary>
 public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
 {
     private readonly List<AxisBase> _axesList;
     private readonly ReadOnlyCollection<AxisBase> _axesView;
     private readonly IDataRangeCalculatorService _dataRangeCalculator;
+    private readonly IInteractionService _interactionService;
+    private readonly ILegendSyncService _legendSyncService;
+    private readonly IAxisManagementService _axisManagementService;
 
     private ITheme _theme = new LightTheme();
     private IAxis<double> _xAxis;
@@ -36,13 +39,35 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     private string _title = "Chart";
     private bool _disposed;
 
-    public ChartModel() : this(new DataRangeCalculatorService())
+    /// <summary>
+    /// Initializes a new instance of ChartModel with default services
+    /// </summary>
+    public ChartModel() : this(
+        new DataRangeCalculatorService(),
+        new InteractionService(),
+        new LegendSyncService(),
+        new AxisManagementService())
     {
     }
 
-    public ChartModel(IDataRangeCalculatorService dataRangeCalculator)
+    /// <summary>
+    /// Initializes a new instance of ChartModel with dependency injection support
+    /// </summary>
+    /// <param name="dataRangeCalculator">Service for calculating data ranges</param>
+    /// <param name="interactionService">Service for handling interactions</param>
+    /// <param name="legendSyncService">Service for legend synchronization</param>
+    /// <param name="axisManagementService">Service for axis management</param>
+    public ChartModel(
+        IDataRangeCalculatorService dataRangeCalculator,
+        IInteractionService interactionService,
+        ILegendSyncService legendSyncService,
+        IAxisManagementService axisManagementService)
     {
         _dataRangeCalculator = dataRangeCalculator ?? throw new ArgumentNullException(nameof(dataRangeCalculator));
+        _interactionService = interactionService ?? throw new ArgumentNullException(nameof(interactionService));
+        _legendSyncService = legendSyncService ?? throw new ArgumentNullException(nameof(legendSyncService));
+        _axisManagementService = axisManagementService ?? throw new ArgumentNullException(nameof(axisManagementService));
+
         _xAxis = new NumericAxis();
         _yAxis = new NumericAxis();
         Viewport = new Interactivity.Viewport(new FRange(0, 1), new FRange(0, 1));
@@ -59,7 +84,16 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     public IAxis<double> YAxis { get => _yAxis; private set => this.RaiseAndSetIfChanged(ref _yAxis, value); }
     public IAxis<double>? YAxisSecondary { get => _yAxisSecondary; private set => this.RaiseAndSetIfChanged(ref _yAxisSecondary, value); }
     public Margins PlotMargins { get => _plotMargins; set => this.RaiseAndSetIfChanged(ref _plotMargins, value); }
-    public InteractionState? InteractionState { get => _interactionState; set => this.RaiseAndSetIfChanged(ref _interactionState, value); }
+    
+    public InteractionState? InteractionState 
+    { 
+        get => _interactionState; 
+        set 
+        { 
+            this.RaiseAndSetIfChanged(ref _interactionState, value);
+            _interactionService.UpdateInteractionState(value);
+        } 
+    }
 
     public IViewport Viewport { get; }
     public ObservableCollection<SeriesBase> Series { get; }
@@ -68,6 +102,11 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     IReadOnlyList<SeriesBase> IChartModel.Series => Series;
     public LegendModel Legend { get; }
     public IList<IBehavior> Behaviors { get; } = new List<IBehavior>();
+    
+    /// <summary>
+    /// Collection of chart annotations (P1-ANN-LINE)
+    /// </summary>
+    public ObservableCollection<IAnnotation> Annotations { get; } = new ObservableCollection<IAnnotation>();
 
     private void OnSeriesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
@@ -75,94 +114,134 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
         {
             return;
         }
-        Legend.SyncFromSeries(Series);
+        
+        _legendSyncService.SyncLegendWithSeries(Legend, Series);
     }
 
+    /// <summary>
+    /// Ensures a secondary Y axis exists, creating one if necessary
+    /// </summary>
     public void EnsureSecondaryYAxis()
     {
-        if (YAxisSecondary != null)
-        {
-            return;
-        }
-        YAxisSecondary = new NumericAxis();
-        _axesList.Add((AxisBase)YAxisSecondary);
+        YAxisSecondary = _axisManagementService.EnsureSecondaryYAxis(YAxisSecondary, _axesList);
     }
 
+    /// <summary>
+    /// Replaces the X axis with a new axis, preserving data range
+    /// </summary>
+    /// <param name="newAxis">New X axis to replace with</param>
     public void ReplaceXAxis(IAxis<double> newAxis)
     {
-        if (newAxis == null)
-        {
-            return;
-        }
-        newAxis.DataRange = XAxis.DataRange;
-        XAxis = newAxis;
-        if (_axesList.Count > 0)
-        {
-            _axesList[0] = (AxisBase)newAxis;
-        }
+        XAxis = _axisManagementService.ReplaceXAxis(XAxis, newAxis, _axesList);
     }
 
+    /// <summary>
+    /// Replaces the Y axis with a new axis, preserving data range
+    /// </summary>
+    /// <param name="newAxis">New Y axis to replace with</param>
     public void ReplaceYAxis(IAxis<double> newAxis)
     {
-        if (newAxis == null)
-        {
-            return;
-        }
-        newAxis.DataRange = YAxis.DataRange;
-        YAxis = newAxis;
-        if (_axesList.Count > 1)
-        {
-            _axesList[1] = (AxisBase)newAxis;
-        }
+        YAxis = _axisManagementService.ReplaceYAxis(YAxis, newAxis, _axesList);
     }
 
+    /// <summary>
+    /// Replaces the secondary Y axis with a new axis, preserving data range
+    /// </summary>
+    /// <param name="newAxis">New secondary Y axis to replace with</param>
     public void ReplaceSecondaryYAxis(IAxis<double> newAxis)
     {
         EnsureSecondaryYAxis();
-        if (newAxis == null)
-        {
-            return;
-        }
-        newAxis.DataRange = YAxisSecondary!.DataRange;
-        YAxisSecondary = newAxis;
-        _axesList[2] = (AxisBase)newAxis;
+        YAxisSecondary = _axisManagementService.ReplaceSecondaryYAxis(YAxisSecondary, newAxis, _axesList);
     }
 
+    /// <summary>
+    /// Adds a series to the chart and automatically fits the data range
+    /// </summary>
+    /// <param name="series">Series to add</param>
     public void AddSeries(SeriesBase series)
     {
         Series.Add(series);
         AutoFitDataRange();
     }
 
+    /// <summary>
+    /// Clears all series and resets axis ranges to defaults
+    /// </summary>
     public void ClearSeries()
     {
         Series.Clear();
-        XAxis.DataRange = new FRange(0, 1);
-        YAxis.DataRange = new FRange(0, 1);
-        if (YAxisSecondary != null)
-        {
-            YAxisSecondary.DataRange = new FRange(0, 1);
-        }
-        Viewport.SetVisible(XAxis.DataRange, YAxis.DataRange);
+        _axisManagementService.ClearAxisRanges(XAxis, YAxis, YAxisSecondary, Viewport);
     }
 
+    /// <summary>
+    /// Updates scales for all axes based on pixel dimensions
+    /// </summary>
+    /// <param name="widthPx">Chart width in pixels</param>
+    /// <param name="heightPx">Chart height in pixels</param>
     public void UpdateScales(double widthPx, double heightPx)
     {
-        XAxis.VisibleRange = Viewport.X;
-        YAxis.VisibleRange = Viewport.Y;
-        ((AxisBase)XAxis).UpdateScale(0, widthPx);
-        ((AxisBase)YAxis).UpdateScale(heightPx, 0);
-        if (YAxisSecondary != null)
-        {
-            YAxisSecondary.VisibleRange = YAxis.VisibleRange;
-            ((AxisBase)YAxisSecondary).UpdateScale(heightPx, 0);
-        }
+        _axisManagementService.UpdateScales(XAxis, YAxis, YAxisSecondary, Viewport, widthPx, heightPx);
     }
 
+    /// <summary>
+    /// Automatically calculates and applies data ranges from all series
+    /// </summary>
     public void AutoFitDataRange()
     {
         var result = _dataRangeCalculator.CalculateDataRanges(Series);
         ApplyDataRangeResult(result);
+    }
+
+    /// <summary>
+    /// Performs zoom operation at specified center point
+    /// </summary>
+    /// <param name="factorX">Zoom factor for X axis (> 0)</param>
+    /// <param name="factorY">Zoom factor for Y axis (> 0)</param>
+    /// <param name="centerDataX">Center point X in data coordinates</param>
+    /// <param name="centerDataY">Center point Y in data coordinates</param>
+    public void ZoomAt(double factorX, double factorY, double centerDataX, double centerDataY)
+    {
+        _interactionService.ZoomAt(XAxis, YAxis, YAxisSecondary, factorX, factorY, centerDataX, centerDataY);
+    }
+
+    /// <summary>
+    /// Performs pan operation by specified deltas
+    /// </summary>
+    /// <param name="deltaDataX">Pan delta for X axis in data coordinates</param>
+    /// <param name="deltaDataY">Pan delta for Y axis in data coordinates</param>
+    public void Pan(double deltaDataX, double deltaDataY)
+    {
+        _interactionService.Pan(XAxis, YAxis, YAxisSecondary, deltaDataX, deltaDataY);
+    }
+
+    /// <summary>
+    /// Adds an annotation to the chart
+    /// </summary>
+    /// <param name="annotation">Annotation to add</param>
+    public void AddAnnotation(IAnnotation annotation)
+    {
+        if (annotation != null)
+        {
+            Annotations.Add(annotation);
+        }
+    }
+
+    /// <summary>
+    /// Removes an annotation from the chart
+    /// </summary>
+    /// <param name="annotation">Annotation to remove</param>
+    /// <returns>True if the annotation was found and removed, false otherwise</returns>
+    public bool RemoveAnnotation(IAnnotation annotation)
+    {
+        return annotation != null && Annotations.Remove(annotation);
+    }
+
+    /// <summary>
+    /// Clears all annotations from the chart
+    /// </summary>
+    public void ClearAnnotations()
+    {
+        Annotations.Clear();
     }
 
     private void ApplyDataRangeResult(DataRangeCalculationResult result)
@@ -191,117 +270,40 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
         Viewport.SetVisible(XAxis.DataRange, YAxis.DataRange);
     }
 
-    public void ZoomAt(double factorX, double factorY, double centerDataX, double centerDataY)
-    {
-        var invalidFactorX = double.IsNaN(factorX) || double.IsInfinity(factorX) || factorX <= 0d;
-        if (invalidFactorX)
-        {
-            throw new ArgumentOutOfRangeException(nameof(factorX), factorX, "Zoom factor X must be finite and positive");
-        }
-        var invalidFactorY = double.IsNaN(factorY) || double.IsInfinity(factorY) || factorY <= 0d;
-        if (invalidFactorY)
-        {
-            throw new ArgumentOutOfRangeException(nameof(factorY), factorY, "Zoom factor Y must be finite and positive");
-        }
-        var invalidCenterX = double.IsNaN(centerDataX) || double.IsInfinity(centerDataX);
-        if (invalidCenterX)
-        {
-            throw new ArgumentOutOfRangeException(nameof(centerDataX), centerDataX, "Center X must be finite");
-        }
-        var invalidCenterY = double.IsNaN(centerDataY) || double.IsInfinity(centerDataY);
-        if (invalidCenterY)
-        {
-            throw new ArgumentOutOfRangeException(nameof(centerDataY), centerDataY, "Center Y must be finite");
-        }
-
-        var xr = XAxis.VisibleRange; var yr = YAxis.VisibleRange;
-        var newSizeX = xr.Size * factorX; var newSizeY = yr.Size * factorY;
-        var newMinX = centerDataX - (centerDataX - xr.Min) * factorX; var newMaxX = newMinX + newSizeX;
-        var newMinY = centerDataY - (centerDataY - yr.Min) * factorY; var newMaxY = newMinY + newSizeY;
-        if (DoubleUtils.AreEqual(newMinX, newMaxX))
-        {
-            newMinX -= 1e-6;
-            newMaxX += 1e-6;
-        }
-        if (DoubleUtils.AreEqual(newMinY, newMaxY))
-        {
-            newMinY -= 1e-6;
-            newMaxY += 1e-6;
-        }
-        if (!ValidationHelper.IsValidRange(newMinX, newMaxX))
-        {
-            throw new InvalidOperationException($"Resulting X range is invalid: [{newMinX}, {newMaxX}]");
-        }
-        if (!ValidationHelper.IsValidRange(newMinY, newMaxY))
-        {
-            throw new InvalidOperationException($"Resulting Y range is invalid: [{newMinY}, {newMaxY}]");
-        }
-        XAxis.VisibleRange = new FRange(newMinX, newMaxX);
-        YAxis.VisibleRange = new FRange(newMinY, newMaxY);
-        if (YAxisSecondary != null)
-        {
-            YAxisSecondary.VisibleRange = YAxis.VisibleRange;
-        }
-    }
-
-    public void Pan(double deltaDataX, double deltaDataY)
-    {
-        var invalidDeltaX = double.IsNaN(deltaDataX) || double.IsInfinity(deltaDataX);
-        if (invalidDeltaX)
-        {
-            throw new ArgumentOutOfRangeException(nameof(deltaDataX), deltaDataX, "Delta X must be finite");
-        }
-        var invalidDeltaY = double.IsNaN(deltaDataY) || double.IsInfinity(deltaDataY);
-        if (invalidDeltaY)
-        {
-            throw new ArgumentOutOfRangeException(nameof(deltaDataY), deltaDataY, "Delta Y must be finite");
-        }
-        var xr = XAxis.VisibleRange; var yr = YAxis.VisibleRange;
-        var newMinX = xr.Min + deltaDataX; var newMaxX = xr.Max + deltaDataX;
-        var newMinY = yr.Min + deltaDataY; var newMaxY = yr.Max + deltaDataY;
-        if (!ValidationHelper.IsValidRange(newMinX, newMaxX))
-        {
-            throw new InvalidOperationException($"Resulting X range is invalid: [{newMinX}, {newMaxX}]");
-        }
-        if (!ValidationHelper.IsValidRange(newMinY, newMaxY))
-        {
-            throw new InvalidOperationException($"Resulting Y range is invalid: [{newMinY}, {newMaxY}]");
-        }
-        XAxis.VisibleRange = new FRange(newMinX, newMaxX);
-        YAxis.VisibleRange = new FRange(newMinY, newMaxY);
-        if (YAxisSecondary != null)
-        {
-            YAxisSecondary.VisibleRange = YAxis.VisibleRange;
-        }
-    }
-
     public void Dispose()
     {
         if (_disposed)
         {
             return;
         }
+        
         Series.CollectionChanged -= OnSeriesCollectionChanged;
+        
         foreach (var axis in _axesList.OfType<IDisposable>())
         {
             axis.Dispose();
         }
-        if (_theme is IDisposable td)
+        
+        if (_theme is IDisposable themeDisposable)
         {
-            td.Dispose();
+            themeDisposable.Dispose();
         }
-        if (Viewport is IDisposable vp)
+        
+        if (Viewport is IDisposable viewportDisposable)
         {
-            vp.Dispose();
+            viewportDisposable.Dispose();
         }
-        foreach (var s in Series.OfType<IDisposable>())
+        
+        foreach (var series in Series.OfType<IDisposable>())
         {
-            s.Dispose();
+            series.Dispose();
         }
-        foreach (var b in Behaviors.OfType<IDisposable>())
+        
+        foreach (var behavior in Behaviors.OfType<IDisposable>())
         {
-            b.Dispose();
+            behavior.Dispose();
         }
+        
         Series.Clear();
         Behaviors.Clear();
         _axesList.Clear();
