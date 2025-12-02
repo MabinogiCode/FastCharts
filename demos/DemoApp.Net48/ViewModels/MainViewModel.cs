@@ -5,13 +5,16 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using FastCharts.Core;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Axes;
+using FastCharts.Core.Primitives;
+using FastCharts.Core.Series;
 using FastCharts.Core.Themes.BuiltIn;
+using FastCharts.Core.Annotations;
 using DemoApp.Net48.ViewModels.Base;
 using DemoApp.Net48.Commands;
 using DemoApp.Net48.Constants;
 using DemoApp.Net48.Services.Abstractions;
 using DemoApp.Net48.Services;
-using FastCharts.Core.Annotations;
 
 namespace DemoApp.Net48.ViewModels
 {
@@ -29,25 +32,6 @@ namespace DemoApp.Net48.ViewModels
         /// </summary>
         public MainViewModel() : this(new ChartCreationService())
         {
-            Charts.Add(BuildMixedChart());
-            Charts.Add(BuildBarsChart());
-            Charts.Add(BuildStackedBarsChart());
-            Charts.Add(BuildOhlcChart());
-            Charts.Add(BuildErrorBarChart());
-            Charts.Add(BuildMinimalLineChart());
-            Charts.Add(BuildAreaOnly());
-            Charts.Add(BuildScatterOnly());
-            Charts.Add(BuildStepLine());
-            Charts.Add(BuildSingleBars());
-            Charts.Add(BuildStacked100());
-            Charts.Add(BuildOhlcWithErrorOverlay());
-            Charts.Add(BuildMultiSeriesTooltipShowcase());
-            
-            // P1-AX-CAT: Add CategoryAxis demo
-            Charts.Add(BuildCategoryAxisDemo());
-            
-            // P1-ANN-LINE: Add Annotation demo
-            Charts.Add(BuildAnnotationDemo());
         }
 
         /// <summary>
@@ -98,6 +82,28 @@ namespace DemoApp.Net48.ViewModels
 
         private void LoadCharts()
         {
+            // Basic demo charts
+            Charts.Add(BuildMixedChart());
+            Charts.Add(BuildBarsChart());
+            Charts.Add(BuildStackedBarsChart());
+            Charts.Add(BuildOhlcChart());
+            Charts.Add(BuildErrorBarChart());
+            Charts.Add(BuildMinimalLineChart());
+            Charts.Add(BuildAreaOnly());
+            Charts.Add(BuildScatterOnly());
+            Charts.Add(BuildStepLine());
+            Charts.Add(BuildSingleBars());
+            Charts.Add(BuildStacked100());
+            Charts.Add(BuildOhlcWithErrorOverlay());
+            Charts.Add(BuildMultiSeriesTooltipShowcase());
+            
+            // P1-AX-CAT: Add CategoryAxis demo
+            Charts.Add(BuildCategoryAxisDemo());
+            
+            // P1-ANN-LINE: Add Annotation demo
+            Charts.Add(BuildAnnotationDemo());
+            
+            // Add demo charts from service
             var demoCharts = _chartCreationService.CreateDemoCharts();
             foreach (var chart in demoCharts)
             {
@@ -155,6 +161,238 @@ namespace DemoApp.Net48.ViewModels
             {
                 chart.Theme = theme;
             }
+        }
+
+        // Chart builder methods
+        private static ChartModel CreateBase(DateTime start, DateTime end, string title = "Chart")
+        {
+            var m = new ChartModel { Theme = new DarkTheme(), Title = title };
+            var dtAxis = new DateTimeAxis();
+            dtAxis.SetVisibleRange(start, end);
+            m.ReplaceXAxis(dtAxis);
+            return m;
+        }
+
+        private static ChartModel BuildMixedChart()
+        {
+            var start = DateTime.Today.AddDays(-14);
+            var end = DateTime.Today.AddDays(1);
+            var n = 201;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 1.5)).ToArray();
+            var m = CreateBase(start, end, "Mixed Chart");
+            var areaPts = xs.Select(x => new PointD(x.ToOADate(), Math.Max(0, Math.Sin(x.Ticks / 1e10)))).ToArray();
+            m.AddSeries(new AreaSeries(areaPts) { Title = "Area", Baseline = 0.0, FillOpacity = 0.35 });
+            var linePts = xs.Select(x => new PointD(x.ToOADate(), Math.Cos(x.Ticks / 1e10))).ToArray();
+            m.AddSeries(new LineSeries(linePts) { Title = "Line", StrokeThickness = 1.8 });
+            var scatterPts = xs.Where((x, i) => i % 16 == 0)
+                .Select(x => new PointD(x.ToOADate(), Math.Sin(x.Ticks / 1e10) + (Math.Sin(3 * (x.Ticks / 1e10)) * 0.05))).ToArray();
+            m.AddSeries(new ScatterSeries(scatterPts) { Title = "Scatter", MarkerSize = 4.0 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildBarsChart()
+        {
+            var start = DateTime.Today.AddDays(-10);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "Bar Chart");
+            var buckets = 10;
+            var bucketXs = Enumerable.Range(0, buckets).Select(i => start.AddDays(i)).ToArray();
+            var barsA = bucketXs.Select((x, i) => new BarPoint(x.ToOADate(), (Math.Sin(i * 0.6) + 1.2) * 0.6)).ToArray();
+            var barsB = bucketXs.Select((x, i) => new BarPoint(x.ToOADate(), (Math.Cos(i * 0.6) + 1.2) * 0.5)).ToArray();
+            m.AddSeries(new BarSeries(barsA) { Title = "Bars A", GroupCount = 2, GroupIndex = 0, FillOpacity = 0.7 });
+            m.AddSeries(new BarSeries(barsB) { Title = "Bars B", GroupCount = 2, GroupIndex = 1, FillOpacity = 0.7 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildStackedBarsChart()
+        {
+            var start = DateTime.Today.AddDays(-12);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "Stacked Bars");
+            var sbBuckets = 8;
+            var sbXs = Enumerable.Range(0, sbBuckets).Select(i => start.AddDays(i * 1.5)).ToArray();
+            var stackA = sbXs.Select((x, i) => new StackedBarPoint(x.ToOADate(), new[] { (Math.Sin(i * 0.5) + 1.1) * 0.4, (Math.Cos(i * 0.6) + 1.1) * 0.3, (Math.Sin(i * 0.7) + 1.1) * 0.2 })).ToArray();
+            m.AddSeries(new StackedBarSeries(stackA) { Title = "Stack A", FillOpacity = 0.8 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildOhlcChart()
+        {
+            var start = DateTime.Today.AddDays(-20);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "OHLC Chart");
+            var rand = new Random(123);
+            var n = 60;
+            double price = 100;
+            var list = new OhlcPoint[n];
+            for (var i = 0; i < n; i++)
+            {
+                var open = price;
+                var change = (rand.NextDouble() - 0.5) * 4;
+                var close = open + change;
+                var high = Math.Max(open, close) + rand.NextDouble() * 2;
+                var low = Math.Min(open, close) - rand.NextDouble() * 2;
+                price = close;
+                list[i] = new OhlcPoint(start.AddDays(i).ToOADate(), open, high, low, close);
+            }
+            m.AddSeries(new OhlcSeries(list) { Title = "OHLC" });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildErrorBarChart()
+        {
+            var start = DateTime.Today.AddDays(-10);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "Error Bar Chart");
+            var n = 20;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddDays(i * 0.5)).ToArray();
+            var rand = new Random(456);
+            var pts = xs.Select(x =>
+            {
+                var y = 50 + Math.Sin(x.DayOfYear * 0.2) * 10 + rand.NextDouble() * 4;
+                var err = 2 + rand.NextDouble() * 2;
+                return new ErrorBarPoint(x.ToOADate(), y, err, err * (0.5 + rand.NextDouble() * 0.5));
+            }).ToArray();
+            m.AddSeries(new ErrorBarSeries(pts) { Title = "ErrorBars" });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildMinimalLineChart()
+        {
+            var start = DateTime.Today.AddDays(-5);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "Minimal Line Chart");
+            var n = 60;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 2)).ToArray();
+            var pts = xs.Select((x, i) => new PointD(x.ToOADate(), Math.Sin(i * 0.2) * 5 + 20)).ToArray();
+            m.AddSeries(new LineSeries(pts) { Title = "Line" });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildAreaOnly()
+        {
+            var start = DateTime.Today.AddDays(-7);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "Area Only");
+            var n = 120;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i)).ToArray();
+            var pts = xs.Select((x, i) => new PointD(x.ToOADate(), Math.Sin(i * 0.1) * 10 + 30)).ToArray();
+            m.AddSeries(new AreaSeries(pts) { Title = "Area Only", Baseline = 20, FillOpacity = 0.45 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildScatterOnly()
+        {
+            var start = DateTime.Today.AddDays(-3);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "Scatter Only");
+            var rand = new Random(789);
+            var n = 80;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 1.2)).ToArray();
+            var pts = xs.Select(x => new PointD(x.ToOADate(), 40 + Math.Sin(x.Ticks / 6e11) * 5 + rand.NextDouble() * 3)).ToArray();
+            m.AddSeries(new ScatterSeries(pts) { Title = "Scatter Only", MarkerSize = 5.5 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildStepLine()
+        {
+            var start = DateTime.Today.AddDays(-6);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "Step Line");
+            var n = 40;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 4)).ToArray();
+            var pts = xs.Select((x, i) => new PointD(x.ToOADate(), (i % 2 == 0 ? 10 : 20) + (i % 5 == 0 ? 5 : 0))).ToArray();
+            m.AddSeries(new StepLineSeries(pts) { Title = "Step", Mode = StepMode.Before, StrokeThickness = 2 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildSingleBars()
+        {
+            var start = DateTime.Today.AddDays(-8);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "Single Bars");
+            var n = 12;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddDays(i)).ToArray();
+            var pts = xs.Select((x, i) => new BarPoint(x.ToOADate(), Math.Sin(i * 0.4) * 8 + 15)).ToArray();
+            m.AddSeries(new BarSeries(pts) { Title = "Bars", FillOpacity = 0.75 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildStacked100()
+        {
+            var start = DateTime.Today.AddDays(-10);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "Stacked 100%");
+            var n = 10;
+            var xs = Enumerable.Range(0, n).Select(i => start.AddDays(i)).ToArray();
+            var rand = new Random(321);
+            var stackPoints = xs.Select((x, i) =>
+            {
+                var a = rand.NextDouble() * 1 + 0.2;
+                var b = rand.NextDouble() * 1 + 0.2;
+                var c = rand.NextDouble() * 1 + 0.2;
+                var sum = a + b + c;
+                return new StackedBarPoint(x.ToOADate(), new[] { a / sum, b / sum, c / sum });
+            }).ToArray();
+            m.AddSeries(new StackedBarSeries(stackPoints) { Title = "Stacked 100%", FillOpacity = 0.85 });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildOhlcWithErrorOverlay()
+        {
+            var start = DateTime.Today.AddDays(-15);
+            var end = DateTime.Today.AddDays(1);
+            var m = CreateBase(start, end, "OHLC + Error");
+            var rand = new Random(654);
+            var n = 40;
+            double price = 50;
+            var ohlc = new OhlcPoint[n];
+            var errs = new ErrorBarPoint[n];
+            for (var i = 0; i < n; i++)
+            {
+                var open = price;
+                var change = (rand.NextDouble() - 0.5) * 3;
+                var close = open + change;
+                var high = Math.Max(open, close) + rand.NextDouble() * 1.5;
+                var low = Math.Min(open, close) - rand.NextDouble() * 1.5;
+                price = close;
+                var xOa = start.AddDays(i).ToOADate();
+                ohlc[i] = new OhlcPoint(xOa, open, high, low, close);
+                var central = (open + close) * 0.5;
+                var err = 0.5 + rand.NextDouble();
+                errs[i] = new ErrorBarPoint(xOa, central, err, err * 0.7);
+            }
+            m.AddSeries(new OhlcSeries(ohlc) { Title = "OHLC" });
+            m.AddSeries(new ErrorBarSeries(errs) { Title = "Err" });
+            m.UpdateScales(800, 400);
+            return m;
+        }
+
+        private static ChartModel BuildMultiSeriesTooltipShowcase()
+        {
+            var start = DateTime.Today.AddDays(-3);
+            var end = DateTime.Today.AddDays(0.5);
+            var m = CreateBase(start, end, "Multi-Series Tooltip");
+            var xs = Enumerable.Range(0, 300).Select(i => start.AddMinutes(i * 15)).ToArray();
+            var line = xs.Select((x, i) => new PointD(x.ToOADate(), 50 + Math.Sin(i * 0.15) * 10 + Math.Sin(i * 0.03) * 5)).ToArray();
+            m.AddSeries(new LineSeries(line) { Title = "Line A", StrokeThickness = 1.4 });
+            var area = xs.Where((_, i) => i % 3 == 0).Select((x, i) => new PointD(x.ToOADate(), 40 + Math.Cos(i * 0.18) * 6)).ToArray();
+            m.AddSeries(new AreaSeries(area) { Title = "Area B", Baseline = 35, FillOpacity = 0.35 });
+            var scatter = xs.Where((_, i) => i % 20 == 0).Select((x, i) => new PointD(x.ToOADate(), 55 + Math.Sin(i * 0.9) * 4)).ToArray();
+            m.AddSeries(new ScatterSeries(scatter) { Title = "Scatter C", MarkerSize = 4 });
+            m.UpdateScales(800, 400);
+            return m;
         }
 
         /// <summary>
