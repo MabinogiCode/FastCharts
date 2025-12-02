@@ -16,6 +16,9 @@ namespace FastCharts.Core.Extensions
         {
             // Core services
             services.RegisterSingleton<IDataRangeCalculatorService, DataRangeCalculatorService>();
+            services.RegisterSingleton<IInteractionService, InteractionService>();
+            services.RegisterSingleton<ILegendSyncService, LegendSyncService>();
+            services.RegisterSingleton<IAxisManagementService, AxisManagementService>();
             services.RegisterSingleton<IBehaviorManager, BehaviorManager>();
 
             // Factories

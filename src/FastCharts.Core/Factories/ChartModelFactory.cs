@@ -10,15 +10,25 @@ namespace FastCharts.Core.Factories
     public class ChartModelFactory : IChartModelFactory
     {
         private readonly IDataRangeCalculatorService _dataRangeCalculator;
+        private readonly IInteractionService _interactionService;
+        private readonly ILegendSyncService _legendSyncService;
+        private readonly IAxisManagementService _axisManagementService;
 
-        public ChartModelFactory(IDataRangeCalculatorService dataRangeCalculator)
+        public ChartModelFactory(
+            IDataRangeCalculatorService dataRangeCalculator,
+            IInteractionService interactionService,
+            ILegendSyncService legendSyncService,
+            IAxisManagementService axisManagementService)
         {
             _dataRangeCalculator = dataRangeCalculator ?? throw new ArgumentNullException(nameof(dataRangeCalculator));
+            _interactionService = interactionService ?? throw new ArgumentNullException(nameof(interactionService));
+            _legendSyncService = legendSyncService ?? throw new ArgumentNullException(nameof(legendSyncService));
+            _axisManagementService = axisManagementService ?? throw new ArgumentNullException(nameof(axisManagementService));
         }
 
         public ChartModel CreateDefault()
         {
-            return new ChartModel(_dataRangeCalculator);
+            return new ChartModel(_dataRangeCalculator, _interactionService, _legendSyncService, _axisManagementService);
         }
 
         public ChartModel CreateWithConfiguration(ChartConfiguration configuration)
@@ -28,7 +38,7 @@ namespace FastCharts.Core.Factories
                 throw new ArgumentNullException(nameof(configuration));
             }
 
-            var model = new ChartModel(_dataRangeCalculator);
+            var model = new ChartModel(_dataRangeCalculator, _interactionService, _legendSyncService, _axisManagementService);
 
             if (configuration.XAxis != null)
             {

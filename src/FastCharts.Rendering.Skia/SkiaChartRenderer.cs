@@ -1,6 +1,7 @@
 using FastCharts.Core;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Helpers;
+using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 using FastCharts.Rendering.Skia.Helpers;
 using FastCharts.Rendering.Skia.Rendering;
@@ -18,6 +19,7 @@ namespace FastCharts.Rendering.Skia
     {
         private readonly GridLayer _grid = new();
         private readonly SeriesLayer _series = new();
+        private readonly AnnotationLayer _annotations = new(); // P1-ANN-LINE
         private readonly AxesTicksLayer _axesTicks = new();
         private readonly LegendLayer _legend = new();
 
@@ -40,15 +42,35 @@ namespace FastCharts.Rendering.Skia
                 throw new ArgumentOutOfRangeException(nameof(pixelHeight), pixelHeight, "Pixel height must be positive");
             }
 
-            var xRange = model.XAxis.VisibleRange;
-            var yRange = model.YAxis.VisibleRange;
+            var originalXRange = model.XAxis.VisibleRange;
+            var originalYRange = model.YAxis.VisibleRange;
+            var xRange = originalXRange;
+            var yRange = originalYRange;
+            
+            // Handle empty ranges by using a minimal valid range for rendering
             if (!ValidationHelper.IsValidRange(xRange))
             {
-                throw new InvalidOperationException($"X-axis visible range is invalid: [{xRange.Min}, {xRange.Max}]");
+                if (xRange.Min == xRange.Max && ValidationHelper.IsFinite(xRange.Min))
+                {
+                    // Empty range - use minimal span for rendering
+                    xRange = new FRange(xRange.Min, xRange.Min + 1);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"X-axis visible range is invalid: [{xRange.Min}, {xRange.Max}]");
+                }
             }
             if (!ValidationHelper.IsValidRange(yRange))
             {
-                throw new InvalidOperationException($"Y-axis visible range is invalid: [{yRange.Min}, {yRange.Max}]");
+                if (yRange.Min == yRange.Max && ValidationHelper.IsFinite(yRange.Min))
+                {
+                    // Empty range - use minimal span for rendering
+                    yRange = new FRange(yRange.Min, yRange.Min + 1);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Y-axis visible range is invalid: [{yRange.Min}, {yRange.Max}]");
+                }
             }
 
             var theme = model.Theme;
@@ -61,16 +83,38 @@ namespace FastCharts.Rendering.Skia
             var plotH = (float)Math.Max(0, pixelHeight - (top + bottom));
             var plotRect = new SKRect(left, top, left + plotW, top + plotH);
             canvas.Clear(new SKColor(theme.SurfaceBackgroundColor.R, theme.SurfaceBackgroundColor.G, theme.SurfaceBackgroundColor.B, theme.SurfaceBackgroundColor.A));
+            
+            // Check if we need to temporarily adjust ranges for rendering
+            const double tolerance = 1e-10;
+            var needsAdjustment = (Math.Abs(xRange.Min - originalXRange.Min) > tolerance || Math.Abs(xRange.Max - originalXRange.Max) > tolerance) ||
+                                  (Math.Abs(yRange.Min - originalYRange.Min) > tolerance || Math.Abs(yRange.Max - originalYRange.Max) > tolerance);
+            
+            if (needsAdjustment)
+            {
+                // Temporarily set adjusted ranges
+                model.XAxis.VisibleRange = xRange;
+                model.YAxis.VisibleRange = yRange;
+            }
+                
             model.UpdateScales((int)plotW, (int)plotH);
+            
             using var bg = new SKPaint { Style = SKPaintStyle.Fill, Color = new SKColor(theme.PlotBackgroundColor.R, theme.PlotBackgroundColor.G, theme.PlotBackgroundColor.B, theme.PlotBackgroundColor.A) };
             canvas.DrawRect(plotRect, bg);
             using var paints = SkiaPaintPack.Create(theme);
             var ctx = new RenderContext(model, canvas, plotRect, paints, pixelWidth, pixelHeight);
             _grid.Render(ctx);
             _series.Render(ctx);
+            _annotations.Render(ctx); // P1-ANN-LINE: Render annotations after series, before axes
             _axesTicks.Render(ctx);
             _legend.Render(ctx);
             RenderOverlay(ctx);
+            
+            if (needsAdjustment)
+            {
+                // Restore original ranges
+                model.XAxis.VisibleRange = originalXRange;
+                model.YAxis.VisibleRange = originalYRange;
+            }
         }
 
         public SKBitmap RenderToBitmap(ChartModel model, int pixelWidth, int pixelHeight, bool transparentBackground = false)
