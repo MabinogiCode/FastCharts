@@ -9,6 +9,7 @@ namespace FastCharts.Wpf.ViewModels
 {
     /// <summary>
     /// ViewModel pour le contrôle FastChart, séparant la logique métier de la présentation
+    /// Provides WPF-specific collections and bindings for annotations
     /// </summary>
     public class ChartViewModel : ReactiveObject
     {

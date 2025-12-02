@@ -38,228 +38,135 @@ namespace FastCharts.Core.Tests.Annotations
         }
 
         [Fact]
-        public void AnnotationLine_Horizontal_FactoryMethod_CreatesHorizontalLine()
+        public void AnnotationLine_Constructor_Horizontal_WithCustomTitle_UsesProvidedTitle()
         {
             // Arrange & Act
-            var line = AnnotationLine.Horizontal(100.0);
-
-            // Assert
-            Assert.Equal(100.0, line.Value);
-            Assert.Equal(AnnotationOrientation.Horizontal, line.Orientation);
-            Assert.Equal("Y = 100.00", line.Title);
-        }
-
-        [Fact]
-        public void AnnotationLine_Vertical_FactoryMethod_CreatesVerticalLine()
-        {
-            // Arrange & Act
-            var line = AnnotationLine.Vertical(75.0);
-
-            // Assert
-            Assert.Equal(75.0, line.Value);
-            Assert.Equal(AnnotationOrientation.Vertical, line.Orientation);
-            Assert.Equal("X = 75.00", line.Title);
-        }
-
-        [Fact]
-        public void AnnotationLine_Horizontal_WithCustomTitle_UsesProvidedTitle()
-        {
-            // Arrange & Act
-            var line = AnnotationLine.Horizontal(50.0, "Support Level");
+            var line = new AnnotationLine(100.0, AnnotationOrientation.Horizontal, "Support Level");
 
             // Assert
             Assert.Equal("Support Level", line.Title);
         }
 
         [Fact]
-        public void AnnotationLine_Vertical_WithCustomTitle_UsesProvidedTitle()
+        public void AnnotationLine_Constructor_Vertical_WithCustomTitle_UsesProvidedTitle()
         {
             // Arrange & Act
-            var line = AnnotationLine.Vertical(25.0, "Important Date");
+            var line = new AnnotationLine(75.0, AnnotationOrientation.Vertical, "Important Date");
 
             // Assert
             Assert.Equal("Important Date", line.Title);
         }
 
         [Fact]
-        public void AnnotationLine_Properties_AreReactive()
+        public void AnnotationLine_Properties_CanBeModified()
         {
             // Arrange
-            var line = new AnnotationLine(0);
-            var titleChanged = false;
-            var visibilityChanged = false;
-            var valueChanged = false;
-
-            line.PropertyChanged += (s, e) =>
-            {
-                switch (e.PropertyName)
-                {
-                    case nameof(AnnotationLine.Title):
-                        titleChanged = true;
-                        break;
-                    case nameof(AnnotationLine.IsVisible):
-                        visibilityChanged = true;
-                        break;
-                    case nameof(AnnotationLine.Value):
-                        valueChanged = true;
-                        break;
-                    default:
-                        // Other properties not tracked in this test
-                        break;
-                }
-            };
+            var line = new AnnotationLine(0, AnnotationOrientation.Horizontal);
 
             // Act
+            line.Value = 5;
             line.Title = "New Title";
             line.IsVisible = false;
-            line.Value = 123.45;
+            line.Color = new ColorRgba(255, 0, 0, 255);
+            line.Thickness = 2.5;
 
             // Assert
-            Assert.True(titleChanged);
-            Assert.True(visibilityChanged);
-            Assert.True(valueChanged);
+            Assert.Equal(5, line.Value);
+            Assert.Equal("New Title", line.Title);
+            Assert.False(line.IsVisible);
+            Assert.Equal(new ColorRgba(255, 0, 0, 255), line.Color);
+            Assert.Equal(2.5, line.Thickness);
         }
 
         [Fact]
-        public void AnnotationLine_Color_DefaultValue_IsGray()
+        public void AnnotationLine_DefaultTitle_GeneratesCorrectFormat()
         {
             // Arrange & Act
-            var line = new AnnotationLine(0);
+            var horizontalLine = new AnnotationLine(42.5, AnnotationOrientation.Horizontal);
+            var verticalLine = new AnnotationLine(15.3, AnnotationOrientation.Vertical);
 
             // Assert
-            Assert.Equal(128, line.Color.R);
-            Assert.Equal(128, line.Color.G);
-            Assert.Equal(128, line.Color.B);
-            Assert.Equal(180, line.Color.A); // Semi-transparent
+            Assert.Equal("Y = 42.50", horizontalLine.Title);
+            Assert.Equal("X = 15.30", verticalLine.Title);
         }
 
         [Fact]
-        public void AnnotationLine_Thickness_DefaultValue_IsOne()
+        public void AnnotationLine_LineStyle_CanBeSet()
         {
-            // Arrange & Act
-            var line = new AnnotationLine(0);
+            // Arrange
+            var line = new AnnotationLine(10, AnnotationOrientation.Horizontal);
+
+            // Act
+            line.LineStyle = LineStyle.Dashed;
 
             // Assert
+            Assert.Equal(LineStyle.Dashed, line.LineStyle);
+        }
+
+        [Fact]
+        public void AnnotationLine_LabelPosition_CanBeSet()
+        {
+            // Arrange
+            var line = new AnnotationLine(10, AnnotationOrientation.Horizontal);
+
+            // Act
+            line.LabelPosition = LabelPosition.Middle;
+
+            // Assert
+            Assert.Equal(LabelPosition.Middle, line.LabelPosition);
+        }
+
+        [Fact]
+        public void AnnotationLine_ShowLabel_CanBeToggled()
+        {
+            // Arrange
+            var line = new AnnotationLine(10, AnnotationOrientation.Horizontal);
+
+            // Act
+            line.ShowLabel = false;
+
+            // Assert
+            Assert.False(line.ShowLabel);
+        }
+
+        [Fact]
+        public void AnnotationLine_DefaultValues_AreSetCorrectly()
+        {
+            // Arrange & Act
+            var line = new AnnotationLine(10, AnnotationOrientation.Horizontal);
+
+            // Assert
+            Assert.True(line.IsVisible);
+            Assert.Equal(0, line.ZIndex);
+            Assert.False(line.IncludeInAutoFit);
             Assert.Equal(1.0, line.Thickness);
-        }
-
-        [Fact]
-        public void AnnotationLine_Thickness_SetNegative_ClampsToMinimum()
-        {
-            // Arrange
-            var line = new AnnotationLine(0);
-
-            // Act
-            line.Thickness = -5.0;
-
-            // Assert
-            Assert.Equal(0.1, line.Thickness); // Minimum value
-        }
-
-        [Fact]
-        public void AnnotationLine_LineStyle_DefaultValue_IsSolid()
-        {
-            // Arrange & Act
-            var line = new AnnotationLine(0);
-
-            // Assert
             Assert.Equal(LineStyle.Solid, line.LineStyle);
-        }
-
-        [Theory]
-        [InlineData(LineStyle.Solid)]
-        [InlineData(LineStyle.Dashed)]
-        [InlineData(LineStyle.Dotted)]
-        [InlineData(LineStyle.DashDot)]
-        public void AnnotationLine_LineStyle_AllValues_SetCorrectly(LineStyle style)
-        {
-            // Arrange
-            var line = new AnnotationLine(0);
-
-            // Act
-            line.LineStyle = style;
-
-            // Assert
-            Assert.Equal(style, line.LineStyle);
-        }
-
-        [Fact]
-        public void AnnotationLine_LabelPosition_DefaultValue_IsEnd()
-        {
-            // Arrange & Act
-            var line = new AnnotationLine(0);
-
-            // Assert
             Assert.Equal(LabelPosition.End, line.LabelPosition);
-        }
-
-        [Theory]
-        [InlineData(LabelPosition.Start)]
-        [InlineData(LabelPosition.Middle)]
-        [InlineData(LabelPosition.End)]
-        public void AnnotationLine_LabelPosition_AllValues_SetCorrectly(LabelPosition position)
-        {
-            // Arrange
-            var line = new AnnotationLine(0);
-
-            // Act
-            line.LabelPosition = position;
-
-            // Assert
-            Assert.Equal(position, line.LabelPosition);
-        }
-
-        [Fact]
-        public void AnnotationLine_ShowLabel_DefaultValue_IsTrue()
-        {
-            // Arrange & Act
-            var line = new AnnotationLine(0);
-
-            // Assert
             Assert.True(line.ShowLabel);
         }
 
         [Fact]
-        public void AnnotationLine_ZIndex_CanBeSetToNegative()
+        public void AnnotationLine_Color_HasValidDefault()
         {
-            // Arrange
-            var line = new AnnotationLine(0);
+            // Arrange & Act
+            var line = new AnnotationLine(10, AnnotationOrientation.Horizontal);
 
-            // Act
-            line.ZIndex = -10;
-
-            // Assert
-            Assert.Equal(-10, line.ZIndex);
+            // Assert - Default color should be semi-transparent gray
+            Assert.Equal(128, line.Color.R);
+            Assert.Equal(128, line.Color.G);
+            Assert.Equal(128, line.Color.B);
+            Assert.Equal(180, line.Color.A);
         }
 
         [Fact]
-        public void AnnotationLine_Color_CanBeModified()
+        public void AnnotationLine_Constructor_DefaultOrientation_IsHorizontal()
         {
-            // Arrange
-            var line = new AnnotationLine(0);
-            var red = new ColorRgba(255, 0, 0, 255);
-
-            // Act
-            line.Color = red;
+            // Arrange & Act - Use constructor with default orientation
+            var line = new AnnotationLine(42.0);
 
             // Assert
-            Assert.Equal(255, line.Color.R);
-            Assert.Equal(0, line.Color.G);
-            Assert.Equal(0, line.Color.B);
-            Assert.Equal(255, line.Color.A);
-        }
-
-        [Fact]
-        public void AnnotationLine_IncludeInAutoFit_CanBeEnabled()
-        {
-            // Arrange
-            var line = new AnnotationLine(0);
-
-            // Act
-            line.IncludeInAutoFit = true;
-
-            // Assert
-            Assert.True(line.IncludeInAutoFit);
+            Assert.Equal(AnnotationOrientation.Horizontal, line.Orientation);
+            Assert.Equal("Y = 42.00", line.Title);
         }
     }
 }

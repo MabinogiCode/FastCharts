@@ -17,6 +17,32 @@
                 <TextBlock Text="Demo .NET 4.8" Foreground="White" FontWeight="Bold" Margin="0,0,16,0" />
                 <Button Content="Toggle Theme" Command="{Binding ToggleThemeCommand}" Margin="0,0,8,0" />
                 <Button Content="Add Random Series" Command="{Binding AddRandomSeriesCommand}" Margin="0,0,16,0" />
+                
+                <!-- Chart Selection -->
+                <Border Background="White" BorderBrush="Orange" BorderThickness="2" CornerRadius="3" Padding="4" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎯 Selected:" VerticalAlignment="Center" Margin="0,0,4,0" FontWeight="Bold" Foreground="DarkBlue"/>
+                        <ComboBox ItemsSource="{Binding Charts}" 
+                                  SelectedItem="{Binding SelectedChart}"
+                                  DisplayMemberPath="Title"
+                                  Width="120" Margin="2"
+                                  ToolTip="Select chart for export operations"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- P1-EXPORT-PNG: Export Controls -->
+                <Border Background="LightBlue" BorderBrush="Navy" BorderThickness="1" CornerRadius="3" Padding="4" Margin="0,0,16,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="💾 Export:" VerticalAlignment="Center" Margin="0,0,4,0" FontWeight="Bold" Foreground="Navy"/>
+                        <Button Content="📁 Save PNG" Command="{Binding ExportSelectedChartCommand}" Margin="2"
+                                ToolTip="Export selected chart to PNG file"/>
+                        <Button Content="📋 Copy" Command="{Binding CopySelectedChartToClipboardCommand}" Margin="2"
+                                ToolTip="Copy selected chart to clipboard"/>
+                        <Button Content="📂 Export All" Command="{Binding ExportAllChartsCommand}" Margin="2"
+                                ToolTip="Export all charts to PNG files"/>
+                    </StackPanel>
+                </Border>
+                
                 <TextBlock Text="Theme:" Foreground="White" VerticalAlignment="Center" />
                 <TextBlock Text="{Binding SelectedTheme}" Foreground="Orange" FontWeight="Bold" Margin="4,0,16,0" />
             </StackPanel>

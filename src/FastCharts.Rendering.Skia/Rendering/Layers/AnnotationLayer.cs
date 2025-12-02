@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Annotations;
+using FastCharts.Core.Primitives;
 using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers
@@ -33,6 +35,9 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 {
                     case AnnotationLine line:
                         RenderAnnotationLine(ctx, line);
+                        break;
+                    case AnnotationRange range:
+                        RenderAnnotationRange(ctx, range);
                         break;
                     // Future annotation types will be added here
                     default:
@@ -233,6 +238,225 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             }
 
             return paint;
+        }
+
+        // P1-ANN-RANGE: Range annotation rendering methods
+        private static void RenderAnnotationRange(RenderContext ctx, AnnotationRange range)
+        {
+            var pr = ctx.PlotRect;
+            var canvas = ctx.Canvas;
+
+            canvas.Save();
+            canvas.ClipRect(pr);
+
+            if (range.Orientation == AnnotationOrientation.Horizontal)
+            {
+                RenderHorizontalRange(ctx, range);
+            }
+            else
+            {
+                RenderVerticalRange(ctx, range);
+            }
+
+            canvas.Restore();
+        }
+
+        private static void RenderHorizontalRange(RenderContext ctx, AnnotationRange range)
+        {
+            var model = ctx.Model;
+            var pr = ctx.PlotRect;
+            var canvas = ctx.Canvas;
+
+            // Map Y-values to pixel coordinates
+            var startPixel = PixelMapper.Y(range.StartValue, model.YAxis, pr);
+            var endPixel = PixelMapper.Y(range.EndValue, model.YAxis, pr);
+
+            // Ensure proper ordering (top to bottom)
+            var topPixel = Math.Min(startPixel, endPixel);
+            var bottomPixel = Math.Max(startPixel, endPixel);
+
+            // Check if range is visible
+            if (bottomPixel < pr.Top || topPixel > pr.Bottom)
+            {
+                return;
+            }
+
+            // Clamp to plot area
+            topPixel = Math.Max(pr.Top, topPixel);
+            bottomPixel = Math.Min(pr.Bottom, bottomPixel);
+
+            // Create the rectangle for the range
+            var rangeRect = new SKRect(pr.Left, topPixel, pr.Right, bottomPixel);
+
+            // Draw fill
+            using var fillPaint = new SKPaint
+            {
+                Color = new SKColor(range.FillColor.R, range.FillColor.G, range.FillColor.B, range.FillColor.A),
+                Style = SKPaintStyle.Fill,
+                IsAntialias = true
+            };
+            canvas.DrawRect(rangeRect, fillPaint);
+
+            // Draw border if thickness > 0
+            if (range.BorderThickness > 0)
+            {
+                using var borderPaint = new SKPaint
+                {
+                    Color = new SKColor(range.BorderColor.R, range.BorderColor.G, range.BorderColor.B, range.BorderColor.A),
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = (float)range.BorderThickness,
+                    IsAntialias = true
+                };
+                canvas.DrawRect(rangeRect, borderPaint);
+            }
+
+            // Draw label if title is not empty
+            if (!string.IsNullOrWhiteSpace(range.Title))
+            {
+                RenderHorizontalRangeLabel(ctx, range, rangeRect);
+            }
+        }
+
+        private static void RenderVerticalRange(RenderContext ctx, AnnotationRange range)
+        {
+            var model = ctx.Model;
+            var pr = ctx.PlotRect;
+            var canvas = ctx.Canvas;
+
+            // Map X-values to pixel coordinates
+            var startPixel = PixelMapper.X(range.StartValue, model.XAxis, pr);
+            var endPixel = PixelMapper.X(range.EndValue, model.XAxis, pr);
+
+            // Ensure proper ordering (left to right)
+            var leftPixel = Math.Min(startPixel, endPixel);
+            var rightPixel = Math.Max(startPixel, endPixel);
+
+            // Check if range is visible
+            if (rightPixel < pr.Left || leftPixel > pr.Right)
+            {
+                return;
+            }
+
+            // Clamp to plot area
+            leftPixel = Math.Max(pr.Left, leftPixel);
+            rightPixel = Math.Min(pr.Right, rightPixel);
+
+            // Create the rectangle for the range
+            var rangeRect = new SKRect(leftPixel, pr.Top, rightPixel, pr.Bottom);
+
+            // Draw fill
+            using var fillPaint = new SKPaint
+            {
+                Color = new SKColor(range.FillColor.R, range.FillColor.G, range.FillColor.B, range.FillColor.A),
+                Style = SKPaintStyle.Fill,
+                IsAntialias = true
+            };
+            canvas.DrawRect(rangeRect, fillPaint);
+
+            // Draw border if thickness > 0
+            if (range.BorderThickness > 0)
+            {
+                using var borderPaint = new SKPaint
+                {
+                    Color = new SKColor(range.BorderColor.R, range.BorderColor.G, range.BorderColor.B, range.BorderColor.A),
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = (float)range.BorderThickness,
+                    IsAntialias = true
+                };
+                canvas.DrawRect(rangeRect, borderPaint);
+            }
+
+            // Draw label if title is not empty
+            if (!string.IsNullOrWhiteSpace(range.Title))
+            {
+                RenderVerticalRangeLabel(ctx, range, rangeRect);
+            }
+        }
+
+        private static void RenderHorizontalRangeLabel(RenderContext ctx, AnnotationRange range, SKRect rangeRect)
+        {
+            var canvas = ctx.Canvas;
+            var font = ctx.Paints.TextFont;
+
+            using var textPaint = new SKPaint
+            {
+                Color = new SKColor(range.BorderColor.R, range.BorderColor.G, range.BorderColor.B, 255),
+                IsAntialias = true
+            };
+
+            using var backgroundPaint = new SKPaint
+            {
+                Color = new SKColor(255, 255, 255, 220), // Semi-transparent white background
+                IsAntialias = true
+            };
+
+            var text = range.Title!;
+            var textWidth = font.MeasureText(text, textPaint);
+            var textHeight = font.Size;
+
+            // Calculate label position based on LabelPosition setting
+            float labelX = range.LabelPosition switch
+            {
+                LabelPosition.Start => rangeRect.Left + 5,
+                LabelPosition.Middle => rangeRect.Left + (rangeRect.Width - textWidth) / 2,
+                LabelPosition.End => rangeRect.Right - textWidth - 5,
+                _ => rangeRect.Left + (rangeRect.Width - textWidth) / 2
+            };
+
+            var labelY = rangeRect.Top + textHeight + 5; // Position at top of range
+
+            // Ensure label stays within range bounds
+            labelX = Math.Max(rangeRect.Left + 2, Math.Min(rangeRect.Right - textWidth - 2, labelX));
+
+            // Draw background rectangle
+            var bgRect = new SKRect(labelX - 2, labelY - textHeight, labelX + textWidth + 2, labelY + 2);
+            canvas.DrawRect(bgRect, backgroundPaint);
+
+            // Draw text
+            canvas.DrawText(text, labelX, labelY - 2, SKTextAlign.Left, font, textPaint);
+        }
+
+        private static void RenderVerticalRangeLabel(RenderContext ctx, AnnotationRange range, SKRect rangeRect)
+        {
+            var canvas = ctx.Canvas;
+            var font = ctx.Paints.TextFont;
+
+            using var textPaint = new SKPaint
+            {
+                Color = new SKColor(range.BorderColor.R, range.BorderColor.G, range.BorderColor.B, 255),
+                IsAntialias = true
+            };
+
+            using var backgroundPaint = new SKPaint
+            {
+                Color = new SKColor(255, 255, 255, 220), // Semi-transparent white background
+                IsAntialias = true
+            };
+
+            var text = range.Title!;
+            var textWidth = font.MeasureText(text, textPaint);
+            var textHeight = font.Size;
+
+            // Calculate label position based on LabelPosition setting  
+            float labelY = range.LabelPosition switch
+            {
+                LabelPosition.Start => rangeRect.Top + textHeight + 5,
+                LabelPosition.Middle => rangeRect.Top + (rangeRect.Height + textHeight) / 2,
+                LabelPosition.End => rangeRect.Bottom - 5,
+                _ => rangeRect.Top + (rangeRect.Height + textHeight) / 2
+            };
+
+            var labelX = rangeRect.Left + 5; // Position at left of range
+
+            // Ensure label stays within range bounds
+            labelY = Math.Max(rangeRect.Top + textHeight + 2, Math.Min(rangeRect.Bottom - 2, labelY));
+
+            // Draw background rectangle
+            var bgRect = new SKRect(labelX - 2, labelY - textHeight, labelX + textWidth + 2, labelY + 2);
+            canvas.DrawRect(bgRect, backgroundPaint);
+
+            // Draw text
+            canvas.DrawText(text, labelX, labelY - 2, SKTextAlign.Left, font, textPaint);
         }
     }
 }
