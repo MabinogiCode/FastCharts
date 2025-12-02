@@ -103,6 +103,9 @@ namespace FastCharts.Core.Tests.Annotations
                     case nameof(AnnotationLine.Value):
                         valueChanged = true;
                         break;
+                    default:
+                        // Other properties not tracked in this test
+                        break;
                 }
             };
 
@@ -234,7 +237,7 @@ namespace FastCharts.Core.Tests.Annotations
         {
             // Arrange
             var line = new AnnotationLine(0);
-            var red = new Color(255, 0, 0, 255);
+            var red = new ColorRgba(255, 0, 0, 255);
 
             // Act
             line.Color = red;

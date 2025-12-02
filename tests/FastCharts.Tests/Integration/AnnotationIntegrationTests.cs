@@ -94,9 +94,14 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add multiple annotations with different Z-indices
-            var line1 = AnnotationLine.Horizontal(30.0, "Level 1") { ZIndex = 1 };
-            var line2 = AnnotationLine.Horizontal(40.0, "Level 2") { ZIndex = 0 };
-            var line3 = AnnotationLine.Vertical(2.5, "Milestone") { ZIndex = 2 };
+            var line1 = AnnotationLine.Horizontal(30.0, "Level 1");
+            line1.ZIndex = 1;
+            
+            var line2 = AnnotationLine.Horizontal(40.0, "Level 2");
+            line2.ZIndex = 0;
+            
+            var line3 = AnnotationLine.Vertical(2.5, "Milestone");
+            line3.ZIndex = 2;
 
             model.AddAnnotation(line1);
             model.AddAnnotation(line2);
@@ -127,23 +132,17 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add annotations with different styles
-            var solidLine = AnnotationLine.Horizontal(20.0, "Solid") 
-            { 
-                LineStyle = LineStyle.Solid,
-                Thickness = 2.0
-            };
+            var solidLine = AnnotationLine.Horizontal(20.0, "Solid");
+            solidLine.LineStyle = LineStyle.Solid;
+            solidLine.Thickness = 2.0;
             
-            var dashedLine = AnnotationLine.Horizontal(30.0, "Dashed") 
-            { 
-                LineStyle = LineStyle.Dashed,
-                Thickness = 1.5
-            };
+            var dashedLine = AnnotationLine.Horizontal(30.0, "Dashed");
+            dashedLine.LineStyle = LineStyle.Dashed;
+            dashedLine.Thickness = 1.5;
             
-            var dottedLine = AnnotationLine.Horizontal(40.0, "Dotted") 
-            { 
-                LineStyle = LineStyle.Dotted,
-                Color = new Color(255, 0, 0, 200) // Red
-            };
+            var dottedLine = AnnotationLine.Horizontal(40.0, "Dotted");
+            dottedLine.LineStyle = LineStyle.Dotted;
+            dottedLine.Color = new ColorRgba(255, 0, 0, 200); // Red
 
             model.AddAnnotation(solidLine);
             model.AddAnnotation(dashedLine);
@@ -173,10 +172,8 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add annotation without label
-            var line = AnnotationLine.Horizontal(15.0, "Hidden Label") 
-            { 
-                ShowLabel = false 
-            };
+            var line = AnnotationLine.Horizontal(15.0, "Hidden Label");
+            line.ShowLabel = false;
             model.AddAnnotation(line);
 
             // Act
@@ -203,10 +200,8 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add invisible annotation
-            var line = AnnotationLine.Horizontal(15.0, "Invisible") 
-            { 
-                IsVisible = false 
-            };
+            var line = AnnotationLine.Horizontal(15.0, "Invisible");
+            line.IsVisible = false;
             model.AddAnnotation(line);
 
             // Act & Assert - should not throw
@@ -293,14 +288,14 @@ namespace FastCharts.Tests.Integration
 
             // Act & Assert
             model.AddAnnotation(line1);
-            Assert.Equal(1, model.Annotations.Count);
+            Assert.Single(model.Annotations);
 
             model.AddAnnotation(line2);
             Assert.Equal(2, model.Annotations.Count);
 
             var removed = model.RemoveAnnotation(line1);
             Assert.True(removed);
-            Assert.Equal(1, model.Annotations.Count);
+            Assert.Single(model.Annotations);
             Assert.Contains(line2, model.Annotations);
 
             model.ClearAnnotations();
@@ -325,10 +320,8 @@ namespace FastCharts.Tests.Integration
             model.AddSeries(new LineSeries(lineData) { Title = "Data Series" });
 
             // Add annotation with specific label position
-            var line = AnnotationLine.Horizontal(20.0, $"Label at {position}") 
-            { 
-                LabelPosition = position 
-            };
+            var line = AnnotationLine.Horizontal(20.0, $"Label at {position}");
+            line.LabelPosition = position;
             model.AddAnnotation(line);
 
             // Act
