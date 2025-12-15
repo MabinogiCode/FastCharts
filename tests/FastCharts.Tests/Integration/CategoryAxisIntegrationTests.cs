@@ -21,7 +21,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Category Bar Chart" };
-            
+
             var categoryAxis = new CategoryAxis(new[] { "Jan", "Feb", "Mar", "Apr" });
             model.ReplaceXAxis(categoryAxis);
 
@@ -32,7 +32,7 @@ namespace FastCharts.Tests.Integration
                 new BarPoint(2, 120),
                 new BarPoint(3, 180)
             };
-            
+
             model.AddSeries(new BarSeries(barData) { Title = "Monthly Sales" });
 
             // Act
@@ -49,7 +49,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Category Line Chart" };
-            
+
             var categoryAxis = new CategoryAxis(new[] { "Q1", "Q2", "Q3", "Q4" });
             model.ReplaceXAxis(categoryAxis);
 
@@ -60,7 +60,7 @@ namespace FastCharts.Tests.Integration
                 new PointD(2, 60),
                 new PointD(3, 90)
             };
-            
+
             model.AddSeries(new LineSeries(lineData) { Title = "Quarterly Growth" });
 
             // Act
@@ -76,12 +76,12 @@ namespace FastCharts.Tests.Integration
         public void CategoryAxis_WithMultipleSeries_RendersCorrectly()
         {
             // Arrange
-            var model = new ChartModel 
-            { 
+            var model = new ChartModel
+            {
                 Title = "Multiple Series with Categories",
                 Theme = new DarkTheme()
             };
-            
+
             var categoryAxis = new CategoryAxis(new[] { "Product A", "Product B", "Product C" });
             model.ReplaceXAxis(categoryAxis);
 
@@ -126,7 +126,7 @@ namespace FastCharts.Tests.Integration
                 var (bitmap, _) = ChartRenderTestHelper.Render(model);
                 bitmap?.Dispose();
             });
-            
+
             Assert.Null(exception);
         }
 
@@ -135,7 +135,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Custom Spacing" };
-            
+
             var categoryAxis = new CategoryAxis(new[] { "A", "B", "C" })
             {
                 CategorySpacing = 2.0
@@ -148,7 +148,7 @@ namespace FastCharts.Tests.Integration
                 new BarPoint(2, 150),  // Note: spaced by 2.0
                 new BarPoint(4, 120)   // Note: spaced by 2.0
             };
-            
+
             model.AddSeries(new BarSeries(barData) { Title = "Spaced Data" });
 
             // Act
@@ -165,12 +165,12 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Long Category Names" };
-            
-            var categoryAxis = new CategoryAxis(new[] 
-            { 
-                "Very Long Category Name 1", 
-                "Even Longer Category Name 2", 
-                "Extremely Long Category Name 3" 
+
+            var categoryAxis = new CategoryAxis(new[]
+            {
+                "Very Long Category Name 1",
+                "Even Longer Category Name 2",
+                "Extremely Long Category Name 3"
             });
             model.ReplaceXAxis(categoryAxis);
 
@@ -180,7 +180,7 @@ namespace FastCharts.Tests.Integration
                 new BarPoint(1, 150),
                 new BarPoint(2, 120)
             };
-            
+
             model.AddSeries(new BarSeries(barData) { Title = "Data" });
 
             // Act
@@ -197,7 +197,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Categories with Dual Y" };
-            
+
             var categoryAxis = new CategoryAxis(new[] { "Jan", "Feb", "Mar" });
             model.ReplaceXAxis(categoryAxis);
             model.EnsureSecondaryYAxis();
@@ -272,7 +272,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Export Test" };
-            
+
             var categoryAxis = new CategoryAxis(new[] { "Test1", "Test2", "Test3" });
             model.ReplaceXAxis(categoryAxis);
 
@@ -294,7 +294,7 @@ namespace FastCharts.Tests.Integration
                 Assert.Equal(800, bitmap.Width);
                 Assert.Equal(600, bitmap.Height);
             });
-            
+
             Assert.Null(exception);
         }
     }

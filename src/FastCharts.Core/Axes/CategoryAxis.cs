@@ -39,7 +39,7 @@ namespace FastCharts.Core.Axes
         {
             _categories = categories?.Where(c => !string.IsNullOrWhiteSpace(c)).ToList() ?? new List<string>();
             _categoryTicker = new CategoryTicker(_categories);
-            
+
             var maxIndex = Math.Max(_categories.Count - 1, 0);
             Scale = new LinearScale(0, maxIndex, 0, 1);
             DataRange = new FRange(0, maxIndex);
@@ -197,16 +197,16 @@ namespace FastCharts.Core.Axes
         {
             var startIndex = (int)Math.Floor(visibleRange.Min);
             var endIndex = (int)Math.Ceiling(visibleRange.Max);
-            
-            if (startIndex < 0) 
+
+            if (startIndex < 0)
             {
                 startIndex = 0;
             }
-            if (endIndex >= _categories.Count) 
+            if (endIndex >= _categories.Count)
             {
                 endIndex = Math.Max(_categories.Count - 1, 0);
             }
-            if (startIndex > endIndex) 
+            if (startIndex > endIndex)
             {
                 (startIndex, endIndex) = (endIndex, startIndex);
             }
@@ -221,13 +221,13 @@ namespace FastCharts.Core.Axes
         {
             var maxIndex = Math.Max(_categories.Count - 1, 0);
             DataRange = new FRange(0, maxIndex * CategorySpacing);
-            
+
             // Keep visible range within bounds
             if (VisibleRange.Max > DataRange.Max || VisibleRange.Min < DataRange.Min)
             {
                 VisibleRange = DataRange;
             }
-            
+
             _categoryTicker = new CategoryTicker(_categories, CategorySpacing);
         }
     }

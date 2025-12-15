@@ -311,7 +311,7 @@ namespace FastCharts.Core.Tests.Axes
 
             // Assert
             Assert.NotNull(ticker);
-            
+
             // Test ticker functionality
             var ticks = ticker.GetTicks(new FRange(0, 2), 1.0);
             Assert.Equal(3, ticks.Count);

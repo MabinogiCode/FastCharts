@@ -17,7 +17,7 @@ namespace FastCharts.Core.Tests.Services
             var currentAxis = new NumericAxis();
             var newAxis = new NumericAxis();
             var axesList = new List<AxisBase> { currentAxis, new NumericAxis() };
-            
+
             currentAxis.DataRange = new FRange(5, 15);
 
             // Act
@@ -52,7 +52,7 @@ namespace FastCharts.Core.Tests.Services
             var currentAxis = new NumericAxis();
             var newAxis = new NumericAxis();
             var axesList = new List<AxisBase> { new NumericAxis(), currentAxis };
-            
+
             currentAxis.DataRange = new FRange(10, 20);
 
             // Act

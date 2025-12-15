@@ -12,7 +12,7 @@ internal sealed class LineLayer : ISeriesSubLayer
         var palette = model.Theme.SeriesPalette;
         var paletteCount = palette?.Count ?? 0;
         var lineIndex = 0;
-        
+
         foreach (var s in model.Series)
         {
             if (s is not LineSeries ls)
@@ -27,16 +27,16 @@ internal sealed class LineLayer : ISeriesSubLayer
             {
                 continue;
             }
-            
+
             var c = (paletteCount > 0 && lineIndex < paletteCount && palette != null) ? palette[lineIndex] : model.Theme.PrimarySeriesColor;
             using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)ls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
             using var path = new SKPath();
-            
+
             // ?? LTTB INTEGRATION: Use GetRenderData() for automatic resampling!
             // This provides optimized data based on viewport pixel width
             var plotPixelWidth = (int)pr.Width;
             var renderData = ls.GetRenderData(plotPixelWidth);
-            
+
             var started = false;
             foreach (var p in renderData)  // ? Changed from ls.Data to renderData
             {
@@ -53,7 +53,7 @@ internal sealed class LineLayer : ISeriesSubLayer
                     path.LineTo(px, py);
                 }
             }
-            
+
             ctx.Canvas.Save();
             ctx.Canvas.ClipRect(pr);
             ctx.Canvas.DrawPath(path, sp);

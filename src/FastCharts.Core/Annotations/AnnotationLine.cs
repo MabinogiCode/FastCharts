@@ -21,7 +21,7 @@ namespace FastCharts.Core.Annotations
             Orientation = orientation;
             Color = new ColorRgba(128, 128, 128, 180); // Semi-transparent gray
             Title = title ?? (orientation == AnnotationOrientation.Horizontal ? $"Y = {value:F2}" : $"X = {value:F2}");
-            
+
             // Set default values
             IsVisible = true;
             ZIndex = 0;

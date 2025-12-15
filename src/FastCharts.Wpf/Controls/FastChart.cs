@@ -266,11 +266,11 @@ namespace FastCharts.Wpf.Controls
                     MouseButton.Right => PointerButton.Right,
                     _ => PointerButton.None
                 },
-                BuildModifiers(), 
-                pos.X, 
-                pos.Y, 
-                0, 
-                skiaElement.ActualWidth, 
+                BuildModifiers(),
+                pos.X,
+                pos.Y,
+                0,
+                skiaElement.ActualWidth,
                 skiaElement.ActualHeight);
 
             if (RouteToBehaviors(ev))
@@ -290,13 +290,13 @@ namespace FastCharts.Wpf.Controls
             UpdateDataCoordsForTooltip(pos.X, pos.Y);
 
             var ev = new InteractionEvent(
-                PointerEventType.Move, 
-                PointerButton.None, 
+                PointerEventType.Move,
+                PointerButton.None,
                 BuildModifiers(),
-                pos.X, 
-                pos.Y, 
-                0, 
-                skiaElement.ActualWidth, 
+                pos.X,
+                pos.Y,
+                0,
+                skiaElement.ActualWidth,
                 skiaElement.ActualHeight);
 
             var handled = RouteToBehaviors(ev);
@@ -322,11 +322,11 @@ namespace FastCharts.Wpf.Controls
                     MouseButton.Right => PointerButton.Right,
                     _ => PointerButton.None
                 },
-                BuildModifiers(), 
-                pos.X, 
-                pos.Y, 
-                0, 
-                skiaElement.ActualWidth, 
+                BuildModifiers(),
+                pos.X,
+                pos.Y,
+                0,
+                skiaElement.ActualWidth,
                 skiaElement.ActualHeight);
 
             if (RouteToBehaviors(ev))
@@ -346,13 +346,13 @@ namespace FastCharts.Wpf.Controls
             {
                 var pos = e.GetPosition(skiaElement);
                 var ev = new InteractionEvent(
-                    PointerEventType.Leave, 
-                    PointerButton.None, 
+                    PointerEventType.Leave,
+                    PointerButton.None,
                     new PointerModifiers(),
-                    pos.X, 
-                    pos.Y, 
-                    0, 
-                    skiaElement.ActualWidth, 
+                    pos.X,
+                    pos.Y,
+                    0,
+                    skiaElement.ActualWidth,
                     skiaElement.ActualHeight);
 
                 if (RouteToBehaviors(ev))
@@ -374,13 +374,13 @@ namespace FastCharts.Wpf.Controls
             userChangedView = true;
             var pos = (sender is IInputElement el) ? Mouse.GetPosition(el) : e.GetPosition(skiaElement);
             var ev = new InteractionEvent(
-                PointerEventType.Wheel, 
-                PointerButton.None, 
+                PointerEventType.Wheel,
+                PointerButton.None,
                 BuildModifiers(),
-                pos.X, 
-                pos.Y, 
-                e.Delta > 0 ? 1 : -1, 
-                skiaElement.ActualWidth, 
+                pos.X,
+                pos.Y,
+                e.Delta > 0 ? 1 : -1,
+                skiaElement.ActualWidth,
                 skiaElement.ActualHeight);
 
             if (RouteToBehaviors(ev))

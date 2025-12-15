@@ -65,7 +65,7 @@ namespace FastCharts.Core.Tests.Annotations
         {
             // Arrange
             var range = new AnnotationRange(10.0, 50.0, AnnotationOrientation.Horizontal);
-            
+
             // Act - Set start value higher than end
             range.StartValue = 60.0;
 
@@ -79,7 +79,7 @@ namespace FastCharts.Core.Tests.Annotations
         {
             // Arrange
             var range = new AnnotationRange(10.0, 50.0, AnnotationOrientation.Horizontal);
-            
+
             // Act - Set end value lower than start
             range.EndValue = 5.0;
 

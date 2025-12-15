@@ -83,8 +83,8 @@ namespace FastCharts.Core.Tests
         public void RemoveBehaviorTypeWithExistingTypeRemovesBehavior()
         {
             // Arrange
-            var behaviors = new List<IBehavior> 
-            { 
+            var behaviors = new List<IBehavior>
+            {
                 new CrosshairBehavior(),
                 new ZoomWheelBehavior(),
                 new CrosshairBehavior() // Duplicate to test removal of all instances

@@ -32,15 +32,15 @@ public sealed class ScientificNumberFormatter : INumberFormatter
     public string Format(double value)
     {
         // Handle special values
-        if (double.IsNaN(value)) 
+        if (double.IsNaN(value))
         {
             return "NaN";
         }
-        if (double.IsInfinity(value)) 
+        if (double.IsInfinity(value))
         {
             return "?";
         }
-        if (Math.Abs(value) < 1e-15) 
+        if (Math.Abs(value) < 1e-15)
         {
             return "0";
         }
@@ -76,17 +76,17 @@ public sealed class ScientificNumberFormatter : INumberFormatter
         // Case 4: generic scientific notation  
         // Mantissa between [1,10)
         var mantissa = abs / pow10;
-        
+
         // For E notation, significantDigits specifies decimal places in mantissa
         // significantDigits=2 ? "X.YZ" (2 decimal places)
         var decimalPlaces = Math.Max(0, SignificantDigits - 1);
-        
-        var formatString = decimalPlaces > 0 ? 
+
+        var formatString = decimalPlaces > 0 ?
             $"F{decimalPlaces}" :  // Use F format to force decimal places
             "F0";
-            
+
         var mantissaStr = mantissa.ToString(formatString, CultureInfo.InvariantCulture);
-        
+
         var expSign = exponent >= 0 ? "+" : "-";
         var expAbs = Math.Abs(exponent).ToString("00", CultureInfo.InvariantCulture);
         return sign + mantissaStr + "E" + expSign + expAbs;

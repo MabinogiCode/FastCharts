@@ -17,7 +17,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
         public void Render(RenderContext ctx)
         {
             var model = ctx.Model;
-            
+
             if (!model.Annotations.Any())
             {
                 return;

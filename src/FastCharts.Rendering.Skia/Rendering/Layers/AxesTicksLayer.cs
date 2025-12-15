@@ -39,14 +39,14 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             bool xIsDate = model.XAxis is DateTimeAxis;
             bool xIsCategory = model.XAxis is CategoryAxis;
             var font = paints.TextFont;
-            
+
             // X-axis ticks and labels
             foreach (var t in xTicks)
             {
                 float px = PixelMapper.X(t, model.XAxis, pr);
                 c.DrawLine(px, yBase, px, yBase + tickLen, paints.Tick);
                 string lbl;
-                
+
                 if (xIsCategory)
                 {
                     // Handle CategoryAxis - display category labels
@@ -77,17 +77,17 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     var xf = (model.XAxis as NumericAxis)?.NumberFormatter;
                     lbl = xf != null ? xf.Format(t) : t.ToString((model.XAxis as NumericAxis)?.LabelFormat ?? "G", CultureInfo.InvariantCulture);
                 }
-                
+
                 float w = font.MeasureText(lbl, paints.Text);
                 c.DrawText(lbl, px - w / 2f, yBase + tickLen + 3 + font.Size, SKTextAlign.Left, font, paints.Text);
             }
-            
+
             // Y-axis ticks and labels (primary)
             foreach (var t in yTicks)
             {
                 float py = PixelMapper.Y(t, model.YAxis, pr);
                 c.DrawLine(xBase - tickLen, py, xBase, py, paints.Tick);
-                
+
                 string lbl;
                 if (model.YAxis is CategoryAxis categoryYAxis)
                 {
@@ -100,11 +100,11 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     var yf = ny?.NumberFormatter;
                     lbl = yf != null ? yf.Format(t) : t.ToString(ny?.LabelFormat ?? "G", CultureInfo.InvariantCulture);
                 }
-                
+
                 float w = font.MeasureText(lbl, paints.Text);
                 c.DrawText(lbl, xBase - tickLen - 6 - w, py + 4, SKTextAlign.Left, font, paints.Text);
             }
-            
+
             // Y-axis ticks and labels (secondary)
             if (y2Ticks != null)
             {
@@ -113,7 +113,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 {
                     float py = PixelMapper.Y(t, model.YAxisSecondary!, pr);
                     c.DrawLine(xR, py, xR + tickLen, py, paints.Tick);
-                    
+
                     string lbl;
                     if (model.YAxisSecondary is CategoryAxis categoryY2Axis)
                     {
@@ -126,11 +126,11 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                         var y2f = ny2?.NumberFormatter;
                         lbl = y2f != null ? y2f.Format(t) : t.ToString(ny2?.LabelFormat ?? "G", CultureInfo.InvariantCulture);
                     }
-                    
+
                     c.DrawText(lbl, xR + tickLen + 4, py + 4, SKTextAlign.Left, font, paints.Text);
                 }
             }
-            
+
             // Border
             c.DrawRect(pr, paints.Border);
         }

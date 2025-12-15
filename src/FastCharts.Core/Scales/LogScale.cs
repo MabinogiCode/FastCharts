@@ -76,10 +76,10 @@ namespace FastCharts.Core.Scales
             // Calculate logarithmic position
             var logValue = Math.Log(value, _logBase);
             var t = (logValue - _logDataMin) / (_logDataMax - _logDataMin);
-            
+
             // Clamp to prevent overflow
             t = Math.Max(0, Math.Min(1, t));
-            
+
             return _pixelMin + t * (_pixelMax - _pixelMin);
         }
 
@@ -97,13 +97,13 @@ namespace FastCharts.Core.Scales
 
             // Calculate normalized position
             var t = (px - _pixelMin) / (_pixelMax - _pixelMin);
-            
+
             // Calculate log value at this position
             var logValue = _logDataMin + t * (_logDataMax - _logDataMin);
-            
+
             // Convert back to linear scale
             var value = Math.Pow(_logBase, logValue);
-            
+
             // Ensure result is within valid range
             return Math.Max(_dataMin, Math.Min(_dataMax, value));
         }

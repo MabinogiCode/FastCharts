@@ -75,7 +75,7 @@ namespace FastCharts.Tests.Export
             // Assert
             Assert.True(memoryStream.Length > 0);
             memoryStream.Position = 0;
-            
+
             // Verify PNG header
             var pngHeader = new byte[8];
             memoryStream.Read(pngHeader, 0, 8);
@@ -95,7 +95,7 @@ namespace FastCharts.Tests.Export
             // Assert
             Assert.True(memoryStream.Length > 0);
             memoryStream.Position = 0;
-            
+
             // Verify PNG header
             var pngHeader = new byte[8];
             await memoryStream.ReadAsync(pngHeader, 0, 8);
@@ -138,10 +138,10 @@ namespace FastCharts.Tests.Export
         public void ExportPng_DifferentSizes_ProducesValidOutput()
         {
             // Arrange
-            var sizes = new[] 
-            { 
-                (200, 150), 
-                (800, 600), 
+            var sizes = new[]
+            {
+                (200, 150),
+                (800, 600),
                 (1920, 1080),
                 (300, 300) // Square
             };
@@ -155,7 +155,7 @@ namespace FastCharts.Tests.Export
 
                 // Assert
                 Assert.True(memoryStream.Length > 0, $"Size {width}x{height} should produce valid output");
-                
+
                 // Verify the exported image has correct dimensions
                 using var bitmap = _renderer.RenderToBitmap(_testChart, width, height);
                 Assert.Equal(width, bitmap.Width);
@@ -202,7 +202,7 @@ namespace FastCharts.Tests.Export
             using var memoryStream = new MemoryStream();
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 _renderer.ExportPng(null!, memoryStream, 800, 600));
         }
 
@@ -221,7 +221,7 @@ namespace FastCharts.Tests.Export
             using var memoryStream = new MemoryStream();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 _renderer.ExportPngAsync(null!, memoryStream, 800, 600));
         }
 
@@ -229,7 +229,7 @@ namespace FastCharts.Tests.Export
         public async Task ExportPngAsync_NullStream_ThrowsArgumentException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 _renderer.ExportPngAsync(_testChart, null!, 800, 600));
         }
 
