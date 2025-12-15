@@ -1,7 +1,5 @@
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using FastCharts.Core.DataBinding;
 using FastCharts.Core.DataBinding.Series;
@@ -190,63 +188,5 @@ namespace FastCharts.Core.Tests.DataBinding
             series.Data.Should().HaveCount(3);
             updateCount.Should().BeGreaterThan(0);
         }
-    }
-
-    // Test data classes
-    public class SensorReading
-    {
-        public DateTime Time { get; set; }
-        public double Temperature { get; set; }
-    }
-
-    public class ObservableSensorReading : INotifyPropertyChanged
-    {
-        private DateTime _time;
-        private double _temperature;
-
-        public DateTime Time
-        {
-            get => _time;
-            set
-            {
-                _time = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public double Temperature
-        {
-            get => _temperature;
-            set
-            {
-                _temperature = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
-    public class ComplexDataPoint
-    {
-        public Point2D Location { get; set; } = new();
-        public int Value { get; set; }
-    }
-
-    public class Point2D
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-    }
-
-    public class CategoryValue
-    {
-        public string Category { get; set; } = "";
-        public double Value { get; set; }
     }
 }
