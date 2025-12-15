@@ -156,6 +156,11 @@ namespace FastCharts.Wpf.Controls
 
         private void InitializeChartIfNeeded()
         {
+            if (Model == null)
+            {
+                return;
+            }
+
             if (!userChangedView)
             {
                 Model.AutoFitDataRange();
@@ -166,6 +171,11 @@ namespace FastCharts.Wpf.Controls
 
         private void ConfigureDefaultBehaviors()
         {
+            if (Model == null)
+            {
+                return;
+            }
+
             if (Model.Behaviors.Count == 0)
             {
                 AddDefaultBehaviors();
@@ -178,6 +188,11 @@ namespace FastCharts.Wpf.Controls
 
         private void AddDefaultBehaviors()
         {
+            if (Model == null)
+            {
+                return;
+            }
+
             var defaultBehaviors = new IBehavior[]
             {
                 new CrosshairBehavior(),
@@ -197,6 +212,11 @@ namespace FastCharts.Wpf.Controls
 
         private void EnsureTooltipBehavior()
         {
+            if (Model == null)
+            {
+                return;
+            }
+
             if (!Model.Behaviors.Any(b => b is MultiSeriesTooltipBehavior))
             {
                 Model.Behaviors.Insert(1, new MultiSeriesTooltipBehavior());
@@ -281,7 +301,7 @@ namespace FastCharts.Wpf.Controls
 
             var handled = RouteToBehaviors(ev);
             userChangedView |= handled;
-            Mouse.OverrideCursor = (Model.InteractionState?.IsPanning == true) ? Cursors.Hand : null;
+            Mouse.OverrideCursor = (Model?.InteractionState?.IsPanning == true) ? Cursors.Hand : null;
             RequestRedraw();
         }
 
@@ -314,7 +334,7 @@ namespace FastCharts.Wpf.Controls
                 RequestRedraw();
             }
 
-            if (Model.InteractionState?.IsPanning != true)
+            if (Model?.InteractionState?.IsPanning != true)
             {
                 Mouse.OverrideCursor = null;
             }
@@ -468,6 +488,11 @@ namespace FastCharts.Wpf.Controls
 
         private bool RouteToBehaviors(InteractionEvent ev)
         {
+            if (Model == null)
+            {
+                return false;
+            }
+
             var handled = false;
             for (var i = 0; i < Model.Behaviors.Count; i++)
             {

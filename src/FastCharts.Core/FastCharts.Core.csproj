@@ -25,7 +25,8 @@
     <!-- StyleCop Analyzers for strict SA1124, SA1503, SA1520 enforcement -->
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
     <!-- SonarAnalyzer for strict S1244 floating point equality enforcement -->
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.16.0.128591" PrivateAssets="all" IncludeAssets="analyzers" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.16.1.129956" PrivateAssets="all" IncludeAssets="analyzers" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
   </ItemGroup>
   
   <ItemGroup>

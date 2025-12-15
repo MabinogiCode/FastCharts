@@ -1,24 +1,25 @@
+ï»¿using DemoApp.Net48.Commands;
+using DemoApp.Net48.Constants;
+using DemoApp.Net48.Services;
+using DemoApp.Net48.Services.Abstractions;
+using DemoApp.Net48.ViewModels.Base;
+using FastCharts.Core;
+using FastCharts.Core.Abstractions;
+using FastCharts.Core.Annotations;
+using FastCharts.Core.Axes;
+using FastCharts.Core.Primitives;
+using FastCharts.Core.Series;
+using FastCharts.Core.Themes.BuiltIn;
+using FastCharts.Rendering.Skia;
+using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
-using FastCharts.Core;
-using FastCharts.Core.Abstractions;
-using FastCharts.Core.Axes;
-using FastCharts.Core.Primitives;
-using FastCharts.Core.Series;
-using FastCharts.Core.Themes.BuiltIn;
-using FastCharts.Core.Annotations;
-using FastCharts.Rendering.Skia;
-using DemoApp.Net48.ViewModels.Base;
-using DemoApp.Net48.Commands;
-using DemoApp.Net48.Constants;
-using DemoApp.Net48.Services.Abstractions;
-using DemoApp.Net48.Services;
-using Microsoft.Win32;
 
 namespace DemoApp.Net48.ViewModels
 {
@@ -53,7 +54,7 @@ namespace DemoApp.Net48.ViewModels
             Charts = new ObservableCollection<ChartModel>();
             InitializeCommands();
             LoadCharts();
-            
+
             // Select first chart by default
             SelectedChart = Charts.FirstOrDefault();
         }
@@ -110,9 +111,9 @@ namespace DemoApp.Net48.ViewModels
         {
             ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
             AddRandomSeriesCommand = new RelayCommand(
-                _ => AddRandomSeries(), 
+                _ => AddRandomSeries(),
                 _ => Charts.Count > 0);
-            
+
             // P1-EXPORT-PNG: Add export commands
             ExportSelectedChartCommand = new AsyncRelayCommand(
                 _ => ExportSelectedChart(),
@@ -126,32 +127,15 @@ namespace DemoApp.Net48.ViewModels
         private void LoadCharts()
         {
             // Basic demo charts
-            Charts.Add(BuildMixedChart());
-            Charts.Add(BuildBarsChart());
-            Charts.Add(BuildStackedBarsChart());
-            Charts.Add(BuildOhlcChart());
-            Charts.Add(BuildErrorBarChart());
-            Charts.Add(BuildMinimalLineChart());
-            Charts.Add(BuildAreaOnly());
-            Charts.Add(BuildScatterOnly());
-            Charts.Add(BuildStepLine());
-            Charts.Add(BuildSingleBars());
-            Charts.Add(BuildStacked100());
-            Charts.Add(BuildOhlcWithErrorOverlay());
-            Charts.Add(BuildMultiSeriesTooltipShowcase());
-            
-            // P1-AX-CAT: Add CategoryAxis demo
-            Charts.Add(BuildCategoryAxisDemo());
-            
-            // P1-ANN-LINE: Add Annotation demo
-            Charts.Add(BuildAnnotationDemo());
-            
-            // P1-AX-MULTI: Add Multi-Axis demo
-            Charts.Add(BuildMultiAxisDemo());
-            
-            // P1-ANN-RANGE: Add Range Annotation demo
-            Charts.Add(BuildRangeAnnotationDemo());
-            
+            Charts.Add(BuildMixedChart());          // 0
+            Charts.Add(BuildBarsChart());           // 1
+            Charts.Add(BuildStackedBarsChart());    // 2
+            Charts.Add(BuildOhlcChart());           // 3
+            Charts.Add(BuildErrorBarChart());       // 4
+            Charts.Add(BuildMinimalLineChart());    // 5
+            Charts.Add(BuildRangeAnnotationDemo()); // 6
+            Charts.Add(BuildLogarithmicAxisDemo()); // 7 - P1-AX-LOG
+
             // Add demo charts from service
             var demoCharts = _chartCreationService.CreateDemoCharts();
             foreach (var chart in demoCharts)
@@ -162,8 +146,8 @@ namespace DemoApp.Net48.ViewModels
 
         private void ToggleTheme()
         {
-            SelectedTheme = SelectedTheme == ThemeConstants.Dark 
-                ? ThemeConstants.Light 
+            SelectedTheme = SelectedTheme == ThemeConstants.Dark
+                ? ThemeConstants.Light
                 : ThemeConstants.Dark;
 
             _dispatcher.Invoke(() =>
@@ -187,11 +171,11 @@ namespace DemoApp.Net48.ViewModels
 
             var randomChart = _chartCreationService.CreateRandomChart(40);
             var randomSeries = randomChart.Series.FirstOrDefault();
-            
+
             if (randomSeries != null)
             {
                 randomSeries.Title = $"Rand {targetChart.Series.Count + 1}";
-                
+
                 _dispatcher.Invoke(() =>
                 {
                     targetChart.AddSeries(randomSeries);
@@ -202,8 +186,8 @@ namespace DemoApp.Net48.ViewModels
 
         private void ApplyThemeToAllCharts()
         {
-            var theme = SelectedTheme == ThemeConstants.Dark 
-                ? (ITheme)new DarkTheme() 
+            var theme = SelectedTheme == ThemeConstants.Dark
+                ? (ITheme)new DarkTheme()
                 : new LightTheme();
 
             foreach (var chart in Charts)
@@ -236,7 +220,7 @@ namespace DemoApp.Net48.ViewModels
                     {
                         await _renderer.ExportPngAsync(SelectedChart, fileStream, 1200, 800, quality: 95);
                     }
-                    
+
                     // Show success message
                     System.Windows.MessageBox.Show(
                         $"Chart '{SelectedChart.Title}' exported successfully to:\n{saveFileDialog.FileName}",
@@ -266,24 +250,24 @@ namespace DemoApp.Net48.ViewModels
                 if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
                     var folderPath = folderDialog.SelectedPath;
-                    
+
                     try
                     {
                         var exportTasks = Charts.Select(async (chart, index) =>
                         {
                             var fileName = $"{index:00}_{chart.Title?.Replace(" ", "_") ?? "Chart"}.png";
                             var fullPath = Path.Combine(folderPath, fileName);
-                            
+
                             using (var fileStream = new FileStream(fullPath, FileMode.Create))
                             {
                                 await _renderer.ExportPngAsync(chart, fileStream, 1200, 800, quality: 95);
                             }
-                            
+
                             return fullPath;
                         });
 
                         var exportedFiles = await Task.WhenAll(exportTasks);
-                        
+
                         System.Windows.MessageBox.Show(
                             $"Successfully exported {exportedFiles.Length} charts to:\n{folderPath}",
                             "Batch Export Successful",
@@ -313,7 +297,7 @@ namespace DemoApp.Net48.ViewModels
             {
                 // Render to bitmap
                 var bitmap = await _renderer.RenderToBitmapAsync(SelectedChart, 1200, 800, transparentBackground: true);
-                
+
                 // Convert SKBitmap to System.Drawing.Bitmap for clipboard
                 using (var memoryStream = new MemoryStream())
                 using (var image = SkiaSharp.SKImage.FromPixels(bitmap.PeekPixels()))
@@ -322,19 +306,19 @@ namespace DemoApp.Net48.ViewModels
                     data.SaveTo(memoryStream);
                     memoryStream.Position = 0;
                     var drawingBitmap = new System.Drawing.Bitmap(memoryStream);
-                    
+
                     // Copy to clipboard
                     System.Windows.Clipboard.SetImage(System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
                         drawingBitmap.GetHbitmap(),
                         IntPtr.Zero,
                         System.Windows.Int32Rect.Empty,
                         System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions()));
-                    
+
                     drawingBitmap.Dispose();
                 }
-                
+
                 bitmap.Dispose();
-                
+
                 System.Windows.MessageBox.Show(
                     $"Chart '{SelectedChart.Title}' copied to clipboard!",
                     "Copy Successful",
@@ -463,333 +447,10 @@ namespace DemoApp.Net48.ViewModels
             return m;
         }
 
-        private static ChartModel BuildAreaOnly()
-        {
-            var start = DateTime.Today.AddDays(-7);
-            var end = DateTime.Today.AddDays(1);
-            var m = CreateBase(start, end, "Area Only");
-            var n = 120;
-            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i)).ToArray();
-            var pts = xs.Select((x, i) => new PointD(x.ToOADate(), Math.Sin(i * 0.1) * 10 + 30)).ToArray();
-            m.AddSeries(new AreaSeries(pts) { Title = "Area Only", Baseline = 20, FillOpacity = 0.45 });
-            m.UpdateScales(800, 400);
-            return m;
-        }
-
-        private static ChartModel BuildScatterOnly()
-        {
-            var start = DateTime.Today.AddDays(-3);
-            var end = DateTime.Today.AddDays(1);
-            var m = CreateBase(start, end, "Scatter Only");
-            var rand = new Random(789);
-            var n = 80;
-            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 1.2)).ToArray();
-            var pts = xs.Select(x => new PointD(x.ToOADate(), 40 + Math.Sin(x.Ticks / 6e11) * 5 + rand.NextDouble() * 3)).ToArray();
-            m.AddSeries(new ScatterSeries(pts) { Title = "Scatter Only", MarkerSize = 5.5 });
-            m.UpdateScales(800, 400);
-            return m;
-        }
-
-        private static ChartModel BuildStepLine()
-        {
-            var start = DateTime.Today.AddDays(-6);
-            var end = DateTime.Today.AddDays(1);
-            var m = CreateBase(start, end, "Step Line");
-            var n = 40;
-            var xs = Enumerable.Range(0, n).Select(i => start.AddHours(i * 4)).ToArray();
-            var pts = xs.Select((x, i) => new PointD(x.ToOADate(), (i % 2 == 0 ? 10 : 20) + (i % 5 == 0 ? 5 : 0))).ToArray();
-            m.AddSeries(new StepLineSeries(pts) { Title = "Step", Mode = StepMode.Before, StrokeThickness = 2 });
-            m.UpdateScales(800, 400);
-            return m;
-        }
-
-        private static ChartModel BuildSingleBars()
-        {
-            var start = DateTime.Today.AddDays(-8);
-            var end = DateTime.Today.AddDays(1);
-            var m = CreateBase(start, end, "Single Bars");
-            var n = 12;
-            var xs = Enumerable.Range(0, n).Select(i => start.AddDays(i)).ToArray();
-            var pts = xs.Select((x, i) => new BarPoint(x.ToOADate(), Math.Sin(i * 0.4) * 8 + 15)).ToArray();
-            m.AddSeries(new BarSeries(pts) { Title = "Bars", FillOpacity = 0.75 });
-            m.UpdateScales(800, 400);
-            return m;
-        }
-
-        private static ChartModel BuildStacked100()
-        {
-            var start = DateTime.Today.AddDays(-10);
-            var end = DateTime.Today.AddDays(1);
-            var m = CreateBase(start, end, "Stacked 100%");
-            var n = 10;
-            var xs = Enumerable.Range(0, n).Select(i => start.AddDays(i)).ToArray();
-            var rand = new Random(321);
-            var stackPoints = xs.Select((x, i) =>
-            {
-                var a = rand.NextDouble() * 1 + 0.2;
-                var b = rand.NextDouble() * 1 + 0.2;
-                var c = rand.NextDouble() * 1 + 0.2;
-                var sum = a + b + c;
-                return new StackedBarPoint(x.ToOADate(), new[] { a / sum, b / sum, c / sum });
-            }).ToArray();
-            m.AddSeries(new StackedBarSeries(stackPoints) { Title = "Stacked 100%", FillOpacity = 0.85 });
-            m.UpdateScales(800, 400);
-            return m;
-        }
-
-        private static ChartModel BuildOhlcWithErrorOverlay()
-        {
-            var start = DateTime.Today.AddDays(-15);
-            var end = DateTime.Today.AddDays(1);
-            var m = CreateBase(start, end, "OHLC + Error");
-            var rand = new Random(654);
-            var n = 40;
-            double price = 50;
-            var ohlc = new OhlcPoint[n];
-            var errs = new ErrorBarPoint[n];
-            for (var i = 0; i < n; i++)
-            {
-                var open = price;
-                var change = (rand.NextDouble() - 0.5) * 3;
-                var close = open + change;
-                var high = Math.Max(open, close) + rand.NextDouble() * 1.5;
-                var low = Math.Min(open, close) - rand.NextDouble() * 1.5;
-                price = close;
-                var xOa = start.AddDays(i).ToOADate();
-                ohlc[i] = new OhlcPoint(xOa, open, high, low, close);
-                var central = (open + close) * 0.5;
-                var err = 0.5 + rand.NextDouble();
-                errs[i] = new ErrorBarPoint(xOa, central, err, err * 0.7);
-            }
-            m.AddSeries(new OhlcSeries(ohlc) { Title = "OHLC" });
-            m.AddSeries(new ErrorBarSeries(errs) { Title = "Err" });
-            m.UpdateScales(800, 400);
-            return m;
-        }
-
-        private static ChartModel BuildMultiSeriesTooltipShowcase()
-        {
-            var start = DateTime.Today.AddDays(-3);
-            var end = DateTime.Today.AddDays(0.5);
-            var m = CreateBase(start, end, "Multi-Series Tooltip");
-            var xs = Enumerable.Range(0, 300).Select(i => start.AddMinutes(i * 15)).ToArray();
-            var line = xs.Select((x, i) => new PointD(x.ToOADate(), 50 + Math.Sin(i * 0.15) * 10 + Math.Sin(i * 0.03) * 5)).ToArray();
-            m.AddSeries(new LineSeries(line) { Title = "Line A", StrokeThickness = 1.4 });
-            var area = xs.Where((_, i) => i % 3 == 0).Select((x, i) => new PointD(x.ToOADate(), 40 + Math.Cos(i * 0.18) * 6)).ToArray();
-            m.AddSeries(new AreaSeries(area) { Title = "Area B", Baseline = 35, FillOpacity = 0.35 });
-            var scatter = xs.Where((_, i) => i % 20 == 0).Select((x, i) => new PointD(x.ToOADate(), 55 + Math.Sin(i * 0.9) * 4)).ToArray();
-            m.AddSeries(new ScatterSeries(scatter) { Title = "Scatter C", MarkerSize = 4 });
-            m.UpdateScales(800, 400);
-            return m;
-        }
-
-        /// <summary>
-        /// Demonstrates CategoryAxis functionality (P1-AX-CAT)
-        /// Shows quarterly sales data with category labels
-        /// </summary>
-        private static ChartModel BuildCategoryAxisDemo()
-        {
-            var model = new ChartModel 
-            { 
-                Theme = new LightTheme(),
-                Title = "Quarterly Sales (CategoryAxis Demo)"
-            };
-
-            // Create CategoryAxis with quarterly labels
-            var categoryAxis = new CategoryAxis(new[] 
-            { 
-                "Q1 2023", "Q2 2023", "Q3 2023", "Q4 2023",
-                "Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024"
-            });
-            
-            model.ReplaceXAxis(categoryAxis);
-
-            // Sales data for each quarter
-            var salesData = new[]
-            {
-                new BarPoint(0, 150), // Q1 2023
-                new BarPoint(1, 180), // Q2 2023  
-                new BarPoint(2, 220), // Q3 2023
-                new BarPoint(3, 280), // Q4 2023
-                new BarPoint(4, 320), // Q1 2024
-                new BarPoint(5, 380), // Q2 2024
-                new BarPoint(6, 420), // Q3 2024
-                new BarPoint(7, 450)  // Q4 2024
-            };
-
-            model.AddSeries(new BarSeries(salesData)
-            {
-                Title = "Sales (K€)"
-            });
-
-            // Revenue trend line
-            var revenueData = new[]
-            {
-                new PointD(0, 140),
-                new PointD(1, 175),
-                new PointD(2, 210),
-                new PointD(3, 270),
-                new PointD(4, 310),
-                new PointD(5, 375),
-                new PointD(6, 415),
-                new PointD(7, 445)
-            };
-
-            model.AddSeries(new LineSeries(revenueData)
-            {
-                Title = "Revenue Trend",
-                StrokeThickness = 3
-            });
-
-            model.UpdateScales(800, 400);
-            return model;
-        }
-
-        /// <summary>
-        /// Demonstrates annotation functionality (P1-ANN-LINE)
-        /// Shows horizontal and vertical lines with different styles and labels
-        /// </summary>
-        private static ChartModel BuildAnnotationDemo()
-        {
-            var model = new ChartModel 
-            { 
-                Theme = new DarkTheme(),
-                Title = "Stock Price with Annotations (P1-ANN-LINE)"
-            };
-
-            // Stock price data (simulated)
-            var stockData = new[]
-            {
-                new PointD(0, 100),   // Day 0
-                new PointD(1, 102),   // Day 1
-                new PointD(2, 98),    // Day 2
-                new PointD(3, 105),   // Day 3
-                new PointD(4, 108),   // Day 4
-                new PointD(5, 103),   // Day 5
-                new PointD(6, 110),   // Day 6
-                new PointD(7, 115),   // Day 7
-                new PointD(8, 112),   // Day 8
-                new PointD(9, 118),   // Day 9
-                new PointD(10, 120)   // Day 10
-            };
-
-            model.AddSeries(new LineSeries(stockData)
-            {
-                Title = "Stock Price ($)",
-                StrokeThickness = 2
-            });
-
-            // Add horizontal annotations for key levels
-            var supportLevel = new AnnotationLine(100.0, AnnotationOrientation.Horizontal, "Support Level ($100)")
-            {
-                Color = new ColorRgba(0, 255, 0, 180), // Green
-                LineStyle = LineStyle.Dashed,
-                Thickness = 2.0,
-                LabelPosition = LabelPosition.Start
-            };
-
-            var resistanceLevel = new AnnotationLine(115.0, AnnotationOrientation.Horizontal, "Resistance Level ($115)")
-            {
-                Color = new ColorRgba(255, 0, 0, 180), // Red
-                LineStyle = LineStyle.Dashed,
-                Thickness = 2.0,
-                LabelPosition = LabelPosition.Start
-            };
-
-            // Add vertical annotations for important events
-            var earnings = new AnnotationLine(3.0, AnnotationOrientation.Vertical, "Earnings Report")
-            {
-                Color = new ColorRgba(128, 0, 128, 160), // Purple
-                LineStyle = LineStyle.Dotted,
-                Thickness = 2.0,
-                LabelPosition = LabelPosition.Middle
-            };
-
-            // Add all annotations
-            model.AddAnnotation(supportLevel);
-            model.AddAnnotation(resistanceLevel);
-            model.AddAnnotation(earnings);
-
-            model.UpdateScales(800, 400);
-            return model;
-        }
-
-        /// <summary>
-        /// Demonstrates multiple Y axes functionality (P1-AX-MULTI)
-        /// Shows price data on primary axis and volume on secondary axis
-        /// </summary>
-        private static ChartModel BuildMultiAxisDemo()
-        {
-            var model = new ChartModel 
-            { 
-                Theme = new LightTheme(),
-                Title = "Stock Price & Volume (Multi-Axis Demo P1-AX-MULTI)"
-            };
-
-            // Ensure secondary Y axis exists
-            model.EnsureSecondaryYAxis();
-
-            // Stock price data (primary Y axis)
-            var priceData = new[]
-            {
-                new PointD(0, 100.0), // Day 0: $100
-                new PointD(1, 102.5), // Day 1: $102.50
-                new PointD(2, 98.2),  // Day 2: $98.20
-                new PointD(3, 105.8), // Day 3: $105.80
-                new PointD(4, 108.1), // Day 4: $108.10
-                new PointD(5, 103.5), // Day 5: $103.50
-                new PointD(6, 110.3), // Day 6: $110.30
-                new PointD(7, 115.7), // Day 7: $115.70
-                new PointD(8, 112.4), // Day 8: $112.40
-                new PointD(9, 118.9), // Day 9: $118.90
-            };
-
-            // Volume data (secondary Y axis) - much larger scale
-            var volumeData = new[]
-            {
-                new BarPoint(0, 1200000), // Day 0: 1.2M shares
-                new BarPoint(1, 850000),  // Day 1: 850K shares
-                new BarPoint(2, 1800000), // Day 2: 1.8M shares (high volume on price drop)
-                new BarPoint(3, 1100000), // Day 3: 1.1M shares
-                new BarPoint(4, 950000),  // Day 4: 950K shares
-                new BarPoint(5, 1350000), // Day 5: 1.35M shares
-                new BarPoint(6, 1050000), // Day 6: 1.05M shares
-                new BarPoint(7, 1600000), // Day 7: 1.6M shares (breakout volume)
-                new BarPoint(8, 1000000), // Day 8: 1M shares
-                new BarPoint(9, 1750000), // Day 9: 1.75M shares
-            };
-
-            // Add price series to primary Y axis (YAxisIndex = 0)
-            var priceSeries = new LineSeries(priceData)
-            {
-                Title = "Price ($)",
-                StrokeThickness = 3,
-                YAxisIndex = 0 // Primary Y axis
-            };
-            model.Series.Add(priceSeries);
-
-            // Add volume series to secondary Y axis (YAxisIndex = 1)
-            var volumeSeries = new BarSeries(volumeData)
-            {
-                Title = "Volume (shares)",
-                YAxisIndex = 1 // Secondary Y axis
-            };
-            model.Series.Add(volumeSeries);
-
-            // Auto fit the ranges
-            model.AutoFitDataRange();
-
-            return model;
-        }
-
-        /// <summary>
-        /// Demonstrates range annotation functionality (P1-ANN-RANGE)
-        /// Shows horizontal and vertical range highlights with different styles
-        /// </summary>
         private static ChartModel BuildRangeAnnotationDemo()
         {
-            var model = new ChartModel 
-            { 
+            var model = new ChartModel
+            {
                 Theme = new LightTheme(),
                 Title = "Temperature Monitoring with Range Annotations (P1-ANN-RANGE)"
             };
@@ -797,31 +458,31 @@ namespace DemoApp.Net48.ViewModels
             // Temperature data over 24 hours (simulated)
             var temperatureData = new[]
             {
-                new PointD(0, 18.5),    // Midnight: 18.5°C
-                new PointD(2, 16.8),    // 2 AM: 16.8°C
-                new PointD(4, 15.2),    // 4 AM: 15.2°C
-                new PointD(6, 14.5),    // 6 AM: 14.5°C (coldest)
-                new PointD(8, 17.3),    // 8 AM: 17.3°C
-                new PointD(10, 22.1),   // 10 AM: 22.1°C
-                new PointD(12, 26.8),   // Noon: 26.8°C
-                new PointD(14, 29.5),   // 2 PM: 29.5°C (hottest)
-                new PointD(16, 28.2),   // 4 PM: 28.2°C
-                new PointD(18, 25.4),   // 6 PM: 25.4°C
-                new PointD(20, 22.7),   // 8 PM: 22.7°C
-                new PointD(22, 20.1),   // 10 PM: 20.1°C
-                new PointD(24, 18.9)    // Midnight: 18.9°C
+                new PointD(0, 18.5),    // Midnight: 18.5Â°C
+                new PointD(2, 16.8),    // 2 AM: 16.8Â°C
+                new PointD(4, 15.2),    // 4 AM: 15.2Â°C
+                new PointD(6, 14.5),    // 6 AM: 14.5Â°C (coldest)
+                new PointD(8, 17.3),    // 8 AM: 17.3Â°C
+                new PointD(10, 22.1),   // 10 AM: 22.1Â°C
+                new PointD(12, 26.8),   // Noon: 26.8Â°C
+                new PointD(14, 29.5),   // 2 PM: 29.5Â°C (hottest)
+                new PointD(16, 28.2),   // 4 PM: 28.2Â°C
+                new PointD(18, 25.4),   // 6 PM: 25.4Â°C
+                new PointD(20, 22.7),   // 8 PM: 22.7Â°C
+                new PointD(22, 20.1),   // 10 PM: 20.1Â°C
+                new PointD(24, 18.9)    // Midnight: 18.9Â°C
             };
 
             model.AddSeries(new LineSeries(temperatureData)
             {
-                Title = "Temperature (°C)",
+                Title = "Temperature (Â°C)",
                 StrokeThickness = 3
             });
 
             // Add horizontal range annotations for temperature zones
-            
-            // Comfort zone (20°C - 25°C)
-            var comfortZone = new AnnotationRange(20.0, 25.0, AnnotationOrientation.Horizontal, "Comfort Zone (20-25°C)")
+
+            // Comfort zone (20Â°C - 25Â°C)
+            var comfortZone = new AnnotationRange(20.0, 25.0, AnnotationOrientation.Horizontal, "Comfort Zone (20-25Â°C)")
             {
                 FillColor = new ColorRgba(0, 255, 0, 40),     // Light green
                 BorderColor = new ColorRgba(0, 200, 0, 120),  // Green border
@@ -829,8 +490,8 @@ namespace DemoApp.Net48.ViewModels
                 LabelPosition = LabelPosition.Start
             };
 
-            // Warning zone (25°C - 30°C)
-            var warningZone = new AnnotationRange(25.0, 30.0, AnnotationOrientation.Horizontal, "Warning Zone (25-30°C)")
+            // Warning zone (25Â°C - 30Â°C)
+            var warningZone = new AnnotationRange(25.0, 30.0, AnnotationOrientation.Horizontal, "Warning Zone (25-30Â°C)")
             {
                 FillColor = new ColorRgba(255, 165, 0, 50),   // Light orange
                 BorderColor = new ColorRgba(255, 140, 0, 150), // Orange border
@@ -838,8 +499,8 @@ namespace DemoApp.Net48.ViewModels
                 LabelPosition = LabelPosition.Start
             };
 
-            // Cold zone (below 15°C)
-            var coldZone = new AnnotationRange(10.0, 15.0, AnnotationOrientation.Horizontal, "Cold Zone (<15°C)")
+            // Cold zone (below 15Â°C)
+            var coldZone = new AnnotationRange(10.0, 15.0, AnnotationOrientation.Horizontal, "Cold Zone (<15Â°C)")
             {
                 FillColor = new ColorRgba(0, 100, 255, 40),      // Light blue
                 BorderColor = new ColorRgba(0, 80, 200, 120),    // Blue border
@@ -885,6 +546,181 @@ namespace DemoApp.Net48.ViewModels
 
             model.UpdateScales(800, 400);
             return model;
+        }
+
+        private static ChartModel BuildLogarithmicAxisDemo()
+        {
+            var model = new ChartModel
+            {
+                Theme = new DarkTheme(),
+                Title = "Logarithmic Axis Demo (P1-AX-LOG) - Exponential Growth Data"
+            };
+
+            // Exponential growth data (e.g., bacterial growth, population, etc.)
+            var exponentialData = new List<PointD>();
+            var compoundData = new List<PointD>();
+            var powerLawData = new List<PointD>();
+
+            for (var i = 0; i <= 20; i++)
+            {
+                var x = i;
+
+                // Exponential growth: y = e^(x/4)
+                var exponentialY = Math.Exp(x / 4.0);
+                exponentialData.Add(new PointD(x, exponentialY));
+
+                // Compound interest: y = (1.15)^x
+                var compoundY = Math.Pow(1.15, x);
+                compoundData.Add(new PointD(x, compoundY));
+
+                // Power law: y = x^3 + 1 (avoid zero for log scale)
+                var powerY = Math.Pow(x + 1, 3);
+                powerLawData.Add(new PointD(x, powerY));
+            }
+
+            // Add series with different exponential behaviors
+            model.AddSeries(new LineSeries(exponentialData)
+            {
+                Title = "Exponential Growth (e^(x/4))",
+                StrokeThickness = 3
+            });
+
+            model.AddSeries(new LineSeries(compoundData)
+            {
+                Title = "Compound Interest (1.15^x)",
+                StrokeThickness = 3
+            });
+
+            model.AddSeries(new LineSeries(powerLawData)
+            {
+                Title = "Power Law (x^3)",
+                StrokeThickness = 3
+            });
+
+            // Convert Y axis to logarithmic (base 10)
+            model.SetYAxisLogarithmic(10.0);
+
+            // Add annotations to show powers of 10
+            var powerOfTenLine1 = new AnnotationLine(10, AnnotationOrientation.Horizontal, "10^1 = 10")
+            {
+                Color = new ColorRgba(255, 255, 0, 180),
+                LineStyle = LineStyle.Dashed,
+                Thickness = 1.5,
+                LabelPosition = LabelPosition.Start
+            };
+
+            var powerOfTenLine2 = new AnnotationLine(100, AnnotationOrientation.Horizontal, "10^2 = 100")
+            {
+                Color = new ColorRgba(255, 255, 0, 180),
+                LineStyle = LineStyle.Dashed,
+                Thickness = 1.5,
+                LabelPosition = LabelPosition.Start
+            };
+
+            var powerOfTenLine3 = new AnnotationLine(1000, AnnotationOrientation.Horizontal, "10^3 = 1,000")
+            {
+                Color = new ColorRgba(255, 255, 0, 180),
+                LineStyle = LineStyle.Dashed,
+                Thickness = 1.5,
+                LabelPosition = LabelPosition.Start
+            };
+
+            model.AddAnnotation(powerOfTenLine1);
+            model.AddAnnotation(powerOfTenLine2);
+            model.AddAnnotation(powerOfTenLine3);
+
+            // Set appropriate ranges
+            model.XAxis.SetVisibleRange(0, 20);
+            model.YAxis.SetVisibleRange(1, 10000); // From 10^0 to 10^4
+
+            model.UpdateScales(800, 400);
+            return model;
+        }
+
+        /// <summary>
+        /// Downsamples data using the Largest Triangle Three Buckets (LTTB) algorithm.
+        /// Simplified but valid implementation for demo purposes.
+        /// </summary>
+        public static PointD[] LTTB(DateTime[] xValues, double[] yValues, int numPoints)
+        {
+            if (xValues == null)
+            {
+                throw new ArgumentNullException(nameof(xValues));
+            }
+            if (yValues == null)
+            {
+                throw new ArgumentNullException(nameof(yValues));
+            }
+            if (numPoints <= 2)
+            {
+                throw new ArgumentOutOfRangeException(nameof(numPoints));
+            }
+            if (xValues.Length != yValues.Length)
+            {
+                throw new ArgumentException("X and Y value arrays must have the same length.");
+            }
+            if (numPoints >= xValues.Length)
+            {
+                return xValues.Zip(yValues, (x, y) => new PointD(x.ToOADate(), y)).ToArray();
+            }
+
+            var dataCount = xValues.Length;
+            var sampled = new List<PointD>(numPoints) { new PointD(xValues[0].ToOADate(), yValues[0]) };
+            var xDouble = xValues.Select(v => v.ToOADate()).ToArray();
+            var bucketSize = (double)(dataCount - 2) / (numPoints - 2);
+            var a = 0;
+
+            for (var i = 0; i < numPoints - 2; i++)
+            {
+                var bucketStart = (int)Math.Floor(i * bucketSize) + 1;
+                var bucketEnd = (int)Math.Floor((i + 1) * bucketSize) + 1;
+                if (bucketEnd >= dataCount)
+                {
+                    bucketEnd = dataCount - 1;
+                }
+
+                var nextBucketStart = (int)Math.Floor((i + 1) * bucketSize) + 1;
+                var nextBucketEnd = (int)Math.Floor((i + 2) * bucketSize) + 1;
+                if (nextBucketEnd >= dataCount)
+                {
+                    nextBucketEnd = dataCount;
+                }
+                var avgRange = nextBucketEnd - nextBucketStart;
+                double avgX = 0, avgY = 0;
+                if (avgRange > 0)
+                {
+                    for (var j = nextBucketStart; j < nextBucketEnd; j++)
+                    {
+                        avgX += xDouble[j];
+                        avgY += yValues[j];
+                    }
+                    avgX /= avgRange;
+                    avgY /= avgRange;
+                }
+                else
+                {
+                    avgX = xDouble[bucketEnd];
+                    avgY = yValues[bucketEnd];
+                }
+
+                double maxArea = -1;
+                var maxAreaIndex = bucketStart;
+                for (var j = bucketStart; j < bucketEnd; j++)
+                {
+                    var area = Math.Abs((xDouble[a] - avgX) * (yValues[j] - yValues[a]) - (xDouble[a] - xDouble[j]) * (avgY - yValues[a]));
+                    if (area > maxArea)
+                    {
+                        maxArea = area;
+                        maxAreaIndex = j;
+                    }
+                }
+
+                sampled.Add(new PointD(xDouble[maxAreaIndex], yValues[maxAreaIndex]));
+                a = maxAreaIndex;
+            }
+
+            sampled.Add(new PointD(xValues[dataCount - 1].ToOADate(), yValues[dataCount - 1]));
+            return sampled.ToArray();
         }
     }
 }

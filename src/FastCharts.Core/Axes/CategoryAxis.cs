@@ -193,6 +193,30 @@ namespace FastCharts.Core.Axes
             VisibleRange = new FRange(min, max);
         }
 
+        public IEnumerable<string> GetVisibleLabels(FRange visibleRange)
+        {
+            var startIndex = (int)Math.Floor(visibleRange.Min);
+            var endIndex = (int)Math.Ceiling(visibleRange.Max);
+            
+            if (startIndex < 0) 
+            {
+                startIndex = 0;
+            }
+            if (endIndex >= _categories.Count) 
+            {
+                endIndex = Math.Max(_categories.Count - 1, 0);
+            }
+            if (startIndex > endIndex) 
+            {
+                (startIndex, endIndex) = (endIndex, startIndex);
+            }
+
+            for (var i = startIndex; i <= endIndex && i < _categories.Count; i++)
+            {
+                yield return _categories[i];
+            }
+        }
+
         private void UpdateInternalState()
         {
             var maxIndex = Math.Max(_categories.Count - 1, 0);

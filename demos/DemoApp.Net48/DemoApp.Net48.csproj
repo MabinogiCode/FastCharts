@@ -7,6 +7,8 @@
     <LangVersion>9.0</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
   <!-- Non-Windows: define dummy build to avoid failure (Windows-only demo) -->
   <PropertyGroup Condition="'$(OS)'!='Windows_NT'">
@@ -21,7 +23,7 @@
     </ItemGroup>
   </Target>
   <ItemGroup Condition="'$(OS)'=='Windows_NT'">
-    <ProjectReference Include="..\\..\\src\\FastCharts.Wpf\\FastCharts.Wpf.csproj" />
+    <ProjectReference Include="..\..\src\FastCharts.Wpf\FastCharts.Wpf.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(OS)'=='Windows_NT'">
     <!-- Updated to match FastCharts.Wpf dependency to avoid NU1605 downgrade warning -->

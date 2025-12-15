@@ -213,17 +213,4 @@ public class DataHelperTests
         minY.Should().Be(10.0);
         maxY.Should().Be(double.PositiveInfinity);
     }
-
-    // Helper class for testing dual-selector overload
-    private class TestPoint
-    {
-        public double Low { get; }
-        public double High { get; }
-
-        public TestPoint(double low, double high)
-        {
-            Low = low;
-            High = high;
-        }
-    }
 }

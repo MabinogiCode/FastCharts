@@ -83,7 +83,7 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 | P3-SANKEY | Sankey diagrams | Flow visualization between nodes | High |
 | P3-TREEMAP | TreeMap charts | Hierarchical area-based visualization | High |
 | P3-ANIM | Animations | Appear / transition effects (optional) | Medium |
-| P3-GPU | GPU accelerated path | Skia GPU / device contexts for massive datasets | Very High |
+| P3-GPU | GPU accelerated path | SkiaSharp GPU context integration | Very High |
 | P3-PLUGIN | Plugin discovery | Attribute-based loading for custom series | Medium |
 | P3-LOCALE | Full culture support | Axis & tooltip formatting, RTL support | Medium |
 | P3-REALTIME-OPT | Real-time optimizations | Circular buffers, incremental rendering | High |
@@ -110,6 +110,7 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 | T-PKG-NUGET | NuGet polish | README, icon, SourceLink, symbols | Distribution |
 | T-CI-MATRIX | CI matrix | Windows + Linux (core libs), performance regression detection | CI/CD |
 | T-ACCESSIBILITY | Accessibility support | ARIA-like metadata, keyboard navigation | Compliance |
+| T-CI-LINT | One type‑per‑file CI guard | GitHub Actions runs `check_one_type_per_file.py` on PRs; build fails on violation | CI/CD |
 
 ---
 ## 7. Performance & Scalability Targets
@@ -136,6 +137,7 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 ### Technical Tasks Progress
 - [x] T-ARCH-AXREF ✅ **COMPLETED** - Series→axis mapping via YAxisIndex, clean service architecture
 - [x] T-ARCH-SERVICES ✅ **COMPLETED** - AxisManagementService, LegendSyncService, InteractionService
+- [x] T-CI-LINT ✅ **COMPLETED** - One type‑per‑file guard via GitHub Actions workflow (fails PR on violations)
 - [ ] T-PERF-PROF
 - [ ] T-QA-VISUAL
 
@@ -176,6 +178,7 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 - ✅ T-ARCH-AXREF (Complete architecture refactor with service pattern)
 - ✅ T-ARCH-SERVICES (Clean service separation and MVVM support)
 - ✅ P1-ANN-RANGE (Range highlight annotations with horizontal/vertical filled bands)
+- ✅ T-CI-LINT (One type‑per‑file CI guard)
 
 **Remaining Phase 1 priorities** (Only 2 left!): 
 - **P1-AX-LOG**: Logarithmic axis (Base-10, later custom bases)

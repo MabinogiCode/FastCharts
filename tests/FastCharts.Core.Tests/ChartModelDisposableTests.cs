@@ -161,28 +161,4 @@ public class ChartModelDisposableTests
         // Assert
         behavior.IsDisposed.Should().BeTrue();
     }
-
-    // Test helper classes
-    private class TestBehavior : IBehavior
-    {
-        public bool OnEvent(ChartModel model, InteractionEvent ev)
-        {
-            return false;
-        }
-    }
-
-    private class DisposableTestBehavior : IBehavior, IDisposable
-    {
-        public bool IsDisposed { get; private set; }
-
-        public bool OnEvent(ChartModel model, InteractionEvent ev)
-        {
-            return false;
-        }
-
-        public void Dispose()
-        {
-            IsDisposed = true;
-        }
-    }
 }

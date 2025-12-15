@@ -1,19 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using ReactiveUI;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Axes;
-using FastCharts.Core.Helpers;
-using FastCharts.Core.Interactivity;
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Legend;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
-using FastCharts.Core.Themes.BuiltIn;
-using FastCharts.Core.Utilities;
 using FastCharts.Core.Services;
+using FastCharts.Core.Themes.BuiltIn;
+using ReactiveUI;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace FastCharts.Core;
 
@@ -84,15 +81,15 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     public IAxis<double> YAxis { get => _yAxis; private set => this.RaiseAndSetIfChanged(ref _yAxis, value); }
     public IAxis<double>? YAxisSecondary { get => _yAxisSecondary; private set => this.RaiseAndSetIfChanged(ref _yAxisSecondary, value); }
     public Margins PlotMargins { get => _plotMargins; set => this.RaiseAndSetIfChanged(ref _plotMargins, value); }
-    
-    public InteractionState? InteractionState 
-    { 
-        get => _interactionState; 
-        set 
-        { 
+
+    public InteractionState? InteractionState
+    {
+        get => _interactionState;
+        set
+        {
             this.RaiseAndSetIfChanged(ref _interactionState, value);
             _interactionService.UpdateInteractionState(value);
-        } 
+        }
     }
 
     public IViewport Viewport { get; }
@@ -102,7 +99,7 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     IReadOnlyList<SeriesBase> IChartModel.Series => Series;
     public LegendModel Legend { get; }
     public IList<IBehavior> Behaviors { get; } = new List<IBehavior>();
-    
+
     /// <summary>
     /// Collection of chart annotations (P1-ANN-LINE)
     /// </summary>
@@ -114,7 +111,7 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
         {
             return;
         }
-        
+
         _legendSyncService.SyncLegendWithSeries(Legend, Series);
     }
 
@@ -152,6 +149,112 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     {
         EnsureSecondaryYAxis();
         YAxisSecondary = _axisManagementService.ReplaceSecondaryYAxis(YAxisSecondary, newAxis, _axesList);
+    }
+
+    /// <summary>
+    /// Converts the X axis to logarithmic scale with specified base
+    /// </summary>
+    /// <param name="logBase">Base for logarithmic scaling (default: 10)</param>
+    public void SetXAxisLogarithmic(double logBase = 10.0)
+    {
+        var logAxis = new LogNumericAxis(logBase);
+
+        // Preserve current visible range if valid for log scale
+        var currentRange = XAxis.VisibleRange;
+        if (currentRange.Min > 0 && currentRange.Max > 0)
+        {
+            logAxis.SetVisibleRange(currentRange.Min, currentRange.Max);
+        }
+
+        ReplaceXAxis(logAxis);
+    }
+
+    /// <summary>
+    /// Converts the Y axis to logarithmic scale with specified base
+    /// </summary>
+    /// <param name="logBase">Base for logarithmic scaling (default: 10)</param>
+    public void SetYAxisLogarithmic(double logBase = 10.0)
+    {
+        var logAxis = new LogNumericAxis(logBase);
+
+        // Preserve current visible range if valid for log scale
+        var currentRange = YAxis.VisibleRange;
+        if (currentRange.Min > 0 && currentRange.Max > 0)
+        {
+            logAxis.SetVisibleRange(currentRange.Min, currentRange.Max);
+        }
+
+        ReplaceYAxis(logAxis);
+    }
+
+    /// <summary>
+    /// Converts the secondary Y axis to logarithmic scale with specified base
+    /// </summary>
+    /// <param name="logBase">Base for logarithmic scaling (default: 10)</param>
+    public void SetSecondaryYAxisLogarithmic(double logBase = 10.0)
+    {
+        EnsureSecondaryYAxis();
+
+        var logAxis = new LogNumericAxis(logBase);
+
+        // Preserve current visible range if valid for log scale
+        if (YAxisSecondary != null)
+        {
+            var currentRange = YAxisSecondary.VisibleRange;
+            if (currentRange.Min > 0 && currentRange.Max > 0)
+            {
+                logAxis.SetVisibleRange(currentRange.Min, currentRange.Max);
+            }
+        }
+
+        ReplaceSecondaryYAxis(logAxis);
+    }
+
+    /// <summary>
+    /// Converts X axis back to linear scale
+    /// </summary>
+    public void SetXAxisLinear()
+    {
+        var linearAxis = new NumericAxis();
+
+        // Preserve current visible range
+        var currentRange = XAxis.VisibleRange;
+        linearAxis.SetVisibleRange(currentRange.Min, currentRange.Max);
+
+        ReplaceXAxis(linearAxis);
+    }
+
+    /// <summary>
+    /// Converts Y axis back to linear scale
+    /// </summary>
+    public void SetYAxisLinear()
+    {
+        var linearAxis = new NumericAxis();
+
+        // Preserve current visible range
+        var currentRange = YAxis.VisibleRange;
+        linearAxis.SetVisibleRange(currentRange.Min, currentRange.Max);
+
+        ReplaceYAxis(linearAxis);
+    }
+
+    /// <summary>
+    /// Converts secondary Y axis back to linear scale
+    /// </summary>
+    public void SetSecondaryYAxisLinear()
+    {
+        if (YAxisSecondary == null)
+        {
+            return;
+        }
+
+        var linearAxis = new NumericAxis();
+
+        // Preserve current visible range
+        var currentRange = YAxisSecondary.VisibleRange;
+        linearAxis.SetVisibleRange(currentRange.Min, currentRange.Max);
+
+        ReplaceSecondaryYAxis(linearAxis);
     }
 
     /// <summary>
@@ -276,34 +379,34 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
         {
             return;
         }
-        
+
         Series.CollectionChanged -= OnSeriesCollectionChanged;
-        
+
         foreach (var axis in _axesList.OfType<IDisposable>())
         {
             axis.Dispose();
         }
-        
+
         if (_theme is IDisposable themeDisposable)
         {
             themeDisposable.Dispose();
         }
-        
+
         if (Viewport is IDisposable viewportDisposable)
         {
             viewportDisposable.Dispose();
         }
-        
+
         foreach (var series in Series.OfType<IDisposable>())
         {
             series.Dispose();
         }
-        
+
         foreach (var behavior in Behaviors.OfType<IDisposable>())
         {
             behavior.Dispose();
         }
-        
+
         Series.Clear();
         Behaviors.Clear();
         _axesList.Clear();
