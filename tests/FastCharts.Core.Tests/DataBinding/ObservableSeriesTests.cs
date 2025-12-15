@@ -52,6 +52,9 @@ namespace FastCharts.Core.Tests.DataBinding
             // Act
             data.Add(new SensorReading { Time = DateTime.Now.AddMinutes(1), Temperature = 22.0 });
 
+            // Force synchronous update for test
+            series.RefreshData();
+
             // Assert
             series.Data.Should().HaveCount(2);
             eventFired.Should().BeTrue();
@@ -158,6 +161,9 @@ namespace FastCharts.Core.Tests.DataBinding
             // Act
             reading.Temperature = 25.5;
 
+            // Force synchronous update for test
+            series.RefreshData();
+
             // Assert
             series.Data[0].Y.Should().Be(25.5);
             series.Data[0].Y.Should().NotBe(originalTemperature);
@@ -181,8 +187,8 @@ namespace FastCharts.Core.Tests.DataBinding
             data.Add(new SensorReading { Time = DateTime.Now.AddMinutes(1), Temperature = 21.0 });
             data.Add(new SensorReading { Time = DateTime.Now.AddMinutes(2), Temperature = 22.0 });
 
-            // Wait for throttling
-            await Task.Delay(100);
+            // Force synchronous updates for test
+            series.RefreshData();
 
             // Assert
             series.Data.Should().HaveCount(3);

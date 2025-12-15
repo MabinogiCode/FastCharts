@@ -92,12 +92,25 @@ namespace FastCharts.Core.DataBinding.Series
             for (var i = 0; i < itemList.Count; i++)
             {
                 var item = itemList[i];
-                var x = GetCoordinateValue(item, XPath, i); // Default to index if no X path
-                var y = GetCoordinateValue(item, YPath, 0.0);
+                var xValue = GetCoordinateValue(item, XPath, i);
+                var yValue = GetCoordinateValue(item, YPath, 0.0);
 
-                if (DataBindingConverter.IsValidCoordinate(x) && DataBindingConverter.IsValidCoordinate(y))
+                // For bar series, if X is not a valid coordinate (like a string category), use index
+                double x;
+                if (DataBindingConverter.IsValidCoordinate(xValue))
                 {
-                    yield return new PointD(DataBindingConverter.ToDouble(x), DataBindingConverter.ToDouble(y));
+                    x = DataBindingConverter.ToDouble(xValue);
+                }
+                else
+                {
+                    // Use index for string categories like "A", "B", "C"
+                    x = i;
+                }
+
+                if (DataBindingConverter.IsValidCoordinate(yValue))
+                {
+                    var y = DataBindingConverter.ToDouble(yValue);
+                    yield return new PointD(x, y);
                 }
             }
         }

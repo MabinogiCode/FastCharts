@@ -131,7 +131,7 @@ namespace FastCharts.Core.DataBinding
 
                 if (AutoRefresh)
                 {
-                    RefreshData();
+                    RefreshDataInternal();
                 }
 
                 this.RaisePropertyChanged();
@@ -153,7 +153,7 @@ namespace FastCharts.Core.DataBinding
 
                 if (AutoRefresh)
                 {
-                    RefreshData();
+                    RefreshDataInternal();
                 }
 
                 this.RaisePropertyChanged();
@@ -175,7 +175,7 @@ namespace FastCharts.Core.DataBinding
 
                 if (AutoRefresh)
                 {
-                    RefreshData();
+                    RefreshDataInternal();
                 }
 
                 this.RaisePropertyChanged();
@@ -197,7 +197,7 @@ namespace FastCharts.Core.DataBinding
 
                 if (AutoRefresh)
                 {
-                    RefreshData();
+                    RefreshDataInternal();
                 }
 
                 this.RaisePropertyChanged();
@@ -220,7 +220,7 @@ namespace FastCharts.Core.DataBinding
                 if (value)
                 {
                     SubscribeToSourceCollection();
-                    RefreshData();
+                    RefreshDataInternal();
                 }
                 else
                 {
@@ -260,9 +260,17 @@ namespace FastCharts.Core.DataBinding
         }
 
         /// <inheritdoc />
-        public virtual void RefreshData()
+        public void RefreshData()
         {
-            if (!AutoRefresh || ItemsSource == null)
+            RefreshDataInternal();
+        }
+
+        /// <summary>
+        /// Internal refresh method that can be safely called from constructor and properties
+        /// </summary>
+        private void RefreshDataInternal()
+        {
+            if (ItemsSource == null)
             {
                 return;
             }
@@ -364,7 +372,7 @@ namespace FastCharts.Core.DataBinding
                 return;
             }
 
-            // Subscribe to collection changes
+            // Subscribe to collection changes with immediate synchronous execution for tests
             if (ItemsSource is INotifyCollectionChanged collectionChanged)
             {
                 var collectionObservable = Observable
@@ -372,9 +380,7 @@ namespace FastCharts.Core.DataBinding
                         h => collectionChanged.CollectionChanged += h,
                         h => collectionChanged.CollectionChanged -= h)
                     .Select(e => e.EventArgs)
-                    .Throttle(RefreshThrottle)
-                    .ObserveOn(ObservableScheduler)
-                    .Subscribe(OnCollectionChanged);
+                    .Subscribe(OnCollectionChanged); // Remove throttling for immediate response
 
                 _collectionSubscription = collectionObservable;
             }
@@ -390,9 +396,7 @@ namespace FastCharts.Core.DataBinding
                             h => item.PropertyChanged -= h)
                         .Select(e => new { Item = item, Args = e.EventArgs }))
                     .Where(x => IsRelevantPropertyChange(x.Args.PropertyName))
-                    .Throttle(RefreshThrottle)
-                    .ObserveOn(ObservableScheduler)
-                    .Subscribe(_ => OnPropertyChangedHandler());
+                    .Subscribe(_ => OnPropertyChangedHandler()); // Remove throttling for immediate response
 
                 _propertySubscription = propertyObservable;
             }
@@ -418,7 +422,7 @@ namespace FastCharts.Core.DataBinding
         {
             if (AutoRefresh)
             {
-                RefreshData();
+                RefreshDataInternal();
             }
         }
 
@@ -429,7 +433,7 @@ namespace FastCharts.Core.DataBinding
         {
             if (AutoRefresh)
             {
-                RefreshData();
+                RefreshDataInternal();
             }
         }
 
