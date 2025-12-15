@@ -36,7 +36,7 @@ namespace FastCharts.Core.Tests
             var act2 = () => new ChartModelFactory(_dataRangeService, null!, _legendSyncService, _axisManagementService);
             var act3 = () => new ChartModelFactory(_dataRangeService, _interactionService, null!, _axisManagementService);
             var act4 = () => new ChartModelFactory(_dataRangeService, _interactionService, _legendSyncService, null!);
-            
+
             act1.Should().Throw<ArgumentNullException>();
             act2.Should().Throw<ArgumentNullException>();
             act3.Should().Throw<ArgumentNullException>();

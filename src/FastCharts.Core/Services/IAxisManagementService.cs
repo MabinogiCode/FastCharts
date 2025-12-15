@@ -55,11 +55,11 @@ namespace FastCharts.Core.Services
         /// <param name="widthPx">Width in pixels</param>
         /// <param name="heightPx">Height in pixels</param>
         void UpdateScales(
-            IAxis<double> xAxis, 
-            IAxis<double> yAxis, 
+            IAxis<double> xAxis,
+            IAxis<double> yAxis,
             IAxis<double>? yAxisSecondary,
             IViewport viewport,
-            double widthPx, 
+            double widthPx,
             double heightPx);
 
         /// <summary>
@@ -70,8 +70,8 @@ namespace FastCharts.Core.Services
         /// <param name="yAxisSecondary">Optional secondary Y axis to clear</param>
         /// <param name="viewport">Viewport to update with default range</param>
         void ClearAxisRanges(
-            IAxis<double> xAxis, 
-            IAxis<double> yAxis, 
+            IAxis<double> xAxis,
+            IAxis<double> yAxis,
             IAxis<double>? yAxisSecondary,
             IViewport viewport);
     }

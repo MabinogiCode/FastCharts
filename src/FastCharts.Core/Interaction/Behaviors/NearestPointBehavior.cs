@@ -66,11 +66,23 @@ public sealed class NearestPointBehavior : IBehavior
                         foreach (var p in ls.Data)
                         {
                             var tX = (p.X - xr.Min) / spanX;
-                            if (tX < 0) { tX = 0; }
-                            else if (tX > 1) { tX = 1; }
+                            if (tX < 0)
+                            {
+                                tX = 0;
+                            }
+                            else if (tX > 1)
+                            {
+                                tX = 1;
+                            }
                             var tY = (p.Y - yr.Min) / spanY;
-                            if (tY < 0) { tY = 0; }
-                            else if (tY > 1) { tY = 1; }
+                            if (tY < 0)
+                            {
+                                tY = 0;
+                            }
+                            else if (tY > 1)
+                            {
+                                tY = 1;
+                            }
                             var px = left + (tX * plotW);
                             var py = top + ((1 - tY) * plotH);
                             var dx = px - cx;
@@ -90,11 +102,23 @@ public sealed class NearestPointBehavior : IBehavior
                         foreach (var p in ss.Data)
                         {
                             var tX = (p.X - xr.Min) / spanX;
-                            if (tX < 0) { tX = 0; }
-                            else if (tX > 1) { tX = 1; }
+                            if (tX < 0)
+                            {
+                                tX = 0;
+                            }
+                            else if (tX > 1)
+                            {
+                                tX = 1;
+                            }
                             var tY = (p.Y - yr.Min) / spanY;
-                            if (tY < 0) { tY = 0; }
-                            else if (tY > 1) { tY = 1; }
+                            if (tY < 0)
+                            {
+                                tY = 0;
+                            }
+                            else if (tY > 1)
+                            {
+                                tY = 1;
+                            }
                             var px = left + (tX * plotW);
                             var py = top + ((1 - tY) * plotH);
                             var dx = px - cx;
@@ -114,16 +138,34 @@ public sealed class NearestPointBehavior : IBehavior
                         foreach (var p in bs.Data)
                         {
                             var tX = (p.X - xr.Min) / spanX;
-                            if (tX < 0) { tX = 0; }
-                            else if (tX > 1) { tX = 1; }
+                            if (tX < 0)
+                            {
+                                tX = 0;
+                            }
+                            else if (tX > 1)
+                            {
+                                tX = 1;
+                            }
                             var px = left + (tX * plotW);
                             var tYh = (p.YHigh - yr.Min) / spanY;
-                            if (tYh < 0) { tYh = 0; }
-                            else if (tYh > 1) { tYh = 1; }
+                            if (tYh < 0)
+                            {
+                                tYh = 0;
+                            }
+                            else if (tYh > 1)
+                            {
+                                tYh = 1;
+                            }
                             var pyh = top + ((1 - tYh) * plotH);
                             var tYl = (p.YLow - yr.Min) / spanY;
-                            if (tYl < 0) { tYl = 0; }
-                            else if (tYl > 1) { tYl = 1; }
+                            if (tYl < 0)
+                            {
+                                tYl = 0;
+                            }
+                            else if (tYl > 1)
+                            {
+                                tYl = 1;
+                            }
                             var pyl = top + ((1 - tYl) * plotH);
                             var minY = pyh < pyl ? pyh : pyl;
                             var maxY = pyh > pyl ? pyh : pyl;

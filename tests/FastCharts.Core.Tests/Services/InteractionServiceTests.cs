@@ -43,7 +43,7 @@ namespace FastCharts.Core.Tests.Services
             var yAxis = new NumericAxis();
 
             // Act & Assert
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 service.ZoomAt(xAxis, yAxis, null, factorX, factorY, centerX, centerY));
         }
 
@@ -79,7 +79,7 @@ namespace FastCharts.Core.Tests.Services
             var yAxis = new NumericAxis();
 
             // Act & Assert
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 service.Pan(xAxis, yAxis, null, deltaX, deltaY));
         }
 
@@ -91,7 +91,7 @@ namespace FastCharts.Core.Tests.Services
             var xAxis = new NumericAxis();
             var yAxis = new NumericAxis();
             var yAxisSecondary = new NumericAxis();
-            
+
             xAxis.VisibleRange = new FRange(0, 10);
             yAxis.VisibleRange = new FRange(0, 10);
             yAxisSecondary.VisibleRange = new FRange(0, 10);
@@ -113,7 +113,7 @@ namespace FastCharts.Core.Tests.Services
             // Act & Assert - should not throw
             var exception1 = Record.Exception(() => service.UpdateInteractionState(interactionState));
             var exception2 = Record.Exception(() => service.UpdateInteractionState(null));
-            
+
             Assert.Null(exception1);
             Assert.Null(exception2);
         }

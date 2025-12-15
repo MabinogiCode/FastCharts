@@ -95,7 +95,7 @@ public class SeriesColorResolverTests
         {
             PaletteIndex = 2 // Explicitly set to third color
         };
-        
+
         model.AddSeries(series);
 
         // Act

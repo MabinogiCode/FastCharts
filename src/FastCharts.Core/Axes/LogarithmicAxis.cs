@@ -41,13 +41,13 @@ namespace FastCharts.Core.Axes
 
                 _logBase = value;
                 Ticker = new LogarithmicTicker(_logBase);
-                
+
                 // Update scale if it exists
                 if (Scale is LogarithmicScale logScale)
                 {
                     Scale = new LogarithmicScale(
-                        logScale.DataMin, logScale.DataMax, 
-                        logScale.PixelMin, logScale.PixelMax, 
+                        logScale.DataMin, logScale.DataMax,
+                        logScale.PixelMin, logScale.PixelMax,
                         _logBase);
                 }
             }

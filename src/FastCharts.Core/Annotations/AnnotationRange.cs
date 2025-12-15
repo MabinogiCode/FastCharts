@@ -27,7 +27,7 @@ namespace FastCharts.Core.Annotations
             _endValue = Math.Max(startValue, endValue);
             Orientation = orientation;
             Title = title ?? GenerateDefaultTitle();
-            
+
             // Set default values
             FillColor = new ColorRgba(128, 128, 128, 60); // Semi-transparent gray
             BorderColor = new ColorRgba(128, 128, 128, 120);
@@ -47,13 +47,13 @@ namespace FastCharts.Core.Annotations
             set
             {
                 _startValue = value;
-                
+
                 // Ensure start <= end
                 if (_startValue > _endValue)
                 {
                     (_startValue, _endValue) = (_endValue, _startValue);
                 }
-                
+
                 UpdateDefaultTitle();
             }
         }
@@ -67,13 +67,13 @@ namespace FastCharts.Core.Annotations
             set
             {
                 _endValue = value;
-                
+
                 // Ensure start <= end
                 if (_startValue > _endValue)
                 {
                     (_startValue, _endValue) = (_endValue, _startValue);
                 }
-                
+
                 UpdateDefaultTitle();
             }
         }

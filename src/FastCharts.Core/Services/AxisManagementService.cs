@@ -85,7 +85,7 @@ namespace FastCharts.Core.Services
 
             // Ensure secondary Y axis exists in list (typically at index 2)
             EnsureSecondaryYAxisInList(axesList);
-            
+
             if (axesList.Count > 2)
             {
                 axesList[2] = (AxisBase)newAxis;
@@ -109,7 +109,7 @@ namespace FastCharts.Core.Services
 
             var newSecondaryAxis = new NumericAxis();
             EnsureSecondaryYAxisInList(axesList);
-            
+
             if (axesList.Count > 2)
             {
                 axesList[2] = (AxisBase)newSecondaryAxis;
@@ -132,11 +132,11 @@ namespace FastCharts.Core.Services
         /// <param name="widthPx">Width in pixels</param>
         /// <param name="heightPx">Height in pixels</param>
         public void UpdateScales(
-            IAxis<double> xAxis, 
-            IAxis<double> yAxis, 
+            IAxis<double> xAxis,
+            IAxis<double> yAxis,
             IAxis<double>? yAxisSecondary,
             IViewport viewport,
-            double widthPx, 
+            double widthPx,
             double heightPx)
         {
             // Sync visible ranges from viewport
@@ -162,16 +162,16 @@ namespace FastCharts.Core.Services
         /// <param name="yAxisSecondary">Optional secondary Y axis to clear</param>
         /// <param name="viewport">Viewport to update with default range</param>
         public void ClearAxisRanges(
-            IAxis<double> xAxis, 
-            IAxis<double> yAxis, 
+            IAxis<double> xAxis,
+            IAxis<double> yAxis,
             IAxis<double>? yAxisSecondary,
             IViewport viewport)
         {
             var defaultRange = new FRange(0, 1);
-            
+
             xAxis.DataRange = defaultRange;
             yAxis.DataRange = defaultRange;
-            
+
             if (yAxisSecondary != null)
             {
                 yAxisSecondary.DataRange = defaultRange;

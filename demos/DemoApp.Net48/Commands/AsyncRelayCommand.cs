@@ -49,26 +49,27 @@ namespace DemoApp.Net48.Commands
         /// <param name="parameter">Data used by the command</param>
         public async void Execute(object? parameter)
         {
-            if (CanExecute(parameter))
+            if (!CanExecute(parameter))
             {
-                try
-                {
-                    _isExecuting = true;
-                    CommandManager.InvalidateRequerySuggested();
-                    await _execute(parameter);
-                }
-                finally
-                {
-                    _isExecuting = false;
-                    CommandManager.InvalidateRequerySuggested();
-                }
+                return;
+            }
+            try
+            {
+                _isExecuting = true;
+                CommandManager.InvalidateRequerySuggested();
+                await _execute(parameter);
+            }
+            finally
+            {
+                _isExecuting = false;
+                CommandManager.InvalidateRequerySuggested();
             }
         }
 
         /// <summary>
         /// Raises the CanExecuteChanged event
         /// </summary>
-        public void RaiseCanExecuteChanged()
+        public static void RaiseCanExecuteChanged()
         {
             CommandManager.InvalidateRequerySuggested();
         }

@@ -173,11 +173,11 @@ namespace FastCharts.Tests.Export
         private static ChartModel CreateLineChart()
         {
             var model = new ChartModel { Title = "Line Chart Export Test", Theme = new LightTheme() };
-            
+
             var data = Enumerable.Range(0, 20)
                 .Select(i => new PointD(i, Math.Sin(i * 0.3) * 50 + 50))
                 .ToArray();
-            
+
             model.AddSeries(new LineSeries(data) { Title = "Sine Wave", StrokeThickness = 2 });
             model.UpdateScales(800, 600);
             return model;
@@ -186,7 +186,7 @@ namespace FastCharts.Tests.Export
         private static ChartModel CreateBarChart()
         {
             var model = new ChartModel { Title = "Bar Chart Export Test", Theme = new LightTheme() };
-            
+
             var data = new[]
             {
                 new BarPoint(0, 100),
@@ -195,7 +195,7 @@ namespace FastCharts.Tests.Export
                 new BarPoint(3, 180),
                 new BarPoint(4, 90)
             };
-            
+
             model.AddSeries(new BarSeries(data) { Title = "Sample Bars" });
             model.UpdateScales(800, 600);
             return model;
@@ -204,10 +204,10 @@ namespace FastCharts.Tests.Export
         private static ChartModel CreateCategoryAxisChart()
         {
             var model = new ChartModel { Title = "Category Axis Export Test", Theme = new LightTheme() };
-            
+
             var categoryAxis = new CategoryAxis(new[] { "Q1", "Q2", "Q3", "Q4" });
             model.ReplaceXAxis(categoryAxis);
-            
+
             var data = new[]
             {
                 new BarPoint(0, 200),
@@ -215,7 +215,7 @@ namespace FastCharts.Tests.Export
                 new BarPoint(2, 180),
                 new BarPoint(3, 300)
             };
-            
+
             model.AddSeries(new BarSeries(data) { Title = "Quarterly Data" });
             model.UpdateScales(800, 600);
             return model;
@@ -224,29 +224,29 @@ namespace FastCharts.Tests.Export
         private static ChartModel CreateAnnotatedChart()
         {
             var model = new ChartModel { Title = "Annotated Chart Export Test", Theme = new LightTheme() };
-            
+
             var lineData = Enumerable.Range(0, 10)
                 .Select(i => new PointD(i, 100 + Math.Sin(i * 0.5) * 20))
                 .ToArray();
-            
+
             model.AddSeries(new LineSeries(lineData) { Title = "Stock Price", StrokeThickness = 2 });
-            
+
             // Add annotations to test overlay rendering
             var supportLine = new AnnotationLine(90, AnnotationOrientation.Horizontal, "Support Level")
             {
                 Color = new ColorRgba(0, 255, 0, 180),
                 LineStyle = LineStyle.Dashed
             };
-            
+
             var resistanceLine = new AnnotationLine(120, AnnotationOrientation.Horizontal, "Resistance Level")
             {
                 Color = new ColorRgba(255, 0, 0, 180),
                 LineStyle = LineStyle.Dashed
             };
-            
+
             model.AddAnnotation(supportLine);
             model.AddAnnotation(resistanceLine);
-            
+
             model.UpdateScales(800, 600);
             return model;
         }
@@ -254,25 +254,25 @@ namespace FastCharts.Tests.Export
         private static ChartModel CreateMultiSeriesChart()
         {
             var model = new ChartModel { Title = "Multi-Series Export Test", Theme = new LightTheme() };
-            
+
             // Line series
             var lineData = Enumerable.Range(0, 15)
                 .Select(i => new PointD(i, Math.Sin(i * 0.4) * 30 + 70))
                 .ToArray();
             model.AddSeries(new LineSeries(lineData) { Title = "Line", StrokeThickness = 2 });
-            
+
             // Bar series
             var barData = Enumerable.Range(0, 8)
                 .Select(i => new BarPoint(i * 2, 50 + i * 5))
                 .ToArray();
             model.AddSeries(new BarSeries(barData) { Title = "Bars" });
-            
+
             // Scatter series
             var scatterData = Enumerable.Range(0, 10)
                 .Select(i => new PointD(i * 1.5, 60 + (i % 3) * 15))
                 .ToArray();
             model.AddSeries(new ScatterSeries(scatterData) { Title = "Scatter", MarkerSize = 6 });
-            
+
             model.UpdateScales(800, 600);
             return model;
         }
@@ -280,7 +280,7 @@ namespace FastCharts.Tests.Export
         private static ChartModel CreateOhlcChart()
         {
             var model = new ChartModel { Title = "OHLC Export Test", Theme = new LightTheme() };
-            
+
             var random = new Random(123);
             var data = Enumerable.Range(0, 10)
                 .Select(i =>
@@ -292,7 +292,7 @@ namespace FastCharts.Tests.Export
                     return new OhlcPoint(i, open, high, low, close);
                 })
                 .ToArray();
-            
+
             model.AddSeries(new OhlcSeries(data) { Title = "OHLC Data" });
             model.UpdateScales(800, 600);
             return model;
@@ -301,11 +301,11 @@ namespace FastCharts.Tests.Export
         private static ChartModel CreateStackedBarChart()
         {
             var model = new ChartModel { Title = "Stacked Bar Export Test", Theme = new LightTheme() };
-            
+
             var data = Enumerable.Range(0, 5)
                 .Select(i => new StackedBarPoint(i, new double[] { 20 + i * 5, 15 + i * 3, 10 + i * 2 }))
                 .ToArray();
-            
+
             model.AddSeries(new StackedBarSeries(data) { Title = "Stacked Data" });
             model.UpdateScales(800, 600);
             return model;
@@ -314,12 +314,12 @@ namespace FastCharts.Tests.Export
         private static ChartModel CreateScatterChart()
         {
             var model = new ChartModel { Title = "Scatter Export Test", Theme = new LightTheme() };
-            
+
             var random = new Random(456);
             var data = Enumerable.Range(0, 30)
                 .Select(_ => new PointD(random.NextDouble() * 100, random.NextDouble() * 100))
                 .ToArray();
-            
+
             model.AddSeries(new ScatterSeries(data) { Title = "Random Points", MarkerSize = 5 });
             model.UpdateScales(800, 600);
             return model;
@@ -328,18 +328,18 @@ namespace FastCharts.Tests.Export
         private static ChartModel CreateDateTimeAxisChart()
         {
             var model = new ChartModel { Title = "DateTime Axis Export Test", Theme = new LightTheme() };
-            
+
             var start = DateTime.Today.AddDays(-7);
             var end = DateTime.Today;
-            
+
             var dateAxis = new DateTimeAxis();
             dateAxis.SetVisibleRange(start, end);
             model.ReplaceXAxis(dateAxis);
-            
+
             var data = Enumerable.Range(0, 8)
                 .Select(i => new PointD(start.AddDays(i).ToOADate(), 50 + Math.Sin(i * 0.8) * 20))
                 .ToArray();
-            
+
             model.AddSeries(new LineSeries(data) { Title = "Daily Values", StrokeThickness = 2 });
             model.UpdateScales(800, 600);
             return model;

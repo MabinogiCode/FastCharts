@@ -20,7 +20,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Horizontal Annotation Test" };
-            
+
             // Add some data
             var lineData = new[]
             {
@@ -50,7 +50,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Vertical Annotation Test" };
-            
+
             // Add some data
             var lineData = new[]
             {
@@ -79,12 +79,12 @@ namespace FastCharts.Tests.Integration
         public void AnnotationLine_MultipleAnnotations_RenderInZIndexOrder()
         {
             // Arrange
-            var model = new ChartModel 
-            { 
+            var model = new ChartModel
+            {
                 Title = "Multiple Annotations Test",
                 Theme = new DarkTheme()
             };
-            
+
             // Add some data
             var lineData = new[]
             {
@@ -98,12 +98,12 @@ namespace FastCharts.Tests.Integration
             {
                 ZIndex = 1
             };
-            
+
             var line2 = new AnnotationLine(40.0, AnnotationOrientation.Horizontal, "Level 2")
             {
                 ZIndex = 0
             };
-            
+
             var line3 = new AnnotationLine(2.5, AnnotationOrientation.Vertical, "Milestone")
             {
                 ZIndex = 2
@@ -128,7 +128,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Different Line Styles Test" };
-            
+
             // Add some data
             var lineData = new[]
             {
@@ -143,13 +143,13 @@ namespace FastCharts.Tests.Integration
                 LineStyle = LineStyle.Solid,
                 Thickness = 2.0
             };
-            
+
             var dashedLine = new AnnotationLine(30.0, AnnotationOrientation.Horizontal, "Dashed")
             {
                 LineStyle = LineStyle.Dashed,
                 Thickness = 1.5
             };
-            
+
             var dottedLine = new AnnotationLine(40.0, AnnotationOrientation.Horizontal, "Dotted")
             {
                 LineStyle = LineStyle.Dotted,
@@ -174,7 +174,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "No Labels Test" };
-            
+
             // Add some data
             var lineData = new[]
             {
@@ -204,7 +204,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Invisible Annotation Test" };
-            
+
             // Add some data
             var lineData = new[]
             {
@@ -226,7 +226,7 @@ namespace FastCharts.Tests.Integration
                 var (bitmap, _) = ChartRenderTestHelper.Render(model);
                 bitmap?.Dispose();
             });
-            
+
             Assert.Null(exception);
         }
 
@@ -235,7 +235,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Out of Range Test" };
-            
+
             // Add some data with limited range
             var lineData = new[]
             {
@@ -257,7 +257,7 @@ namespace FastCharts.Tests.Integration
                 var (bitmap, _) = ChartRenderTestHelper.Render(model);
                 bitmap?.Dispose();
             });
-            
+
             Assert.Null(exception);
         }
 
@@ -266,7 +266,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Annotations with Bar Chart" };
-            
+
             // Add bar data
             var barData = new[]
             {
@@ -298,7 +298,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = "Add/Remove Test" };
-            
+
             var line1 = new AnnotationLine(10.0, AnnotationOrientation.Horizontal, "Line 1");
             var line2 = new AnnotationLine(5.0, AnnotationOrientation.Vertical, "Line 2");
 
@@ -326,7 +326,7 @@ namespace FastCharts.Tests.Integration
         {
             // Arrange
             var model = new ChartModel { Title = $"Label Position: {position}" };
-            
+
             // Add some data
             var lineData = new[]
             {

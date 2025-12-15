@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using FastCharts.Core;              // ChartModel
 using FastCharts.Core.Axes;         // AxisExtensions
-using FastCharts.Core.Primitives;   // PointD (si l'espace de noms diffère, adapte l'using)
+using FastCharts.Core.Primitives;   // PointD
 using FastCharts.Core.Series;       // LineSeries
 using FastCharts.Rendering.Skia;    // SkiaChartRenderer
 using FastCharts.Tests.Helpers;
@@ -21,11 +21,11 @@ namespace FastCharts.Tests
         {
             // Arrange
             var model = new ChartModel();
-            // Ranges visibles simples
+            // Simple visible ranges
             model.XAxis.SetVisibleRange(0, 100);
             model.YAxis.SetVisibleRange(0, 100);
 
-            // Une série basique (diagonale), via le ctor par points
+            // Basic series (diagonal) via points constructor
             var points = new List<PointD>
             {
                 new PointD(0, 0),
@@ -42,7 +42,7 @@ namespace FastCharts.Tests
                 renderer.Render(model, canvas, W, H);
                 canvas.Flush();
 
-                // Les marges effectives proviennent du modèle (valeurs par défaut si non modifiées)
+                // Effective margins come from model (default values if not modified)
                 var margins = model.PlotMargins;
                 var left = (int)margins.Left;
                 var top = (int)margins.Top;
@@ -52,17 +52,17 @@ namespace FastCharts.Tests
                 var plotW = Math.Max(0, W - (left + right));
                 var plotH = Math.Max(0, H - (top + bottom));
 
-                // Couleur "surface" = coin haut-gauche (en dehors du plot)
+                // Surface color = top-left corner (outside plot area)
                 var surfaceColor = bmp.GetPixel(1, 1);
 
-                // Assert (marges doivent rester à la couleur surface)
-                // marge gauche (milieu vertical)
+                // Assert (margins should remain at surface color)
+                // left margin (vertical center)
                 Assert.True(SkiaTestHelper.SameColor(bmp.GetPixel(Math.Max(1, left / 2), top + Math.Max(1, plotH / 2)), surfaceColor));
-                // marge droite
+                // right margin
                 Assert.True(SkiaTestHelper.SameColor(bmp.GetPixel(W - Math.Max(2, right / 2), top + Math.Max(1, plotH / 2)), surfaceColor));
-                // marge haute
+                // top margin
                 Assert.True(SkiaTestHelper.SameColor(bmp.GetPixel(left + Math.Max(1, plotW / 2), Math.Max(1, top / 2)), surfaceColor));
-                // marge basse
+                // bottom margin
                 Assert.True(SkiaTestHelper.SameColor(bmp.GetPixel(left + Math.Max(1, plotW / 2), H - Math.Max(2, bottom / 2)), surfaceColor));
             }
         }
@@ -100,14 +100,14 @@ namespace FastCharts.Tests
                 var plotW = Math.Max(0, W - (left + right));
                 var plotH = Math.Max(0, H - (top + bottom));
 
-                // On récupère la couleur "plot" en plein centre du plot
+                // Get plot color from the center of plot area
                 var plotCenter = bmp.GetPixel(left + plotW / 2, top + plotH / 2);
 
-                // On s'attend à ce que la diagonale traverse :
-                //  - proche du coin bas-gauche du plot
-                //  - proche du coin haut-droit du plot
-                // Pour être robustes à l'AA, on sonde un petit disque de rayon 2 px et
-                // on vérifie que la couleur diffère nettement du fond du plot.
+                // We expect the diagonal to cross:
+                //  - near bottom-left corner of plot
+                //  - near top-right corner of plot
+                // To be robust against anti-aliasing, we probe a small disk with radius 2 px and
+                // verify that the color differs noticeably from the plot background.
                 Assert.True(SkiaTestHelper.ProbeNotColor(bmp, new System.Drawing.Point(left + 3, top + plotH - 3), plotCenter, 2),
                     "Expected a drawn pixel (series/grid) near bottom-left inside plot.");
                 Assert.True(SkiaTestHelper.ProbeNotColor(bmp, new System.Drawing.Point(left + plotW - 3, top + 3), plotCenter, 2),

@@ -36,7 +36,7 @@ namespace FastCharts.Wpf.Extensions
 
             var logAxis = new LogarithmicAxis { LogBase = logBase };
             logAxis.SetVisibleRange(minValue, maxValue);
-            
+
             // This would require ChartModel to support replacing axes
             // For now, we'll return the configured axis
             return logAxis;
@@ -69,7 +69,7 @@ namespace FastCharts.Wpf.Extensions
 
             var logAxis = new LogarithmicAxis { LogBase = logBase };
             logAxis.SetVisibleRange(minValue, maxValue);
-            
+
             return logAxis;
         }
 
@@ -98,7 +98,7 @@ namespace FastCharts.Wpf.Extensions
             var logAxis = new LogarithmicAxis { LogBase = 10.0 };
             logAxis.SetVisibleRange(minValue, maxValue);
             logAxis.LabelFormat = "E1"; // Scientific notation
-            
+
             return logAxis;
         }
 
@@ -124,7 +124,7 @@ namespace FastCharts.Wpf.Extensions
             var logAxis = new LogarithmicAxis { LogBase = 10.0 };
             logAxis.SetVisibleRange(minPercent, maxPercent);
             logAxis.LabelFormat = "P1"; // Percentage format
-            
+
             return logAxis;
         }
     }

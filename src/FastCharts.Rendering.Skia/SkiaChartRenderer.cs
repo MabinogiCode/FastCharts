@@ -19,7 +19,7 @@ namespace FastCharts.Rendering.Skia
     {
         private readonly GridLayer _grid = new();
         private readonly SeriesLayer _series = new();
-        private readonly AnnotationLayer _annotations = new(); // P1-ANN-LINE
+        private readonly AnnotationLayer _annotations = new();
         private readonly AxesTicksLayer _axesTicks = new();
         private readonly LegendLayer _legend = new();
 
@@ -46,13 +46,12 @@ namespace FastCharts.Rendering.Skia
             var originalYRange = model.YAxis.VisibleRange;
             var xRange = originalXRange;
             var yRange = originalYRange;
-            
-            // Handle empty ranges by using a minimal valid range for rendering
+
             if (!ValidationHelper.IsValidRange(xRange))
             {
-                if (xRange.Min == xRange.Max && ValidationHelper.IsFinite(xRange.Min))
+                var tol = 1e-12;
+                if (Math.Abs(xRange.Min - xRange.Max) < tol && ValidationHelper.IsFinite(xRange.Min))
                 {
-                    // Empty range - use minimal span for rendering
                     xRange = new FRange(xRange.Min, xRange.Min + 1);
                 }
                 else
@@ -62,9 +61,9 @@ namespace FastCharts.Rendering.Skia
             }
             if (!ValidationHelper.IsValidRange(yRange))
             {
-                if (yRange.Min == yRange.Max && ValidationHelper.IsFinite(yRange.Min))
+                var tol = 1e-12;
+                if (Math.Abs(yRange.Min - yRange.Max) < tol && ValidationHelper.IsFinite(yRange.Min))
                 {
-                    // Empty range - use minimal span for rendering
                     yRange = new FRange(yRange.Min, yRange.Min + 1);
                 }
                 else
@@ -79,39 +78,37 @@ namespace FastCharts.Rendering.Skia
             var top = (float)m.Top;
             var right = (float)RenderingHelper.CalculateEffectiveRightMargin(m.Right, model.YAxisSecondary != null);
             var bottom = (float)m.Bottom;
-            var plotW = (float)Math.Max(0, pixelWidth - (left + right));
-            var plotH = (float)Math.Max(0, pixelHeight - (top + bottom));
+            var plotW = Math.Max(0, pixelWidth - (left + right));
+            var plotH = Math.Max(0, pixelHeight - (top + bottom));
             var plotRect = new SKRect(left, top, left + plotW, top + plotH);
             canvas.Clear(new SKColor(theme.SurfaceBackgroundColor.R, theme.SurfaceBackgroundColor.G, theme.SurfaceBackgroundColor.B, theme.SurfaceBackgroundColor.A));
-            
-            // Check if we need to temporarily adjust ranges for rendering
+
             const double tolerance = 1e-10;
             var needsAdjustment = (Math.Abs(xRange.Min - originalXRange.Min) > tolerance || Math.Abs(xRange.Max - originalXRange.Max) > tolerance) ||
                                   (Math.Abs(yRange.Min - originalYRange.Min) > tolerance || Math.Abs(yRange.Max - originalYRange.Max) > tolerance);
-            
             if (needsAdjustment)
             {
-                // Temporarily set adjusted ranges
                 model.XAxis.VisibleRange = xRange;
                 model.YAxis.VisibleRange = yRange;
             }
-                
+
             model.UpdateScales((int)plotW, (int)plotH);
-            
-            using var bg = new SKPaint { Style = SKPaintStyle.Fill, Color = new SKColor(theme.PlotBackgroundColor.R, theme.PlotBackgroundColor.G, theme.PlotBackgroundColor.B, theme.PlotBackgroundColor.A) };
-            canvas.DrawRect(plotRect, bg);
+
+            using (var bg = new SKPaint { Style = SKPaintStyle.Fill, Color = new SKColor(theme.PlotBackgroundColor.R, theme.PlotBackgroundColor.G, theme.PlotBackgroundColor.B, theme.PlotBackgroundColor.A) })
+            {
+                canvas.DrawRect(plotRect, bg);
+            }
             using var paints = SkiaPaintPack.Create(theme);
             var ctx = new RenderContext(model, canvas, plotRect, paints, pixelWidth, pixelHeight);
             _grid.Render(ctx);
             _series.Render(ctx);
-            _annotations.Render(ctx); // P1-ANN-LINE: Render annotations after series, before axes
+            _annotations.Render(ctx);
             _axesTicks.Render(ctx);
             _legend.Render(ctx);
             RenderOverlay(ctx);
-            
+
             if (needsAdjustment)
             {
-                // Restore original ranges
                 model.XAxis.VisibleRange = originalXRange;
                 model.YAxis.VisibleRange = originalYRange;
             }
@@ -121,13 +118,15 @@ namespace FastCharts.Rendering.Skia
         {
             var info = new SKImageInfo(pixelWidth, pixelHeight, SKColorType.Bgra8888, SKAlphaType.Premul);
             var bmp = new SKBitmap(info);
-            using var canvas = new SKCanvas(bmp);
-            if (transparentBackground)
+            using (var canvas = new SKCanvas(bmp))
             {
-                canvas.Clear(SKColors.Transparent);
+                if (transparentBackground)
+                {
+                    canvas.Clear(SKColors.Transparent);
+                }
+                Render(model, canvas, pixelWidth, pixelHeight);
+                canvas.Flush();
             }
-            Render(model, canvas, pixelWidth, pixelHeight);
-            canvas.Flush();
             return bmp;
         }
 
@@ -240,7 +239,11 @@ namespace FastCharts.Rendering.Skia
                 using var selFill = new SKPaint { Color = new SKColor(30, 120, 220, 40), Style = SKPaintStyle.Fill, IsAntialias = true };
                 using var selStroke = new SKPaint { Color = new SKColor(30, 120, 220, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
                 var rr = SKRect.Create(Math.Min(x1, x2), Math.Min(y1, y2), Math.Abs(x2 - x1), Math.Abs(y2 - y1));
-                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawRect(rr, selFill); ctx.Canvas.DrawRect(rr, selStroke); ctx.Canvas.Restore();
+                ctx.Canvas.Save();
+                ctx.Canvas.ClipRect(pr);
+                ctx.Canvas.DrawRect(rr, selFill);
+                ctx.Canvas.DrawRect(rr, selStroke);
+                ctx.Canvas.Restore();
             }
             if (st.ShowNearest)
             {
@@ -248,7 +251,11 @@ namespace FastCharts.Rendering.Skia
                 var py = PixelMapper.Y(st.NearestDataY, ctx.Model.YAxis, pr);
                 using var npStroke = new SKPaint { Color = new SKColor(255, 80, 80, 220), Style = SKPaintStyle.Stroke, StrokeWidth = 2, IsAntialias = true };
                 using var npFill = new SKPaint { Color = new SKColor(255, 80, 80, 120), Style = SKPaintStyle.Fill, IsAntialias = true };
-                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawCircle(px, py, 6, npFill); ctx.Canvas.DrawCircle(px, py, 6, npStroke); ctx.Canvas.Restore();
+                ctx.Canvas.Save();
+                ctx.Canvas.ClipRect(pr);
+                ctx.Canvas.DrawCircle(px, py, 6, npFill);
+                ctx.Canvas.DrawCircle(px, py, 6, npStroke);
+                ctx.Canvas.Restore();
             }
             if (!st.ShowCrosshair)
             {
@@ -278,7 +285,11 @@ namespace FastCharts.Rendering.Skia
             using var tipTxPaint = new SKPaint { Color = new SKColor(30, 30, 30, 255), Style = SKPaintStyle.Fill, IsAntialias = true };
             using var tipFont = new SKFont(null, (float)model.Theme.LabelTextSize);
             var palette = model.Theme.SeriesPalette;
-            ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawLine(pr.Left, cy, pr.Right, cy, cross); ctx.Canvas.DrawLine(cx, pr.Top, cx, pr.Bottom, cross); ctx.Canvas.Restore();
+            ctx.Canvas.Save();
+            ctx.Canvas.ClipRect(pr);
+            ctx.Canvas.DrawLine(pr.Left, cy, pr.Right, cy, cross);
+            ctx.Canvas.DrawLine(cx, pr.Top, cx, pr.Bottom, cross);
+            ctx.Canvas.Restore();
             string[] lines;
             if (tooltipSeries.Count > 0)
             {

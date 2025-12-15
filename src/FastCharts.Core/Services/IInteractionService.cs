@@ -22,12 +22,12 @@ namespace FastCharts.Core.Services
         /// <exception cref="System.ArgumentOutOfRangeException">Thrown when parameters are invalid</exception>
         /// <exception cref="System.InvalidOperationException">Thrown when resulting range is invalid</exception>
         void ZoomAt(
-            IAxis<double> xAxis, 
-            IAxis<double> yAxis, 
+            IAxis<double> xAxis,
+            IAxis<double> yAxis,
             IAxis<double>? yAxisSecondary,
-            double factorX, 
-            double factorY, 
-            double centerDataX, 
+            double factorX,
+            double factorY,
+            double centerDataX,
             double centerDataY);
 
         /// <summary>
@@ -41,10 +41,10 @@ namespace FastCharts.Core.Services
         /// <exception cref="System.ArgumentOutOfRangeException">Thrown when parameters are invalid</exception>
         /// <exception cref="System.InvalidOperationException">Thrown when resulting range is invalid</exception>
         void Pan(
-            IAxis<double> xAxis, 
-            IAxis<double> yAxis, 
+            IAxis<double> xAxis,
+            IAxis<double> yAxis,
             IAxis<double>? yAxisSecondary,
-            double deltaDataX, 
+            double deltaDataX,
             double deltaDataY);
 
         /// <summary>

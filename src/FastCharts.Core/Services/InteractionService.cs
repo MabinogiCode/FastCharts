@@ -26,22 +26,22 @@ namespace FastCharts.Core.Services
         /// <exception cref="ArgumentOutOfRangeException">Thrown when parameters are invalid</exception>
         /// <exception cref="InvalidOperationException">Thrown when resulting range is invalid</exception>
         public void ZoomAt(
-            IAxis<double> xAxis, 
-            IAxis<double> yAxis, 
+            IAxis<double> xAxis,
+            IAxis<double> yAxis,
             IAxis<double>? yAxisSecondary,
-            double factorX, 
-            double factorY, 
-            double centerDataX, 
+            double factorX,
+            double factorY,
+            double centerDataX,
             double centerDataY)
         {
             ValidateZoomParameters(factorX, factorY, centerDataX, centerDataY);
 
             var xRange = xAxis.VisibleRange;
             var yRange = yAxis.VisibleRange;
-            
+
             var newSizeX = xRange.Size * factorX;
             var newSizeY = yRange.Size * factorY;
-            
+
             var newMinX = centerDataX - (centerDataX - xRange.Min) * factorX;
             var newMaxX = newMinX + newSizeX;
             var newMinY = centerDataY - (centerDataY - yRange.Min) * factorY;
@@ -53,7 +53,7 @@ namespace FastCharts.Core.Services
                 newMinX -= 1e-6;
                 newMaxX += 1e-6;
             }
-            
+
             if (DoubleUtils.AreEqual(newMinY, newMaxY))
             {
                 newMinY -= 1e-6;
@@ -65,7 +65,7 @@ namespace FastCharts.Core.Services
             // Apply zoom to axes
             xAxis.VisibleRange = new FRange(newMinX, newMaxX);
             yAxis.VisibleRange = new FRange(newMinY, newMaxY);
-            
+
             if (yAxisSecondary != null)
             {
                 yAxisSecondary.VisibleRange = yAxis.VisibleRange;
@@ -83,17 +83,17 @@ namespace FastCharts.Core.Services
         /// <exception cref="ArgumentOutOfRangeException">Thrown when parameters are invalid</exception>
         /// <exception cref="InvalidOperationException">Thrown when resulting range is invalid</exception>
         public void Pan(
-            IAxis<double> xAxis, 
-            IAxis<double> yAxis, 
+            IAxis<double> xAxis,
+            IAxis<double> yAxis,
             IAxis<double>? yAxisSecondary,
-            double deltaDataX, 
+            double deltaDataX,
             double deltaDataY)
         {
             ValidatePanParameters(deltaDataX, deltaDataY);
 
             var xRange = xAxis.VisibleRange;
             var yRange = yAxis.VisibleRange;
-            
+
             var newMinX = xRange.Min + deltaDataX;
             var newMaxX = xRange.Max + deltaDataX;
             var newMinY = yRange.Min + deltaDataY;
@@ -104,7 +104,7 @@ namespace FastCharts.Core.Services
             // Apply pan to axes
             xAxis.VisibleRange = new FRange(newMinX, newMaxX);
             yAxis.VisibleRange = new FRange(newMinY, newMaxY);
-            
+
             if (yAxisSecondary != null)
             {
                 yAxisSecondary.VisibleRange = yAxis.VisibleRange;
@@ -127,17 +127,17 @@ namespace FastCharts.Core.Services
             {
                 throw new ArgumentOutOfRangeException(nameof(factorX), factorX, "Zoom factor X must be finite and positive");
             }
-            
+
             if (double.IsNaN(factorY) || double.IsInfinity(factorY) || factorY <= 0d)
             {
                 throw new ArgumentOutOfRangeException(nameof(factorY), factorY, "Zoom factor Y must be finite and positive");
             }
-            
+
             if (double.IsNaN(centerDataX) || double.IsInfinity(centerDataX))
             {
                 throw new ArgumentOutOfRangeException(nameof(centerDataX), centerDataX, "Center X must be finite");
             }
-            
+
             if (double.IsNaN(centerDataY) || double.IsInfinity(centerDataY))
             {
                 throw new ArgumentOutOfRangeException(nameof(centerDataY), centerDataY, "Center Y must be finite");
@@ -150,7 +150,7 @@ namespace FastCharts.Core.Services
             {
                 throw new ArgumentOutOfRangeException(nameof(deltaDataX), deltaDataX, "Delta X must be finite");
             }
-            
+
             if (double.IsNaN(deltaDataY) || double.IsInfinity(deltaDataY))
             {
                 throw new ArgumentOutOfRangeException(nameof(deltaDataY), deltaDataY, "Delta Y must be finite");
@@ -163,7 +163,7 @@ namespace FastCharts.Core.Services
             {
                 throw new InvalidOperationException($"Resulting X range is invalid: [{newMinX}, {newMaxX}]");
             }
-            
+
             if (!ValidationHelper.IsValidRange(newMinY, newMaxY))
             {
                 throw new InvalidOperationException($"Resulting Y range is invalid: [{newMinY}, {newMaxY}]");

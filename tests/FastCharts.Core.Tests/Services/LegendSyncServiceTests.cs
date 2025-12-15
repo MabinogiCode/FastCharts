@@ -21,7 +21,7 @@ namespace FastCharts.Core.Tests.Services
             var exception1 = Record.Exception(() => service.SyncLegendWithSeries(null, null));
             var exception2 = Record.Exception(() => service.SyncLegendWithSeries(new LegendModel(), null));
             var exception3 = Record.Exception(() => service.SyncLegendWithSeries(null, new List<SeriesBase>()));
-            
+
             Assert.Null(exception1);
             Assert.Null(exception2);
             Assert.Null(exception3);
@@ -57,7 +57,7 @@ namespace FastCharts.Core.Tests.Services
             var exception2 = Record.Exception(() => service.UpdateSeriesVisibility(legend, null, true));
             var exception3 = Record.Exception(() => service.UpdateSeriesVisibility(null, series, true));
             var exception4 = Record.Exception(() => service.UpdateSeriesVisibility(legend, series, true));
-            
+
             Assert.Null(exception1);
             Assert.Null(exception2);
             Assert.Null(exception3);
@@ -77,7 +77,7 @@ namespace FastCharts.Core.Tests.Services
             var exception2 = Record.Exception(() => service.AddSeriesToLegend(legend, null));
             var exception3 = Record.Exception(() => service.AddSeriesToLegend(null, series));
             var exception4 = Record.Exception(() => service.AddSeriesToLegend(legend, series));
-            
+
             Assert.Null(exception1);
             Assert.Null(exception2);
             Assert.Null(exception3);
@@ -97,7 +97,7 @@ namespace FastCharts.Core.Tests.Services
             var exception2 = Record.Exception(() => service.RemoveSeriesFromLegend(legend, null));
             var exception3 = Record.Exception(() => service.RemoveSeriesFromLegend(null, series));
             var exception4 = Record.Exception(() => service.RemoveSeriesFromLegend(legend, series));
-            
+
             Assert.Null(exception1);
             Assert.Null(exception2);
             Assert.Null(exception3);

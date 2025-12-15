@@ -16,10 +16,10 @@ namespace FastCharts.Core.Examples
         public static IServiceContainer ConfigureServices()
         {
             var container = new SimpleServiceContainer();
-            
+
             // Basic FastCharts service configuration
             container.AddFastChartsServices();
-            
+
             return container;
         }
 
@@ -29,16 +29,16 @@ namespace FastCharts.Core.Examples
         public static IServiceContainer ConfigureServicesWithOptions()
         {
             var container = new SimpleServiceContainer();
-            
+
             // Custom configuration
             var options = new FastChartsOptions
             {
                 EnableStrictValidation = true,
                 MinRedrawIntervalMs = 33.3 // 30 FPS instead of 60
             };
-            
+
             container.AddFastChartsServices(options);
-            
+
             return container;
         }
 
@@ -48,13 +48,13 @@ namespace FastCharts.Core.Examples
         public static ChartModel CreateChartModelWithDI()
         {
             var container = ConfigureServices();
-            
+
             // Dependency resolution
             var factory = container.Resolve<IChartModelFactory>();
-            
+
             // ChartModel creation via factory
             var chartModel = factory.CreateDefault();
-            
+
             return chartModel;
         }
 
@@ -65,14 +65,14 @@ namespace FastCharts.Core.Examples
         {
             var container = ConfigureServices();
             var factory = container.Resolve<IChartModelFactory>();
-            
+
             var config = new ChartConfiguration
             {
                 Title = "Custom Chart",
                 XAxis = new Axes.DateTimeAxis(),
                 Theme = new Themes.BuiltIn.DarkTheme()
             };
-            
+
             return factory.CreateWithConfiguration(config);
         }
     }
