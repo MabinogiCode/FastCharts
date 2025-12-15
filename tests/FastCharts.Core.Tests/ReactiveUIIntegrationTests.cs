@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using FastCharts.Core;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Interaction;
 using FastCharts.Core.Themes.BuiltIn;
 using FluentAssertions;
 using ReactiveUI;
@@ -71,7 +72,7 @@ public class ReactiveUIIntegrationTests
         chartModel.PropertyChanged += (sender, e) => propertyChanged = true;
 
         // Act
-        chartModel.InteractionState = new Interaction.InteractionState();
+        chartModel.InteractionState = new InteractionState();
 
         // Assert
         propertyChanged.Should().BeTrue();
@@ -106,7 +107,7 @@ public class ReactiveUIIntegrationTests
     public void InteractionStateShouldSupportPropertyChanged()
     {
         // Arrange
-        var interactionState = new Interaction.InteractionState();
+        var interactionState = new InteractionState();
         var propertyChanged = false;
 
         interactionState.PropertyChanged += (sender, e) => propertyChanged = true;
@@ -122,7 +123,7 @@ public class ReactiveUIIntegrationTests
     public void InteractionStateDataCoordinatesShouldTriggerPropertyChanged()
     {
         // Arrange
-        var interactionState = new Interaction.InteractionState();
+        var interactionState = new InteractionState();
         var propertyChangedCount = 0;
 
         interactionState.PropertyChanged += (sender, e) => propertyChangedCount++;
@@ -139,7 +140,7 @@ public class ReactiveUIIntegrationTests
     public void LegendHitShouldSupportPropertyChanged()
     {
         // Arrange
-        var legendHit = new Interaction.LegendHit();
+        var legendHit = new LegendHit();
         var propertyChanged = false;
 
         legendHit.PropertyChanged += (sender, e) => propertyChanged = true;
@@ -155,7 +156,7 @@ public class ReactiveUIIntegrationTests
     public void TooltipSeriesValueShouldSupportPropertyChanged()
     {
         // Arrange
-        var tooltipValue = new Interaction.TooltipSeriesValue();
+        var tooltipValue = new TooltipSeriesValue();
         var propertyChanged = false;
 
         tooltipValue.PropertyChanged += (sender, e) => propertyChanged = true;
@@ -206,17 +207,17 @@ public class ReactiveUIIntegrationTests
     public void InteractionStatePropertiesShouldBeIndependentlyBindable()
     {
         // Arrange
-        var state = new Interaction.InteractionState();
+        var state = new InteractionState();
         var showCrosshairChanged = false;
         var dataXChanged = false;
 
         state.PropertyChanged += (sender, e) =>
         {
-            if (e.PropertyName == nameof(Interaction.InteractionState.ShowCrosshair))
+            if (e.PropertyName == nameof(InteractionState.ShowCrosshair))
             {
                 showCrosshairChanged = true;
             }
-            if (e.PropertyName == nameof(Interaction.InteractionState.DataX))
+            if (e.PropertyName == nameof(InteractionState.DataX))
             {
                 dataXChanged = true;
             }

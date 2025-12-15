@@ -10,7 +10,13 @@ public struct InteractionEvent
     public double SurfaceWidth { get; set; }
     public double SurfaceHeight { get; set; }
     public double WheelDelta { get; set; }
-    public InteractionEvent(PointerEventType type, PointerButton button, PointerModifiers modifiers, double pixelX, double pixelY, double wheelDelta = 0, double surfaceWidth = 0, double surfaceHeight = 0)
+
+    /// <summary>
+    /// Key pressed for keyboard events (P1-METRICS support)
+    /// </summary>
+    public string? Key { get; set; }
+
+    public InteractionEvent(PointerEventType type, PointerButton button, PointerModifiers modifiers, double pixelX, double pixelY, double wheelDelta = 0, double surfaceWidth = 0, double surfaceHeight = 0, string? key = null)
     {
         Type = type;
         Button = button;
@@ -20,5 +26,6 @@ public struct InteractionEvent
         WheelDelta = wheelDelta;
         SurfaceWidth = surfaceWidth;
         SurfaceHeight = surfaceHeight;
+        Key = key;
     }
 }

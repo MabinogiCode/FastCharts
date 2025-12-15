@@ -17,6 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastCharts.Core.Tests", "te
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Éléments de solution", "Éléments de solution", "{7D44ED90-35FE-4EA8-B807-F96A2078992A}"
 	ProjectSection(SolutionItems) = preProject
+		DEVELOPMENT_GUIDELINES.md = DEVELOPMENT_GUIDELINES.md
 		RoadMap.md = RoadMap.md
 	EndProjectSection
 EndProject
