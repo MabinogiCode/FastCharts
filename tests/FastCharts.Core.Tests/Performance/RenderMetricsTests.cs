@@ -6,6 +6,7 @@ using FluentAssertions;
 using System;
 using System.Diagnostics;
 using Xunit;
+using Performance = FastCharts.Core.Performance;
 
 namespace FastCharts.Core.Tests.Performance
 {

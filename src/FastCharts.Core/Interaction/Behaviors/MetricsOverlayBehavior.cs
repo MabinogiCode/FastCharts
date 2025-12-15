@@ -112,10 +112,10 @@ namespace FastCharts.Core.Interaction.Behaviors
         {
             return _metrics.GetPerformanceStatus() switch
             {
-                PerformanceStatus.Excellent => new ColorRgba(0, 255, 0, 255),   // Green
-                PerformanceStatus.Good => new ColorRgba(255, 255, 0, 255),      // Yellow
-                PerformanceStatus.Fair => new ColorRgba(255, 165, 0, 255),      // Orange
-                PerformanceStatus.Poor => new ColorRgba(255, 0, 0, 255),        // Red
+                Performance.PerformanceStatus.Excellent => new ColorRgba(0, 255, 0, 255),   // Green
+                Performance.PerformanceStatus.Good => new ColorRgba(255, 255, 0, 255),      // Yellow
+                Performance.PerformanceStatus.Fair => new ColorRgba(255, 165, 0, 255),      // Orange
+                Performance.PerformanceStatus.Poor => new ColorRgba(255, 0, 0, 255),        // Red
                 _ => TextColor
             };
         }
@@ -189,10 +189,10 @@ namespace FastCharts.Core.Interaction.Behaviors
             var status = _metrics.GetPerformanceStatus();
             var statusText = status switch
             {
-                PerformanceStatus.Excellent => "EXCELLENT",
-                PerformanceStatus.Good => "GOOD",
-                PerformanceStatus.Fair => "FAIR",
-                PerformanceStatus.Poor => "POOR",
+                Performance.PerformanceStatus.Excellent => "EXCELLENT",
+                Performance.PerformanceStatus.Good => "GOOD",
+                Performance.PerformanceStatus.Fair => "FAIR",
+                Performance.PerformanceStatus.Poor => "POOR",
                 _ => "UNKNOWN"
             };
 
@@ -236,31 +236,5 @@ namespace FastCharts.Core.Interaction.Behaviors
         {
             _metrics.Reset();
         }
-    }
-
-    /// <summary>
-    /// Position options for the metrics overlay
-    /// </summary>
-    public enum MetricsPosition
-    {
-        /// <summary>
-        /// Top-left corner of the chart
-        /// </summary>
-        TopLeft,
-
-        /// <summary>
-        /// Top-right corner of the chart
-        /// </summary>
-        TopRight,
-
-        /// <summary>
-        /// Bottom-left corner of the chart
-        /// </summary>
-        BottomLeft,
-
-        /// <summary>
-        /// Bottom-right corner of the chart
-        /// </summary>
-        BottomRight
     }
 }
