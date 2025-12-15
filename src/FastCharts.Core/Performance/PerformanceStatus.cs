@@ -21,7 +21,7 @@ namespace FastCharts.Core.Performance
         Fair,
 
         /// <summary>
-        /// Poor performance (<15 FPS)
+        /// Poor performance (below 15 FPS)
         /// </summary>
         Poor
     }

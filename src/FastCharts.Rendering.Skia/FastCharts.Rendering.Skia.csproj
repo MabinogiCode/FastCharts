@@ -5,7 +5,40 @@
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <!-- Temporarily disable missing XML documentation warnings for NuGet release -->
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        
+        <!-- NuGet Package Metadata -->
+        <PackageId>FastCharts.Rendering.Skia</PackageId>
+        <Title>FastCharts Skia Rendering Engine</Title>
+        <Version>1.0.0</Version>
+        <Authors>FastCharts Team</Authors>
+        <Company>FastCharts</Company>
+        <Product>FastCharts</Product>
+        <Description>Cross-platform rendering engine for FastCharts using SkiaSharp. Supports Windows, macOS, and Linux with hardware acceleration. Includes PNG export, vector graphics, and high-performance chart rendering.</Description>
+        <Summary>Cross-platform Skia-based rendering engine for FastCharts</Summary>
+        <PackageTags>charts;skia;rendering;cross-platform;graphics;visualization;png-export;hardware-acceleration</PackageTags>
+        <PackageProjectUrl>https://github.com/MabinogiCode/FastCharts</PackageProjectUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>mabinogi-icon.png</PackageIcon>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/MabinogiCode/FastCharts</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        
+        <PackageReleaseNotes>FastCharts.Rendering.Skia v1.0.0 - Cross-platform rendering ready!</PackageReleaseNotes>
     </PropertyGroup>
+    
+    <!-- Include README and icon in package -->
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\mabinogi-icon.png" Pack="true" PackagePath="\" />
+    </ItemGroup>
     
     <!-- Expose internals to test assemblies -->
     <ItemGroup>
@@ -19,6 +52,8 @@
         <!-- StyleCop Analyzers for strict SA1124 enforcement -->
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
         <PackageReference Include="System.Text.Json" Version="10.0.1" />
+        <!-- Source Link for debugging -->
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\FastCharts.Core\FastCharts.Core.csproj" />

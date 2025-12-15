@@ -1,0 +1,106 @@
+name: Publish NuGet Packages
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    
+    environment: nuget-production # Optional: use GitHub environment for secrets management
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for version info
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            6.0.x
+
+      - name: Extract version from tag
+        id: get-version
+        run: |
+          $tag = "${{ github.ref }}"
+          $version = $tag -replace '^refs/tags/v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Extracted version: $version"
+
+      - name: Restore dependencies
+        run: dotnet restore FastChartsSolution.sln
+
+      - name: Build solution
+        run: dotnet build FastChartsSolution.sln --configuration Release --no-restore /p:EnableWindowsTargeting=true /p:Version=${{ steps.get-version.outputs.VERSION }}
+
+      - name: Run tests
+        run: dotnet test FastChartsSolution.sln --configuration Release --no-build /p:EnableWindowsTargeting=true --verbosity normal
+
+      - name: Pack NuGet packages
+        run: |
+          dotnet pack src/FastCharts.Core/FastCharts.Core.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{ steps.get-version.outputs.VERSION }}
+          dotnet pack src/FastCharts.Rendering.Skia/FastCharts.Rendering.Skia.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{ steps.get-version.outputs.VERSION }}
+          dotnet pack src/FastCharts.Wpf/FastCharts.Wpf.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{ steps.get-version.outputs.VERSION }}
+
+      - name: List generated packages
+        run: |
+          echo "Generated NuGet packages:"
+          dir ./nupkg
+
+      - name: Publish to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "./nupkg/*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Upload packages as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./nupkg/*.nupkg
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: FastCharts ${{ steps.get-version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          body: |
+            ?? **FastCharts ${{ steps.get-version.outputs.VERSION }} Released!**
+            
+            ## ?? NuGet Packages Available
+            - `FastCharts.Core` v${{ steps.get-version.outputs.VERSION }}
+            - `FastCharts.Rendering.Skia` v${{ steps.get-version.outputs.VERSION }}
+            - `FastCharts.Wpf` v${{ steps.get-version.outputs.VERSION }}
+            
+            ## ?? Installation
+            ```bash
+            # For WPF applications
+            dotnet add package FastCharts.Wpf --version ${{ steps.get-version.outputs.VERSION }}
+            
+            # For cross-platform applications
+            dotnet add package FastCharts.Core --version ${{ steps.get-version.outputs.VERSION }}
+            dotnet add package FastCharts.Rendering.Skia --version ${{ steps.get-version.outputs.VERSION }}
+            ```
+            
+            ## ?? What's New
+            See the [CHANGELOG](https://github.com/MabinogiCode/FastCharts/blob/main/CHANGELOG.md) for detailed changes.
+            
+            ## ?? Links
+            - ?? [Documentation](https://github.com/MabinogiCode/FastCharts)
+            - ?? [Examples](https://github.com/MabinogiCode/FastCharts/tree/main/demos)
+            - ?? [Report Issues](https://github.com/MabinogiCode/FastCharts/issues)
+
+      - name: Comment on related PRs
+        if: success()
+        run: |
+          echo "?? FastCharts ${{ steps.get-version.outputs.VERSION }} has been published to NuGet!"
+          echo "?? Packages available: FastCharts.Core, FastCharts.Rendering.Skia, FastCharts.Wpf"

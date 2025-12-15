@@ -3,10 +3,23 @@ using FastCharts.Core.Series;
 
 namespace FastCharts.Core.Interaction.Behaviors;
 
+/// <summary>
+/// Behavior that tracks the nearest data point to the mouse cursor
+/// Updates InteractionState with the closest point within MaxPixelDistance
+/// </summary>
 public sealed class NearestPointBehavior : IBehavior
 {
+    /// <summary>
+    /// Gets or sets the maximum pixel distance to consider a point as "nearest"
+    /// </summary>
     public double MaxPixelDistance { get; set; } = 24;
 
+    /// <summary>
+    /// Handles pointer events to find and track the nearest data point
+    /// </summary>
+    /// <param name="model">Chart model containing series data</param>
+    /// <param name="ev">Pointer event to process</param>
+    /// <returns>True if the event was handled and requires a redraw</returns>
     public bool OnEvent(ChartModel model, InteractionEvent ev)
     {
         // Only handle Move events, ignore all others

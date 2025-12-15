@@ -3,7 +3,7 @@ using FastCharts.Core.Primitives;
 namespace FastCharts.Core.Abstractions
 {
     /// <summary>
-    /// Provides data range information (X & Y) for a series so that generic range aggregation logic
+    /// Provides data range information (X and Y) for a series so that generic range aggregation logic
     /// (e.g., auto-fit) does not need to use reflection or large switch statements.
     /// </summary>
     public interface ISeriesRangeProvider

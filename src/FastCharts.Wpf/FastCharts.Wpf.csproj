@@ -7,10 +7,44 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <!-- Temporarily disable missing XML documentation warnings for NuGet release -->
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        
+        <!-- NuGet Package Metadata -->
+        <PackageId>FastCharts.Wpf</PackageId>
+        <Title>FastCharts WPF Controls</Title>
+        <Version>1.0.0</Version>
+        <Authors>FastCharts Team</Authors>
+        <Company>FastCharts</Company>
+        <Product>FastCharts</Product>
+        <Description>WPF controls for FastCharts charting library. Includes FastChart control with full MVVM support, interactive behaviors, and reactive UI integration. Supports .NET Framework 4.8, .NET 6, and .NET 8.</Description>
+        <Summary>WPF controls and MVVM integration for FastCharts</Summary>
+        <PackageTags>wpf;charts;controls;mvvm;reactive;windows;ui;visualization;interactive</PackageTags>
+        <PackageProjectUrl>https://github.com/MabinogiCode/FastCharts</PackageProjectUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>mabinogi-icon.png</PackageIcon>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/MabinogiCode/FastCharts</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        
+        <PackageReleaseNotes>FastCharts.Wpf v1.0.0 - Production-ready WPF controls with full MVVM support!</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
         <LangVersion>9.0</LangVersion>
     </PropertyGroup>
+    
+    <!-- Include README and icon in package -->
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\mabinogi-icon.png" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    
     <ItemGroup>
         <PackageReference Include="DynamicData" Version="9.4.1" />
         <PackageReference Include="ReactiveUI" Version="22.3.1" />
@@ -19,6 +53,8 @@
         <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.1" />
         <!-- StyleCop Analyzers for strict SA1124 enforcement -->
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
+        <!-- Source Link for debugging -->
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\tests\**" Pack="false" Visible="false" />
