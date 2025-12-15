@@ -1,0 +1,100 @@
+name: Test NuGet Packaging
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  test-packaging:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            6.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore FastChartsSolution.sln
+
+      - name: Build solution
+        run: dotnet build FastChartsSolution.sln --configuration Release --no-restore /p:EnableWindowsTargeting=true
+
+      - name: Run tests
+        run: dotnet test FastChartsSolution.sln --configuration Release --no-build /p:EnableWindowsTargeting=true --verbosity normal
+
+      - name: Test pack NuGet packages
+        run: |
+          echo "Testing NuGet package creation..."
+          dotnet pack src/FastCharts.Core/FastCharts.Core.csproj --configuration Release --no-build --output ./test-nupkg /p:PackageVersion=0.0.1-test
+          dotnet pack src/FastCharts.Rendering.Skia/FastCharts.Rendering.Skia.csproj --configuration Release --no-build --output ./test-nupkg /p:PackageVersion=0.0.1-test
+          dotnet pack src/FastCharts.Wpf/FastCharts.Wpf.csproj --configuration Release --no-build --output ./test-nupkg /p:PackageVersion=0.0.1-test
+
+      - name: Verify packages
+        run: |
+          echo "Generated test packages:"
+          if (Test-Path "./test-nupkg") {
+            Get-ChildItem ./test-nupkg -Name "*.nupkg" | ForEach-Object { 
+              echo "  ? $_" 
+              $size = (Get-Item "./test-nupkg/$_").Length
+              echo "     Size: $([math]::Round($size/1KB, 1)) KB"
+            }
+            
+            $packageCount = (Get-ChildItem ./test-nupkg -Name "*.nupkg").Count
+            if ($packageCount -eq 3) {
+              echo "? All 3 packages created successfully!"
+            } else {
+              echo "? Expected 3 packages, found $packageCount"
+              exit 1
+            }
+          } else {
+            echo "? ERROR: ./test-nupkg directory not found!"
+            exit 1
+          }
+
+      - name: Test package content
+        run: |
+          echo "Testing package contents..."
+          $packages = Get-ChildItem ./test-nupkg -Name "*.nupkg"
+          foreach ($package in $packages) {
+            echo "?? Inspecting $package:"
+            # Extract and list package contents (basic check)
+            $fullPath = "./test-nupkg/$package"
+            if (Test-Path $fullPath) {
+              $info = Get-Item $fullPath
+              echo "   Size: $([math]::Round($info.Length/1KB, 1)) KB"
+              echo "   Created: $($info.CreationTime)"
+              
+              # Check if package contains expected files
+              Add-Type -AssemblyName System.IO.Compression.FileSystem
+              try {
+                $zip = [System.IO.Compression.ZipFile]::OpenRead($fullPath)
+                $hasManifest = $zip.Entries | Where-Object { $_.Name -like "*.nuspec" }
+                $hasDll = $zip.Entries | Where-Object { $_.Name -like "*.dll" }
+                $hasIcon = $zip.Entries | Where-Object { $_.Name -like "*mabinogi-icon.png*" }
+                
+                if ($hasManifest) { echo "   ? Contains .nuspec manifest" }
+                if ($hasDll) { echo "   ? Contains .dll files" }
+                if ($hasIcon) { echo "   ? Contains Mabinogi icon" } else { echo "   ??  Missing Mabinogi icon" }
+                
+                $zip.Dispose()
+              } catch {
+                echo "   ??  Could not inspect package contents: $_"
+              }
+            }
+          }
+
+      - name: Upload test packages as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-nuget-packages
+          path: ./test-nupkg/*.nupkg
+          retention-days: 7

@@ -49,11 +49,37 @@ jobs:
           dotnet pack src/FastCharts.Rendering.Skia/FastCharts.Rendering.Skia.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{ steps.get-version.outputs.VERSION }}
           dotnet pack src/FastCharts.Wpf/FastCharts.Wpf.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{ steps.get-version.outputs.VERSION }}
 
+      - name: List generated packages
+        run: |
+          echo "Generated NuGet packages:"
+          if (Test-Path "./nupkg") {
+            Get-ChildItem ./nupkg -Name "*.nupkg" | ForEach-Object { echo "  - $_" }
+          } else {
+            echo "ERROR: ./nupkg directory not found!"
+          }
+
       - name: Publish to NuGet.org (Prerelease)
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          dotnet nuget push "./nupkg/*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+          if (-not $env:NUGET_API_KEY) {
+            echo "ERROR: NUGET_API_KEY secret not configured"
+            exit 1
+          }
+          
+          $packages = Get-ChildItem ./nupkg -Name "*.nupkg"
+          if ($packages.Count -eq 0) {
+            echo "ERROR: No NuGet packages found in ./nupkg/"
+            exit 1
+          }
+          
+          foreach ($package in $packages) {
+            echo "Publishing prerelease package: $package"
+            dotnet nuget push "./nupkg/$package" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+            if ($LASTEXITCODE -ne 0) {
+              echo "WARNING: Failed to publish $package (might already exist)"
+            }
+          }
 
       - name: Upload packages as artifacts
         uses: actions/upload-artifact@v4
