@@ -31,7 +31,7 @@ namespace FastCharts.Core.DataBinding
         private double _strokeThickness = 1.5;
         private object? _tag;
         private int _yAxisIndex;
-        
+
         private readonly CompositeDisposable _subscriptions = new();
         private IDisposable? _collectionSubscription;
         private IDisposable? _propertySubscription;
@@ -128,12 +128,12 @@ namespace FastCharts.Core.DataBinding
 
                 _itemsSource = value;
                 SubscribeToSourceCollection();
-                
+
                 if (AutoRefresh)
                 {
                     RefreshData();
                 }
-                
+
                 this.RaisePropertyChanged();
             }
         }
@@ -150,12 +150,12 @@ namespace FastCharts.Core.DataBinding
                 }
 
                 _xPath = value;
-                
+
                 if (AutoRefresh)
                 {
                     RefreshData();
                 }
-                
+
                 this.RaisePropertyChanged();
             }
         }
@@ -172,12 +172,12 @@ namespace FastCharts.Core.DataBinding
                 }
 
                 _yPath = value;
-                
+
                 if (AutoRefresh)
                 {
                     RefreshData();
                 }
-                
+
                 this.RaisePropertyChanged();
             }
         }
@@ -194,12 +194,12 @@ namespace FastCharts.Core.DataBinding
                 }
 
                 _titlePath = value;
-                
+
                 if (AutoRefresh)
                 {
                     RefreshData();
                 }
-                
+
                 this.RaisePropertyChanged();
             }
         }
@@ -216,7 +216,7 @@ namespace FastCharts.Core.DataBinding
                 }
 
                 _autoRefresh = value;
-                
+
                 if (value)
                 {
                     SubscribeToSourceCollection();
@@ -226,7 +226,7 @@ namespace FastCharts.Core.DataBinding
                 {
                     UnsubscribeFromSourceCollection();
                 }
-                
+
                 this.RaisePropertyChanged();
             }
         }
@@ -271,9 +271,9 @@ namespace FastCharts.Core.DataBinding
             {
                 var points = ConvertToPoints(ItemsSource);
                 var oldCount = GetPointCount();
-                
+
                 UpdateSeriesData(points);
-                
+
                 var newCount = GetPointCount();
                 var args = new DataBindingUpdatedEventArgs
                 {
@@ -283,7 +283,7 @@ namespace FastCharts.Core.DataBinding
                     TotalItems = newCount,
                     UpdateType = DataBindingUpdateType.FullRefresh
                 };
-                
+
                 DataBindingUpdated?.Invoke(this, args);
                 NotifyDataChanged();
             }
@@ -305,7 +305,7 @@ namespace FastCharts.Core.DataBinding
             {
                 var x = GetCoordinateValue(item, XPath, 0.0);
                 var y = GetCoordinateValue(item, YPath, 0.0);
-                
+
                 if (DataBindingConverter.IsValidCoordinate(x) && DataBindingConverter.IsValidCoordinate(y))
                 {
                     yield return new PointD(DataBindingConverter.ToDouble(x), DataBindingConverter.ToDouble(y));
@@ -358,7 +358,7 @@ namespace FastCharts.Core.DataBinding
         private void SubscribeToSourceCollection()
         {
             UnsubscribeFromSourceCollection();
-            
+
             if (!AutoRefresh || ItemsSource == null)
             {
                 return;
@@ -375,7 +375,7 @@ namespace FastCharts.Core.DataBinding
                     .Throttle(RefreshThrottle)
                     .ObserveOn(ObservableScheduler)
                     .Subscribe(OnCollectionChanged);
-                
+
                 _collectionSubscription = collectionObservable;
             }
 
@@ -393,7 +393,7 @@ namespace FastCharts.Core.DataBinding
                     .Throttle(RefreshThrottle)
                     .ObserveOn(ObservableScheduler)
                     .Subscribe(_ => OnPropertyChangedHandler());
-                
+
                 _propertySubscription = propertyObservable;
             }
         }
@@ -405,7 +405,7 @@ namespace FastCharts.Core.DataBinding
         {
             _collectionSubscription?.Dispose();
             _collectionSubscription = null;
-            
+
             _propertySubscription?.Dispose();
             _propertySubscription = null;
         }

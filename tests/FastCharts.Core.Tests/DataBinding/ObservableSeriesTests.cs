@@ -47,7 +47,7 @@ namespace FastCharts.Core.Tests.DataBinding
             };
 
             var series = new ObservableLineSeries(data, nameof(SensorReading.Time), nameof(SensorReading.Temperature));
-            
+
             var eventFired = false;
             series.DataBindingUpdated += (_, _) => eventFired = true;
 
@@ -152,9 +152,9 @@ namespace FastCharts.Core.Tests.DataBinding
             // Arrange
             var reading = new ObservableSensorReading { Time = DateTime.Now, Temperature = 20.0 };
             var data = new ObservableCollection<ObservableSensorReading> { reading };
-            
+
             var series = new ObservableLineSeries(data, nameof(ObservableSensorReading.Time), nameof(ObservableSensorReading.Temperature));
-            
+
             var originalTemperature = series.Data[0].Y;
 
             // Act

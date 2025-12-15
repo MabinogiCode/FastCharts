@@ -66,7 +66,7 @@ namespace FastCharts.Core.DataBinding.Series
         protected override void UpdateSeriesData(IEnumerable<PointD> points)
         {
             _data.Clear();
-            
+
             foreach (var point in points)
             {
                 var barPoint = new BarPoint(point.X, point.Y);
