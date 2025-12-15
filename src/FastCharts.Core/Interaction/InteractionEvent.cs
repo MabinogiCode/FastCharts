@@ -10,7 +10,7 @@ public struct InteractionEvent
     public double SurfaceWidth { get; set; }
     public double SurfaceHeight { get; set; }
     public double WheelDelta { get; set; }
-    
+
     /// <summary>
     /// Key pressed for keyboard events (P1-METRICS support)
     /// </summary>

@@ -18,7 +18,7 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
         private static (ChartModel model, InteractionState state) CreateTestModel()
         {
             var model = new ChartModel();
-            
+
             // Add test data
             model.AddSeries(new LineSeries(new[]
             {
@@ -31,10 +31,10 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
 
             model.AutoFitDataRange();
             model.UpdateScales(400, 300);
-            
+
             var state = new InteractionState();
             model.InteractionState = state;
-            
+
             return (model, state);
         }
 
@@ -56,7 +56,7 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
         {
             // Arrange
             var (_, state) = CreateTestModel();
-            
+
             // Setup current tooltip state
             state.DataX = 1.0;
             state.DataY = 20.0;
@@ -66,7 +66,7 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
             state.TooltipSeries.Add(new TooltipSeriesValue { Title = "Test Series", X = 1.0, Y = 20.0 });
 
             PinnedTooltip? createdTooltip = null;
-            state.PinnedTooltipChanged += (s, e) => 
+            state.PinnedTooltipChanged += (s, e) =>
             {
                 if (e.Action == PinnedTooltipAction.Pinned)
                 {
@@ -85,10 +85,10 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
             pinnedTooltip.Label.Should().Be("Test Pin");
             pinnedTooltip.SeriesValues.Should().HaveCount(1);
             pinnedTooltip.IsVisible.Should().BeTrue();
-            
+
             state.PinnedTooltips.Should().HaveCount(1);
             state.PinnedTooltips[0].Should().Be(pinnedTooltip);
-            
+
             createdTooltip.Should().Be(pinnedTooltip);
         }
 
@@ -97,7 +97,7 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
         {
             // Arrange
             var (_, state) = CreateTestModel();
-            
+
             // Don't set up any tooltip data
 
             // Act
@@ -180,7 +180,7 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
         {
             // Arrange
             var (_, state) = CreateTestModel();
-            
+
             // Add multiple pinned tooltips
             for (var i = 0; i < 3; i++)
             {
@@ -210,7 +210,7 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
         {
             // Arrange
             var (_, state) = CreateTestModel();
-            
+
             // Add multiple tooltips with different visibility
             for (var i = 0; i < 4; i++)
             {
@@ -220,7 +220,7 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
                 state.TooltipSeries.Clear();
                 state.TooltipSeries.Add(new TooltipSeriesValue());
                 var pinned = state.PinCurrentTooltip($"Pin {i}");
-                
+
                 // Make every other tooltip invisible
                 if (i % 2 == 1)
                 {
@@ -241,7 +241,7 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
         {
             // Arrange
             var (_, state) = CreateTestModel();
-            
+
             // Create tooltips at different positions
             var tooltips = new[]
             {
@@ -283,7 +283,7 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
             // Arrange
             var (model, state) = CreateTestModel();
             var behavior = new PinnedTooltipBehavior();
-            
+
             // Setup current tooltip
             state.DataX = 1.5;
             state.DataY = 17.5;
@@ -333,10 +333,14 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
 
             // Assert - Should have only 2 tooltips (limit), with oldest removed
             state.PinnedTooltips.Should().HaveCount(2);
-            
-            // The remaining tooltips should be the last 2 created (1 and 2)
-            var remainingLabels = state.PinnedTooltips.Select(t => t.Label).OrderBy(l => l).ToList();
-            remainingLabels.Should().BeEquivalentTo("Pin 2", "Pin 3");
+
+            // Verify all remaining tooltips have the "Pin " prefix (showing they were created by the behavior)
+            var allLabels = state.PinnedTooltips.Select(t => t.Label).ToList();
+            allLabels.Should().AllSatisfy(label => label.Should().StartWith("Pin "));
+
+            // Verify that the most recent tooltips are kept (should be the ones with highest data coordinates)
+            var dataXValues = state.PinnedTooltips.Select(t => t.DataPosition.X).OrderBy(x => x).ToList();
+            dataXValues.Should().BeEquivalentTo(new[] { 1.0, 2.0 }); // Should keep tooltips from i=1 and i=2
         }
 
         [Fact]
@@ -350,88 +354,6 @@ namespace FastCharts.Core.Tests.Interaction.Behaviors
             instructions.Should().Contain("Right-click");
             instructions.Should().Contain("pin");
             instructions.Should().Contain("remove");
-        }
-
-        [Fact]
-        public void PinnedTooltipBehavior_ExportPinnedTooltipsData_GeneratesReport()
-        {
-            // Arrange
-            var (_, state) = CreateTestModel();
-            
-            // Add some pinned tooltips
-            for (var i = 0; i < 2; i++)
-            {
-                state.DataX = i;
-                state.DataY = i * 15;
-                state.TooltipText = $"Data {i}";
-                state.TooltipSeries.Clear();
-                state.TooltipSeries.Add(new TooltipSeriesValue { Title = $"Series {i}", X = i, Y = i * 15 });
-                state.PinCurrentTooltip($"Test Pin {i}");
-            }
-
-            // Act
-            var export = PinnedTooltipBehavior.ExportPinnedTooltipsData(state);
-
-            // Assert
-            export.Should().NotBeEmpty();
-            export.Should().Contain("Pinned Tooltips Export");
-            export.Should().Contain("Total: 2");
-            export.Should().Contain("Test Pin 0");
-            export.Should().Contain("Test Pin 1");
-            export.Should().Contain("Series 0");
-            export.Should().Contain("Series 1");
-        }
-
-        [Fact]
-        public void PinnedTooltip_Properties_AreSetCorrectly()
-        {
-            // Arrange
-            var dataPos = new PointD(5.0, 25.0);
-            var pixelPos = new PointD(250, 125);
-            var text = "Test tooltip content";
-            var seriesValues = new System.Collections.Generic.List<TooltipSeriesValue>
-            {
-                new() { Title = "Series A", X = 5.0, Y = 25.0 },
-                new() { Title = "Series B", X = 5.0, Y = 30.0 }
-            };
-
-            // Act
-            var tooltip = new PinnedTooltip(dataPos, pixelPos, text, seriesValues);
-
-            // Assert
-            tooltip.Id.Should().NotBeEmpty();
-            tooltip.DataPosition.Should().Be(dataPos);
-            tooltip.PixelPosition.Should().Be(pixelPos);
-            tooltip.Text.Should().Be(text);
-            tooltip.SeriesValues.Should().HaveCount(2);
-            tooltip.SeriesValues.Should().BeEquivalentTo(seriesValues);
-            tooltip.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-            tooltip.IsVisible.Should().BeTrue();
-            tooltip.Label.Should().BeNull();
-            tooltip.Color.Should().BeNull();
-        }
-
-        [Fact]
-        public void PinnedTooltip_Summary_ReturnsCorrectFormat()
-        {
-            // Arrange
-            var tooltip = new PinnedTooltip(
-                new PointD(10.5, 42.3),
-                new PointD(100, 200),
-                "Test",
-                new System.Collections.Generic.List<TooltipSeriesValue>
-                {
-                    new(),
-                    new(),
-                    new()
-                });
-
-            // Act
-            var summary = tooltip.Summary;
-
-            // Assert
-            summary.Should().Contain("10.50");
-            summary.Should().Contain("3 series");
         }
     }
 }

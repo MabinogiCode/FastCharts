@@ -168,7 +168,7 @@ public sealed class InteractionState : ReactiveObject
 
         PinnedTooltips.Add(pinnedTooltip);
         PinnedTooltipChanged?.Invoke(this, new PinnedTooltipEventArgs(pinnedTooltip, PinnedTooltipAction.Pinned));
-        
+
         return pinnedTooltip;
     }
 
@@ -215,9 +215,9 @@ public sealed class InteractionState : ReactiveObject
         PinnedTooltips.Clear();
         // Use a dummy tooltip for the event since we don't have a specific one
         var dummyTooltip = new PinnedTooltip(
-            new Primitives.PointD(0, 0), 
-            new Primitives.PointD(0, 0), 
-            string.Empty, 
+            new Primitives.PointD(0, 0),
+            new Primitives.PointD(0, 0),
+            string.Empty,
             new List<TooltipSeriesValue>());
         PinnedTooltipChanged?.Invoke(this, new PinnedTooltipEventArgs(dummyTooltip, PinnedTooltipAction.AllCleared));
     }

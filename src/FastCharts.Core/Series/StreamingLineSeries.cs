@@ -46,14 +46,14 @@ namespace FastCharts.Core.Series
             : this(maxPointCount, rollingWindow)
         {
             _streamingData.AddRange(initialData);
-            
+
             // Set reference time based on latest data point if available
             if (_streamingData.Count > 0)
             {
                 var latestPoint = _streamingData.OrderByDescending(p => p.X).First();
                 _referenceTime = DateTime.FromOADate(latestPoint.X);
             }
-            
+
             TrimToWindow(); // Apply window limits to initial data
             InvalidateCache();
         }
@@ -145,7 +145,7 @@ namespace FastCharts.Core.Series
 
             // Add points efficiently
             _streamingData.AddRange(pointArray);
-            
+
             // Update reference time based on latest point
             var latestPoint = pointArray.OrderByDescending(p => p.X).First();
             _referenceTime = DateTime.FromOADate(latestPoint.X);
@@ -158,7 +158,7 @@ namespace FastCharts.Core.Series
 
             // Raise events
             PointsAdded?.Invoke(this, new StreamingDataEventArgs(_streamingData.Count, pointArray.Length, 0));
-            
+
             if (removedCount > 0)
             {
                 PointsRemoved?.Invoke(this, new StreamingDataEventArgs(_streamingData.Count, 0, removedCount));
@@ -171,7 +171,7 @@ namespace FastCharts.Core.Series
         public void TrimToWindow()
         {
             var removedCount = TrimToWindowInternal();
-            
+
             if (removedCount > 0)
             {
                 InvalidateCache();
@@ -243,7 +243,7 @@ namespace FastCharts.Core.Series
         private int TrimToWindowInternal()
         {
             var initialCount = _streamingData.Count;
-            
+
             // Apply count-based limit
             if (_maxPointCount.HasValue && _streamingData.Count > _maxPointCount.Value)
             {
@@ -256,7 +256,7 @@ namespace FastCharts.Core.Series
             {
                 var cutoffTime = (_referenceTime - _rollingWindowDuration.Value).ToOADate();
                 var oldPointsCount = _streamingData.Count(p => p.X < cutoffTime);
-                
+
                 if (oldPointsCount > 0)
                 {
                     _streamingData.RemoveAll(p => p.X < cutoffTime);
@@ -316,7 +316,7 @@ namespace FastCharts.Core.Series
                 EnableAutoResampling = true,
                 AutoResampleThreshold = 2000
             };
-            
+
             return series;
         }
     }

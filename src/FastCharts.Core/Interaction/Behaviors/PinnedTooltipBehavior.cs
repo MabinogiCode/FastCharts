@@ -127,7 +127,7 @@ namespace FastCharts.Core.Interaction.Behaviors
                 var newPixelX = model.XAxis.Scale?.ToPixels(tooltip.DataPosition.X) ?? tooltip.PixelPosition.X;
                 var newPixelY = model.YAxis.Scale?.ToPixels(tooltip.DataPosition.Y) ?? tooltip.PixelPosition.Y;
 
-                if (Math.Abs(newPixelX - tooltip.PixelPosition.X) > 1.0 || 
+                if (Math.Abs(newPixelX - tooltip.PixelPosition.X) > 1.0 ||
                     Math.Abs(newPixelY - tooltip.PixelPosition.Y) > 1.0)
                 {
                     tooltip.PixelPosition = new PointD(newPixelX, newPixelY);
@@ -145,10 +145,10 @@ namespace FastCharts.Core.Interaction.Behaviors
         {
             var visible = state.GetVisiblePinnedTooltips().Count();
             var total = state.PinnedTooltips.Count;
-            
+
             if (total == 0)
                 return "No pinned tooltips";
-                
+
             return $"{visible}/{total} pinned tooltips visible";
         }
 
@@ -182,7 +182,7 @@ namespace FastCharts.Core.Interaction.Behaviors
                 lines.Add($"  Position: X={tooltip.DataPosition.X:F3}, Y={tooltip.DataPosition.Y:F3}");
                 lines.Add($"  Created: {tooltip.CreatedAt:HH:mm:ss}");
                 lines.Add($"  Series: {tooltip.SeriesValues.Count}");
-                
+
                 foreach (var series in tooltip.SeriesValues)
                 {
                     lines.Add($"    {series.Title}: {series.Y:F3}");

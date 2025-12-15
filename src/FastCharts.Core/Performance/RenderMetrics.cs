@@ -32,7 +32,7 @@ namespace FastCharts.Core.Performance
             var frameTimeMs = _frameTimer.Elapsed.TotalMilliseconds;
             _frameTimes.Add(frameTimeMs);
             _totalFrames++;
-            
+
             // Update memory stats periodically (every 30th frame to avoid overhead)
             if (_totalFrames % 30 == 0)
             {
@@ -48,7 +48,7 @@ namespace FastCharts.Core.Performance
             get
             {
                 if (_frameTimes.Count == 0) return 0.0;
-                
+
                 var avgFrameTimeMs = _frameTimes.Average();
                 return avgFrameTimeMs > 0 ? 1000.0 / avgFrameTimeMs : 0.0;
             }
@@ -160,7 +160,7 @@ namespace FastCharts.Core.Performance
                 // Fallback if GC operations fail
                 MemoryUsageBytes = _lastGcMemoryBytes;
             }
-            
+
             _lastGcMemoryBytes = MemoryUsageBytes;
         }
 

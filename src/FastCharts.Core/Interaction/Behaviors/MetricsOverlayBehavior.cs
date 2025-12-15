@@ -126,7 +126,7 @@ namespace FastCharts.Core.Interaction.Behaviors
         public (double X, double Y) GetOverlayPosition(double canvasWidth, double canvasHeight)
         {
             const double margin = 10;
-            
+
             return Position switch
             {
                 MetricsPosition.TopLeft => (margin, margin),

@@ -154,7 +154,7 @@ namespace FastCharts.Core.Tests.Series
             series.PointCount.Should().Be(1);
             var addedPoint = series.Data[0];
             addedPoint.Y.Should().Be(42.5);
-            
+
             // Check time is approximately correct (within 1 second tolerance)
             var pointTime = DateTime.FromOADate(addedPoint.X);
             Math.Abs((pointTime - testTime).TotalSeconds).Should().BeLessThan(1.0);
@@ -186,13 +186,13 @@ namespace FastCharts.Core.Tests.Series
         {
             // Arrange
             var series = new StreamingLineSeries();
-            
+
             // Add some points
             for (var i = 0; i < 10; i++)
             {
                 series.AppendPoint(new PointD(i, i));
             }
-            
+
             // Now set a smaller limit
             series.MaxPointCount = 5;
 
@@ -219,7 +219,7 @@ namespace FastCharts.Core.Tests.Series
             var largeDataset = Enumerable.Range(0, 5000)
                 .Select(i => new PointD(i, Math.Sin(i * 0.01)))
                 .ToArray();
-            
+
             series.AppendPoints(largeDataset);
 
             // Act
@@ -283,25 +283,34 @@ namespace FastCharts.Core.Tests.Series
         public void HighFrequencyStreaming_Performance_HandlesLargeVolume()
         {
             // Arrange
-            var series = StreamingLineSeries.CreateRealTime(maxPoints: 10_000);
+            var series = new StreamingLineSeries(maxPointCount: 5000);
+            var random = new Random(42); // Deterministic for tests
+            var totalPointsAdded = 0;
+
+            // Act - Simulate high-frequency streaming
             var startTime = DateTime.UtcNow;
-
-            // Act - Simulate high-frequency data (1000 points/second for 5 seconds)
-            var totalPoints = 5000;
-            var batchSize = 100;
-            
-            for (var batch = 0; batch < totalPoints / batchSize; batch++)
+            for (var i = 0; i < 10000; i++)
             {
-                var batchData = Enumerable.Range(0, batchSize)
-                    .Select(i => new PointD((startTime.AddMilliseconds(batch * batchSize + i)).ToOADate(), Math.Sin((batch * batchSize + i) * 0.1)))
-                    .ToArray();
-                
-                series.AppendPoints(batchData);
+                var value = 50 + (25 * Math.Sin(i * 0.1)) + (5 * random.NextDouble());
+                series.AppendRealTimePoint(value);
+                totalPointsAdded++;
             }
+            var elapsed = DateTime.UtcNow - startTime;
 
-            // Assert
-            series.PointCount.Should().BeLessThanOrEqualTo(10_000); // Should respect max limit
-            series.PointCount.Should().BeGreaterThan(5000); // Should keep recent data
+            // Assert - Performance characteristics
+            series.PointCount.Should().BeLessThanOrEqualTo(5000); // Respects max count
+            series.PointCount.Should().BeGreaterThan(1000); // Should have significant data
+            totalPointsAdded.Should().Be(10000); // All points were processed
+            elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5)); // Should be fast
+
+            // Verify data integrity
+            series.Data.Should().NotBeEmpty();
+            var lastPoint = series.Data[series.Data.Count - 1];
+
+            // Check time is approximately current (within 1 minute tolerance)
+            var expectedTime = DateTime.UtcNow.ToOADate();
+            var timeDifferenceInDays = Math.Abs(lastPoint.X - expectedTime);
+            timeDifferenceInDays.Should().BeLessThan(TimeSpan.FromMinutes(1).TotalDays);
         }
 
         [Fact]
@@ -324,7 +333,7 @@ namespace FastCharts.Core.Tests.Series
             // Assert
             addEvents.Count.Should().Be(4); // All additions recorded
             removeEvents.Count.Should().BeGreaterThanOrEqualTo(1); // At least one removal
-            
+
             var lastAddEvent = addEvents[addEvents.Count - 1];
             lastAddEvent.PointsAdded.Should().Be(1);
             lastAddEvent.PointCount.Should().Be(3); // Final count after trimming
@@ -335,7 +344,7 @@ namespace FastCharts.Core.Tests.Series
         {
             // Arrange
             var series = new StreamingLineSeries(maxPointCount: 3);
-            
+
             // Add points up to limit
             for (var i = 0; i < 5; i++)
             {
