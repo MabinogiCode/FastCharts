@@ -165,7 +165,7 @@ namespace FastCharts.Core.Tests.Performance
             summary.Should().Contain("FPS:");
             summary.Should().Contain("Frame:");
             summary.Should().Contain("Points:");
-            summary.Should().MatchRegex(@"1[,\s]*500"); // Handle both comma and space separators for numbers across cultures
+            summary.Should().Contain("1,500"); // InvariantCulture uses comma separators
             summary.Should().Contain("Series: 4");
             summary.Should().Contain("Memory:");
             summary.Should().Contain("Uptime:");

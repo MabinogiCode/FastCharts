@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace FastCharts.Core.Performance
 {
@@ -129,8 +130,8 @@ namespace FastCharts.Core.Performance
         /// </summary>
         public string GetSummary()
         {
-            return $"FPS: {CurrentFPS:F1} | Frame: {LastFrameTimeMs:F1}ms | Points: {DataPointCount:N0}" +
-                   $"{(IsResampled ? $" (?{ResamplingRatio:P0})" : "")} | Series: {SeriesCount} | " +
+            return $"FPS: {CurrentFPS.ToString("F1", CultureInfo.InvariantCulture)} | Frame: {LastFrameTimeMs.ToString("F1", CultureInfo.InvariantCulture)}ms | Points: {DataPointCount.ToString("N0", CultureInfo.InvariantCulture)}" +
+                   $"{(IsResampled ? $" (?{ResamplingRatio.ToString("P0", CultureInfo.InvariantCulture)})" : "")} | Series: {SeriesCount} | " +
                    $"Memory: {MemoryUsageFormatted} | Uptime: {Uptime:hh\\:mm\\:ss}";
         }
 
