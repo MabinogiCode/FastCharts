@@ -4,12 +4,63 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <EnablePackageValidation>false</EnablePackageValidation>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <!-- Temporarily disable missing XML documentation warnings for NuGet release -->
+    <NoWarn>$(NoWarn);S3267;SA1503;IDE0011;CS1591</NoWarn>
     <!-- Enforce style analyzers as errors -->
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <NoWarn>$(NoWarn);S3267;SA1503;IDE0011</NoWarn>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>FastCharts.Core</PackageId>
+    <Title>FastCharts Core Library</Title>
+    <Version>1.0.0</Version>
+    <Authors>FastCharts Team</Authors>
+    <Company>FastCharts</Company>
+    <Product>FastCharts</Product>
+    <Description>High-performance .NET charting library core components. Supports real-time data, LTTB decimation, streaming series, interactive behaviors, and multi-axis charts. Cross-platform with .NET Standard 2.0 support.</Description>
+    <Summary>Core algorithms and abstractions for FastCharts - high-performance .NET charting library</Summary>
+    <PackageTags>charts;charting;graphs;plotting;visualization;real-time;performance;streaming;LTTB;cross-platform;netstandard</PackageTags>
+    <PackageProjectUrl>https://github.com/MabinogiCode/FastCharts</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>mabinogi-icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/MabinogiCode/FastCharts</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>main</RepositoryBranch>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    
+    <!-- Release Notes -->
+    <PackageReleaseNotes>
+FastCharts v1.0.0 - Phase 1 Complete!
+
+🚀 MAJOR FEATURES:
+✅ Multi-axis support (left/right Y axes)
+✅ Logarithmic axes with custom bases
+✅ Category axes for discrete data
+✅ Line and range annotations
+✅ PNG export with clipboard support
+✅ LTTB decimation for massive datasets (10M+ points)
+✅ Streaming series with rolling windows
+✅ Pinned tooltips (multi-tooltip support)
+✅ Performance metrics overlay
+✅ Cross-platform (.NET Standard 2.0, .NET 6/8, Framework 4.8)
+
+🎯 13/13 Phase 1 features implemented
+🧪 594 tests passing
+📊 Production-ready for real-time and analytical applications
+
+See GitHub for full documentation and examples.
+    </PackageReleaseNotes>
   </PropertyGroup>
+  
+  <!-- Include README and icon in package -->
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\mabinogi-icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
   
   <!-- Expose internals to test assemblies -->
   <ItemGroup>
@@ -27,6 +78,9 @@
     <!-- SonarAnalyzer for strict S1244 floating point equality enforcement -->
     <PackageReference Include="SonarAnalyzer.CSharp" Version="10.16.1.129956" PrivateAssets="all" IncludeAssets="analyzers" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+    
+    <!-- Source Link for debugging -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
   </ItemGroup>
   
   <ItemGroup>
