@@ -33,6 +33,7 @@ public sealed class CrosshairBehavior : IBehavior
             case PointerEventType.Down:
             case PointerEventType.Up:
             case PointerEventType.Wheel:
+            case PointerEventType.KeyDown:
                 {
                     return false;
                 }

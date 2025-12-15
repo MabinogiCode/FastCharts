@@ -19,6 +19,7 @@ public sealed class NearestPointBehavior : IBehavior
             case PointerEventType.Up:
             case PointerEventType.Leave:
             case PointerEventType.Wheel:
+            case PointerEventType.KeyDown:
             default:
                 {
                     return false;

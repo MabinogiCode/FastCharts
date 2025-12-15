@@ -72,6 +72,7 @@ public sealed class PanBehavior : IBehavior
                     return false;
                 }
             case PointerEventType.Wheel:
+            case PointerEventType.KeyDown:
             default:
                 {
                     return false;
