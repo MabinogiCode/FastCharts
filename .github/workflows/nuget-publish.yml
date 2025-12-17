@@ -119,9 +119,3 @@ jobs:
             - ?? [Documentation](https://github.com/MabinogiCode/FastCharts)
             - ?? [Examples](https://github.com/MabinogiCode/FastCharts/tree/main/demos)
             - ?? [Report Issues](https://github.com/MabinogiCode/FastCharts/issues)
-
-      - name: Comment on related PRs
-        if: success()
-        run: |
-          echo "?? FastCharts ${{ steps.get-version.outputs.VERSION }} has been published to NuGet!"
-          echo "?? Packages available: FastCharts.Core, FastCharts.Rendering.Skia, FastCharts.Wpf"

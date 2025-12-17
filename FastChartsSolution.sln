@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Éléments de solution", "�
 		RoadMap.md = RoadMap.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoApp.Net8", "demos\DemoApp.Net8\DemoApp.Net8.csproj", "{D5C15D81-7EAB-2DCC-C4B0-D3F69EBCFB0F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{FDEDE0C4-C303-4E33-B3D4-14D9822D2CA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDEDE0C4-C303-4E33-B3D4-14D9822D2CA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDEDE0C4-C303-4E33-B3D4-14D9822D2CA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5C15D81-7EAB-2DCC-C4B0-D3F69EBCFB0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5C15D81-7EAB-2DCC-C4B0-D3F69EBCFB0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5C15D81-7EAB-2DCC-C4B0-D3F69EBCFB0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5C15D81-7EAB-2DCC-C4B0-D3F69EBCFB0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
