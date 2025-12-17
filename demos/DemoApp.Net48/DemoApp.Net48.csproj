@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Condition="'$(OS)'=='Windows_NT'">
     <OutputType>WinExe</OutputType>
     <TargetFramework>net48</TargetFramework>
@@ -28,8 +28,6 @@
   <ItemGroup Condition="'$(OS)'=='Windows_NT'">
     <!-- Updated to match FastCharts.Wpf dependency to avoid NU1605 downgrade warning -->
     <PackageReference Include="DynamicData" Version="9.4.1" />
-    <!-- Fix SkiaSharp compatibility issue with System.Runtime.CompilerServices.Unsafe -->
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <!-- StyleCop Analyzers for strict SA1124 enforcement -->
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
     <!-- P1-EXPORT-PNG: Add System.Drawing for clipboard support in .NET Framework -->
