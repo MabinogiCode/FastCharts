@@ -1,9 +1,8 @@
-using System;
-using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 using FastCharts.Core.DataBinding;
 using FastCharts.Core.DataBinding.Series;
 using FluentAssertions;
+using System;
+using System.Collections.ObjectModel;
 using Xunit;
 
 namespace FastCharts.Core.Tests.DataBinding
@@ -170,7 +169,7 @@ namespace FastCharts.Core.Tests.DataBinding
         }
 
         [Fact]
-        public async Task ObservableLineSeries_WithThrottling_ShouldBatchUpdates()
+        public void ObservableLineSeries_WithThrottling_ShouldBatchUpdates()
         {
             // Arrange
             var data = new ObservableCollection<SensorReading>();
