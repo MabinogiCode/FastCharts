@@ -1,6 +1,6 @@
 # FastCharts NuGet Packages
 
-## ?? Package Overview
+## Package Overview
 
 FastCharts is distributed as three complementary NuGet packages:
 
@@ -10,7 +10,7 @@ FastCharts is distributed as three complementary NuGet packages:
 | **FastCharts.Rendering.Skia** | Cross-platform rendering engine | Console apps, web apps, cross-platform UI |
 | **FastCharts.Wpf** | WPF controls and MVVM integration | Windows desktop applications |
 
-## ?? Quick Start
+## Quick Start
 
 ### For WPF Applications (Recommended)
 ```bash
@@ -72,61 +72,61 @@ dotnet add package FastCharts.Rendering.Skia
 
 Perfect for generating charts in background services, APIs, or command-line tools.
 
-## ?? Use Cases by Package
+## Use Cases by Package
 
 ### FastCharts.Core
-- ? **Business Logic**: Chart models, series, axes
-- ? **Data Processing**: LTTB decimation, streaming data
-- ? **Algorithms**: Auto-scaling, range calculations
-- ? **Interactions**: Behaviors, events, state management
-- ? **Rendering**: No visual output (abstract only)
+- **Business Logic**: Chart models, series, axes
+- **Data Processing**: LTTB decimation, streaming data
+- **Algorithms**: Auto-scaling, range calculations
+- **Interactions**: Behaviors, events, state management
+- **Rendering**: No visual output (abstract only)
 
-### FastCharts.Rendering.Skia  
-- ? **Cross-Platform Rendering**: Windows, macOS, Linux
-- ? **Export Formats**: PNG, JPEG with high quality
-- ? **Performance**: Hardware-accelerated rendering
-- ? **Headless**: Server-side chart generation
-- ? **UI Controls**: No interactive controls (rendering only)
+### FastCharts.Rendering.Skia
+- **Cross-Platform Rendering**: Windows, macOS, Linux
+- **Export Formats**: PNG, JPEG with high quality
+- **Performance**: Hardware-accelerated rendering
+- **Headless**: Server-side chart generation
+- **UI Controls**: No interactive controls (rendering only)
 
 ### FastCharts.Wpf
-- ? **Windows Desktop**: Native WPF integration
-- ? **MVVM Support**: Data binding, commands, reactive UI
-- ? **Interactive Controls**: Pan, zoom, tooltips, crosshair
-- ? **Design-Time Support**: Visual Studio/Blend integration
-- ? **Cross-Platform**: Windows-only
+- **Windows Desktop**: Native WPF integration
+- **MVVM Support**: Data binding, commands, reactive UI
+- **Interactive Controls**: Pan, zoom, tooltips, crosshair
+- **Design-Time Support**: Visual Studio/Blend integration
+- **Cross-Platform**: Windows-only
 
-## ?? Feature Matrix
+## Feature Matrix
 
 | Feature | Core | Skia | WPF |
 |---------|:----:|:----:|:---:|
 | **Series Types** |
-| Line Series | ? | ? | ? |
-| Scatter Series | ? | ? | ? |  
-| Bar Series | ? | ? | ? |
-| Area/Band Series | ? | ? | ? |
-| OHLC Series | ? | ? | ? |
+| Line Series | yes | yes | yes |
+| Scatter Series | yes | yes | yes |
+| Bar Series | yes | yes | yes |
+| Area/Band Series | yes | yes | yes |
+| OHLC Series | yes | yes | yes |
 | **Axes & Scaling** |
-| Linear Axes | ? | ? | ? |
-| Logarithmic Axes | ? | ? | ? |
-| Category Axes | ? | ? | ? |
-| Multi-Axis Support | ? | ? | ? |
+| Linear Axes | yes | yes | yes |
+| Logarithmic Axes | yes | yes | yes |
+| Category Axes | yes | yes | yes |
+| Multi-Axis Support | yes | yes | yes |
 | **Performance** |
-| LTTB Decimation | ? | ? | ? |
-| Streaming Data | ? | ? | ? |
-| Performance Metrics | ? | ? | ? |
+| LTTB Decimation | yes | yes | yes |
+| Streaming Data | yes | yes | yes |
+| Performance Metrics | yes | yes | yes |
 | **Interactions** |
-| Pan & Zoom | ? | ? | ? |
-| Tooltips | ? | ? | ? |
-| Pinned Tooltips | ? | ? | ? |
-| Crosshair | ? | ? | ? |
+| Pan & Zoom | yes | yes | yes |
+| Tooltips | yes | yes | yes |
+| Pinned Tooltips | yes | yes | yes |
+| Crosshair | yes | yes | yes |
 | **Export** |
-| PNG Export | ? | ? | ? |
-| Clipboard Support | ? | ? | ? |
+| PNG Export | yes | yes | yes |
+| Clipboard Support | yes | yes | yes |
 | **Annotations** |
-| Line Annotations | ? | ? | ? |
-| Range Annotations | ? | ? | ? |
+| Line Annotations | yes | yes | yes |
+| Range Annotations | yes | yes | yes |
 
-## ?? Advanced Scenarios
+## Advanced Scenarios
 
 ### 1. Real-Time Dashboard (WPF)
 ```csharp
@@ -171,34 +171,34 @@ dotnet add package FastCharts.Rendering.Skia
 // Generate charts without UI framework
 ```
 
-## ?? Performance Benchmarks
+## Performance Benchmarks
 
 - **Rendering Speed**: Up to 60 FPS for interactive charts
 - **Memory Usage**: Optimized for large datasets (10M+ points)
 - **Decimation**: LTTB algorithm reduces data while preserving visual fidelity
 - **Streaming**: Real-time updates with rolling windows
 
-## ??? Framework Compatibility
+## Framework Compatibility
 
 | Framework | Core | Rendering.Skia | WPF |
 |-----------|:----:|:-------------:|:---:|
-| .NET Standard 2.0 | ? | ? | ? |
-| .NET Framework 4.8 | ? | ? | ? |
-| .NET 6 | ? | ? | ? |
-| .NET 8 | ? | ? | ? |
+| .NET Standard 2.0 | yes | yes | no |
+| .NET Framework 4.8 | yes | yes | yes |
+| .NET 6 | yes | yes | yes |
+| .NET 8 | yes | yes | yes |
 | **Platforms** |
-| Windows | ? | ? | ? |
-| macOS | ? | ? | ? |
-| Linux | ? | ? | ? |
+| Windows | yes | yes | yes |
+| macOS | yes | yes | no |
+| Linux | yes | yes | no |
 
-## ?? Links
+## Links
 
-- ?? **Documentation**: [GitHub Repository](https://github.com/MabinogiCode/FastCharts)
-- ?? **Examples**: [Demo Projects](https://github.com/MabinogiCode/FastCharts/tree/main/demos)
-- ?? **NuGet**: [FastCharts.Wpf](https://www.nuget.org/packages/FastCharts.Wpf/)
-- ?? **Issues**: [GitHub Issues](https://github.com/MabinogiCode/FastCharts/issues)
-- ?? **Discussions**: [GitHub Discussions](https://github.com/MabinogiCode/FastCharts/discussions)
+- **Documentation**: [GitHub Repository](https://github.com/MabinogiCode/FastCharts)
+- **Examples**: [Demo Projects](https://github.com/MabinogiCode/FastCharts/tree/main/demos)
+- **NuGet**: [FastCharts.Wpf](https://www.nuget.org/packages/FastCharts.Wpf/)
+- **Issues**: [GitHub Issues](https://github.com/MabinogiCode/FastCharts/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/MabinogiCode/FastCharts/discussions)
 
 ---
 
-**Ready to build amazing charts? Choose the package that fits your needs! ??**
+**Ready to build amazing charts? Choose the package that fits your needs!**
