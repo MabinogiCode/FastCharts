@@ -2,22 +2,22 @@
 
 This guide helps resolve common issues with FastCharts GitHub Actions workflows.
 
-## ?? Common Issues
+## Common Issues
 
 ### 1. **NuGet Push Failed: "File does not exist (./nupkg/*.nupkg)"**
 
 **Problem**: Wildcard expansion doesn't work in PowerShell for `dotnet nuget push`
 
 **Solution**: 
-- ? **Fixed in workflows** - Now using proper PowerShell loops
+- **Fixed in workflows** - Now using proper PowerShell loops
 - Each package is pushed individually with explicit paths
 
 **Example Fix**:
 ```powershell
-# ? BAD - Doesn't work on Windows
+# BAD - Doesn't work on Windows
 dotnet nuget push "./nupkg/*.nupkg" --api-key $API_KEY --source https://api.nuget.org/v3/index.json
 
-# ? GOOD - Works reliably
+# GOOD - Works reliably
 $packages = Get-ChildItem ./nupkg -Name "*.nupkg"
 foreach ($package in $packages) {
     dotnet nuget push "./nupkg/$package" --api-key $API_KEY --source https://api.nuget.org/v3/index.json
@@ -32,7 +32,7 @@ foreach ($package in $packages) {
 1. Go to [NuGet.org API Keys](https://www.nuget.org/account/apikeys)
 2. Create new API key with push permissions
 3. Add to GitHub repository secrets:
-   - Repository Settings ? Secrets and Variables ? Actions
+   - Repository Settings -> Secrets and Variables -> Actions
    - New repository secret: `NUGET_API_KEY`
 
 ### 3. **Package Already Exists on NuGet**
@@ -58,23 +58,23 @@ foreach ($package in $packages) {
 **Problem**: Mabinogi icon not included in NuGet packages
 
 **Solution**: 
-- ? **Fixed** - Icon path now correctly configured in all `.csproj` files
-- Verify with test workflow: `.github/workflows/test-packaging.yml`
+- **Fixed** - Icon path now correctly configured in all `.csproj` files
+- Verify by running a local pack and inspecting the package contents
 
 ### 6. **GitHub Release Creation Failed**
 
 **Problem**: `actions/create-release@v1` is deprecated
 
-**Future Fix**: Update to newer release action
+**Solution**: Use the maintained release action
 ```yaml
-# Current (works but deprecated)
+# Deprecated
 uses: actions/create-release@v1
 
-# Future (recommended)
-uses: softprops/action-gh-release@v1
+# Recommended
+uses: softprops/action-gh-release@v2
 ```
 
-## ?? Debugging Steps
+## Debugging Steps
 
 ### 1. Check Workflow Logs
 ```bash
@@ -114,23 +114,22 @@ nuget list -source ./test-nupkg
 dotnet nuget push "./test-nupkg/FastCharts.Core.1.0.0.nupkg" --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
 ```
 
-## ?? Workflow Status
+## Workflow Status
 
-### ? **Working Workflows**
+### **Working Workflows**
 - `ci.yml` - Basic CI with type checking
 - `dotnet.yml` - Build and test  
-- `test-packaging.yml` - Package verification
 - `nuget-publish.yml` - **FIXED** NuGet publishing
 - `nuget-prerelease.yml` - **FIXED** Pre-release publishing
 
-### ?? **Recent Fixes Applied**
+### **Recent Fixes Applied**
 - Fixed PowerShell wildcard expansion in NuGet push
 - Added proper error handling for missing API keys
 - Added package verification steps
 - Fixed emoji encoding in release descriptions
 - Added comprehensive logging for debugging
 
-## ?? **How to Release**
+## **How to Release**
 
 ### Stable Release
 ```bash
@@ -144,13 +143,7 @@ git tag v1.0.1-beta1
 git push origin v1.0.1-beta1
 ```
 
-### Test Packaging (without publishing)
-```bash
-# Triggers test-packaging workflow
-git push origin main
-```
-
-## ?? **Getting Help**
+## **Getting Help**
 
 If workflows still fail:
 
@@ -159,7 +152,7 @@ If workflows still fail:
 3. **Verify Secrets**: Ensure `NUGET_API_KEY` is configured  
 4. **Create Issue**: Include full error logs and steps to reproduce
 
-## ?? **Useful Links**
+## **Useful Links**
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [NuGet CLI Reference](https://docs.microsoft.com/en-us/nuget/reference/nuget-exe-cli-reference)
@@ -167,4 +160,4 @@ If workflows still fail:
 
 ---
 
-**All workflows are now fixed and ready for FastCharts v1.0.0 release! ??**
+**All workflows are now fixed and ready for FastCharts v1.0.0 release!**

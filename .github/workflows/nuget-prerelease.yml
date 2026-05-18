@@ -10,7 +10,10 @@ on:
 jobs:
   publish-beta:
     runs-on: windows-latest
-    
+
+    permissions:
+      contents: write
+
     environment: nuget-prerelease
     
     steps:
@@ -88,37 +91,36 @@ jobs:
           path: ./nupkg/*.nupkg
 
       - name: Create GitHub Pre-release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: FastCharts ${{ steps.get-version.outputs.VERSION }} (Pre-release)
-          draft: false
+          name: FastCharts ${{ steps.get-version.outputs.VERSION }} (Pre-release)
           prerelease: true
           body: |
-            ?? **FastCharts ${{ steps.get-version.outputs.VERSION }} Pre-release**
-            
-            ?? **This is a pre-release version** - use with caution in production!
-            
-            ## ?? NuGet Packages Available
+            **FastCharts ${{ steps.get-version.outputs.VERSION }} Pre-release**
+
+            **This is a pre-release version** - use with caution in production!
+
+            ## NuGet Packages Available
             - `FastCharts.Core` v${{ steps.get-version.outputs.VERSION }}
             - `FastCharts.Rendering.Skia` v${{ steps.get-version.outputs.VERSION }}
             - `FastCharts.Wpf` v${{ steps.get-version.outputs.VERSION }}
-            
-            ## ?? Installation
+
+            ## Installation
             ```bash
             # For WPF applications
             dotnet add package FastCharts.Wpf --version ${{ steps.get-version.outputs.VERSION }}
-            
-            # For cross-platform applications  
+
+            # For cross-platform applications
             dotnet add package FastCharts.Core --version ${{ steps.get-version.outputs.VERSION }}
             dotnet add package FastCharts.Rendering.Skia --version ${{ steps.get-version.outputs.VERSION }}
             ```
-            
-            ## ?? Changes
+
+            ## Changes
             This pre-release includes experimental features and bug fixes. Please test thoroughly before using in production.
-            
-            ## ?? Feedback
-            - ?? [Report Issues](https://github.com/MabinogiCode/FastCharts/issues)
-            - ?? [Discussions](https://github.com/MabinogiCode/FastCharts/discussions)
+
+            ## Feedback
+            - [Report Issues](https://github.com/MabinogiCode/FastCharts/issues)
+            - [Discussions](https://github.com/MabinogiCode/FastCharts/discussions)

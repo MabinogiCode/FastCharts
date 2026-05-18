@@ -53,22 +53,22 @@ function Write-ColorOutput {
 
 function Write-Step {
     param([string]$Step)
-    Write-ColorOutput "?? $Step" Blue
+    Write-ColorOutput $Step Blue
 }
 
 function Write-Success {
     param([string]$Message)
-    Write-ColorOutput "? $Message" Green
+    Write-ColorOutput $Message Green
 }
 
 function Write-Warning {
     param([string]$Message)
-    Write-ColorOutput "??  $Message" Yellow
+    Write-ColorOutput $Message Yellow
 }
 
 function Write-Error {
     param([string]$Message)
-    Write-ColorOutput "? $Message" Red
+    Write-ColorOutput $Message Red
 }
 
 # Validate version format
@@ -80,8 +80,8 @@ if ($Version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$') {
 $dryRunText = if ($DryRun) { "Yes" } else { "No" }
 
 Write-ColorOutput @"
-?? FastCharts Release Script
-???????????????????????????????
+FastCharts Release Script
+=========================
 Version: $Version
 Mode: $Mode
 Dry Run: $dryRunText
@@ -175,13 +175,13 @@ if ($Mode -eq "tag") {
         
         Write-Success "Tag '$tagName' created and pushed"
         Write-ColorOutput @"
-?? Release initiated! 
-??????????????????????????????????????????
+Release initiated!
+==========================================
 GitHub Actions will now:
-• Run all tests
-• Build packages for all target frameworks  
-• Publish to NuGet.org
-• Create GitHub release with artifacts
+- Run all tests
+- Build packages for all target frameworks
+- Publish to NuGet.org
+- Create GitHub release with artifacts
 
 Monitor progress at: https://github.com/MabinogiCode/FastCharts/actions
 "@ Green
@@ -226,7 +226,7 @@ Monitor progress at: https://github.com/MabinogiCode/FastCharts/actions
         # List generated packages
         Write-Step "Generated packages:"
         Get-ChildItem $outputDir -Name "*.nupkg" | ForEach-Object {
-            Write-ColorOutput "  ?? $_" Cyan
+            Write-ColorOutput "  $_" Cyan
         }
         
         # Publish to NuGet
@@ -242,11 +242,11 @@ Monitor progress at: https://github.com/MabinogiCode/FastCharts/actions
         
         Write-Success "Local release completed"
         Write-ColorOutput @"
-?? Packages published!
-??????????????????????????????????????????
+Packages published!
+==========================================
 Install with:
   dotnet add package FastCharts.Core --version $Version
-  dotnet add package FastCharts.Rendering.Skia --version $Version  
+  dotnet add package FastCharts.Rendering.Skia --version $Version
   dotnet add package FastCharts.Wpf --version $Version
 
 View on NuGet: https://www.nuget.org/packages/FastCharts.Core/
@@ -256,13 +256,13 @@ View on NuGet: https://www.nuget.org/packages/FastCharts.Core/
 
 Write-ColorOutput @"
 
-?? FastCharts $Version Release Summary
-???????????????????????????????????????????
-? Phase 1 Complete (13/13 features)
-? 594 tests passing  
-? Multi-framework support (.NET Standard 2.0, .NET 6/8, Framework 4.8)
-? Cross-platform ready
-? Production quality code
+FastCharts $Version Release Summary
+===========================================
+- Phase 1 Complete (13/13 features)
+- 594 tests passing
+- Multi-framework support (.NET Standard 2.0, .NET 6/8, Framework 4.8)
+- Cross-platform ready
+- Production quality code
 
-Next: Start Phase 2 development! ??
+Next: Start Phase 2 development!
 "@ Magenta

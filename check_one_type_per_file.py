@@ -3,24 +3,26 @@ import os
 import re
 import sys
 
-# Regex pour identifier class / struct / enum (compte aussi les types imbriqués)
+# Regex to identify class / struct / enum / interface / record / delegate
+# (also counts nested types)
 DECLARATION_RE = re.compile(
-    r'^\s*(public|internal|protected|private)?\s*(partial\s+)?(class|struct|enum)\s+\w+'
+    r'^\s*((?:public|internal|protected|private|sealed|abstract|static|partial|readonly|ref)\s+)*'
+    r'(class|struct|enum|interface|record|delegate)\s+\w+'
 )
 
 SKIP_DIRS = {'.git', '.github', 'bin', 'obj', '.vs', '.idea'}
 
 def read_text_with_fallback(path: str) -> str:
-    """Lit un fichier texte .cs avec détection simple d'encodage et repli."""
+    """Reads a .cs text file with simple encoding detection and fallback."""
     with open(path, 'rb') as bf:
         raw = bf.read()
 
-    # Fichiers probablement binaires : beaucoup de NULs et aucun \n
+    # Probably binary files: many NULs and no \n
     if raw and raw.count(b'\x00') > max(8, len(raw) // 10) and b'\n' not in raw:
-        # On considère que ce n'est pas un texte C#
+        # Consider this not to be C# text
         return ""
 
-    # BOMs courants
+    # Common BOMs
     if raw.startswith(b'\xef\xbb\xbf'):
         return raw.decode('utf-8-sig', errors='strict')
     if raw.startswith(b'\xff\xfe'):
@@ -28,14 +30,14 @@ def read_text_with_fallback(path: str) -> str:
     if raw.startswith(b'\xfe\xff'):
         return raw.decode('utf-16-be', errors='strict')
 
-    # Essais sans BOM
+    # Attempts without BOM
     for enc in ('utf-8', 'cp1252', 'latin-1'):
         try:
             return raw.decode(enc, errors='strict')
         except UnicodeDecodeError:
             pass
 
-    # Dernier repli : on ignore les octets illisibles
+    # Last fallback: ignore unreadable bytes
     return raw.decode('utf-8', errors='ignore')
 
 def check_file(path: str) -> int:
@@ -51,7 +53,7 @@ def check_file(path: str) -> int:
 def main(root: str = "."):
     errors = []
     for dirpath, dirnames, filenames in os.walk(root):
-        # filtre répertoires à ignorer
+        # filter out directories to ignore
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         for fname in filenames:
             if not fname.endswith(".cs"):
@@ -62,12 +64,12 @@ def main(root: str = "."):
                 errors.append((fpath, count))
 
     if errors:
-        print("❌ Files with more than one class/struct/enum:")
+        print("❌ Files with more than one type:")
         for path, count in errors:
             print(f"  {path}: {count} top-level types")
         sys.exit(1)
     else:
-        print("✅ All .cs files contain at most one class/struct/enum.")
+        print("✅ All .cs files contain at most one type.")
         sys.exit(0)
 
 if __name__ == "__main__":

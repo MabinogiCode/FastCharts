@@ -3,12 +3,15 @@ name: Publish NuGet Packages
 on:
   push:
     tags:
-      - 'v*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+      - 'v[0-9]+.[0-9]+.[0-9]+'  # Triggers on stable version tags only, e.g. v1.0.0, v1.2.3
 
 jobs:
   publish:
     runs-on: windows-latest
-    
+
+    permissions:
+      contents: write
+
     environment: nuget-production # Optional: use GitHub environment for secrets management
     
     steps:
@@ -86,36 +89,34 @@ jobs:
           path: ./nupkg/*.nupkg
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: FastCharts ${{ steps.get-version.outputs.VERSION }}
-          draft: false
-          prerelease: false
+          name: FastCharts ${{ steps.get-version.outputs.VERSION }}
           body: |
-            ?? **FastCharts ${{ steps.get-version.outputs.VERSION }} Released!**
-            
-            ## ?? NuGet Packages Available
+            **FastCharts ${{ steps.get-version.outputs.VERSION }} Released!**
+
+            ## NuGet Packages Available
             - `FastCharts.Core` v${{ steps.get-version.outputs.VERSION }}
             - `FastCharts.Rendering.Skia` v${{ steps.get-version.outputs.VERSION }}
             - `FastCharts.Wpf` v${{ steps.get-version.outputs.VERSION }}
-            
-            ## ?? Installation
+
+            ## Installation
             ```bash
             # For WPF applications
             dotnet add package FastCharts.Wpf --version ${{ steps.get-version.outputs.VERSION }}
-            
+
             # For cross-platform applications
             dotnet add package FastCharts.Core --version ${{ steps.get-version.outputs.VERSION }}
             dotnet add package FastCharts.Rendering.Skia --version ${{ steps.get-version.outputs.VERSION }}
             ```
-            
-            ## ?? What's New
+
+            ## What's New
             See the [CHANGELOG](https://github.com/MabinogiCode/FastCharts/blob/main/CHANGELOG.md) for detailed changes.
-            
-            ## ?? Links
-            - ?? [Documentation](https://github.com/MabinogiCode/FastCharts)
-            - ?? [Examples](https://github.com/MabinogiCode/FastCharts/tree/main/demos)
-            - ?? [Report Issues](https://github.com/MabinogiCode/FastCharts/issues)
+
+            ## Links
+            - [Documentation](https://github.com/MabinogiCode/FastCharts)
+            - [Examples](https://github.com/MabinogiCode/FastCharts/tree/main/demos)
+            - [Report Issues](https://github.com/MabinogiCode/FastCharts/issues)
