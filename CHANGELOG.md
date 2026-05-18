@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2025-12-15
 
-### ?? **PHASE 1 COMPLETE - MAJOR RELEASE**
+### PHASE 1 COMPLETE - MAJOR RELEASE
 
 This is the first stable release of FastCharts with all Phase 1 features implemented and production-ready.
 
-### ? **Added**
+### Added
 
 #### Core Features
 - **Multi-Axis Support** (P1-AX-MULTI): Independent left/right Y axes with series attachment via `YAxisIndex`
@@ -43,18 +43,18 @@ This is the first stable release of FastCharts with all Phase 1 features impleme
 - **594 Unit Tests**: Comprehensive test coverage with 100% pass rate
 - **Guidelines Compliance**: SA1402, English documentation, proper code formatting
 
-### ?? **Design & Branding**
+### Design & Branding
 - **Mabinogi Icon**: Added custom branding icon to all NuGet packages
 - **Bilingual Documentation**: Complete Getting Started guides in English and French
 - **Professional NuGet Metadata**: Rich package descriptions with proper icons and links
 
-### ?? **Developer Experience**
+### Developer Experience
 - **Automated Release Pipeline**: GitHub Actions workflows for tag-based NuGet publishing  
 - **Release Scripts**: PowerShell automation for local and remote releases
 - **Comprehensive Documentation**: Getting started, API reference, performance guides
 - **Example Projects**: Working demos for WPF applications
 
-### ?? **Series Types**
+### Series Types
 - `LineSeries`: High-performance line charts with markers and styling
 - `ScatterSeries`: Scatter plots with customizable markers  
 - `BarSeries`: Bar charts with grouping and baseline support
@@ -66,25 +66,25 @@ This is the first stable release of FastCharts with all Phase 1 features impleme
 - `StepLineSeries`: Step-line charts
 - `StreamingLineSeries`: Real-time streaming with rolling windows
 
-### ?? **Target Applications**
+### Target Applications
 - Financial trading platforms and market analysis
 - Real-time IoT dashboards and system monitoring
 - Scientific data visualization and research tools
 - Business intelligence and KPI dashboards  
 - Desktop applications with rich data visualization needs
 
-### ?? **Platform Support**
+### Platform Support
 - **Windows**: Full WPF integration + cross-platform rendering
 - **macOS**: Cross-platform rendering via Core + Rendering.Skia
 - **Linux**: Cross-platform rendering via Core + Rendering.Skia
 - **Framework Targets**: .NET Standard 2.0, .NET Framework 4.8, .NET 6, .NET 8
 
-### ?? **NuGet Packages**
+### NuGet Packages
 - `FastCharts.Core` 1.0.0: Core algorithms and abstractions
 - `FastCharts.Rendering.Skia` 1.0.0: Cross-platform rendering engine  
 - `FastCharts.Wpf` 1.0.0: WPF controls and MVVM integration
 
-### ?? **Performance Benchmarks**
+### Performance Benchmarks
 - **Rendering**: Up to 60 FPS for interactive charts
 - **Memory**: Optimized for datasets up to 10M points
 - **Streaming**: Real-time updates with 1K+ points/second capability
@@ -94,7 +94,7 @@ This is the first stable release of FastCharts with all Phase 1 features impleme
 
 ## Development Phases
 
-### ? **Phase 1 Complete (v1.0.0)**
+### Phase 1 Complete (v1.0.0)
 All 13 planned Phase 1 features have been implemented and tested:
 - Multi-axis support
 - Logarithmic axes  
@@ -106,7 +106,7 @@ All 13 planned Phase 1 features have been implemented and tested:
 - Pinned tooltips
 - Performance metrics system
 
-### ?? **Phase 2 Planned**
+### Phase 2 Planned
 Upcoming features for future releases:
 - Pie/Donut charts (P2-SERIES-PIE)
 - HeatMap visualization (P2-HEATMAP)  
@@ -117,4 +117,4 @@ Upcoming features for future releases:
 
 ---
 
-**?? FastCharts v1.0.0 - Production Ready for the .NET Community!**
+**FastCharts v1.0.0 - Production Ready for the .NET Community!**

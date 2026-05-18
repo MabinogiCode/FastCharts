@@ -7,6 +7,9 @@ obj/
 [Ll]og/
 [Ll]ogs/
 
+# WPF intermediate temp project files
+*_wpftmp.csproj
+
 # User-specific files
 *.user
 *.suo

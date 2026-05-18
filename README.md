@@ -197,15 +197,11 @@ model.AddAnnotation(new RangeAnnotation {
 ## 📖 **Documentation**
 
 - 🚀 [**Getting Started**](docs/getting-started.md) | [**Démarrage Rapide**](docs/getting-started-fr.md)
-- 📊 [**Chart Types Guide**](docs/chart-types.md) | [**Guide des Types de Graphiques**](docs/chart-types-fr.md)
-- 🎨 [**Styling & Themes**](docs/styling.md) | [**Style & Thèmes**](docs/styling-fr.md)
-- ⚡ [**Performance Guide**](docs/performance.md) | [**Guide Performance**](docs/performance-fr.md)
-- 🔌 [**API Reference**](docs/api-reference.md) | [**Référence API**](docs/api-reference-fr.md)
 - 🧪 [**Examples & Demos**](demos/) | [**Exemples & Démos**](demos/)
 
 ## 🤝 **Contributing**
 
-We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! See our [Development Guidelines](DEVELOPMENT_GUIDELINES.md) for details.
 
 ### Development Setup
 ```bash
