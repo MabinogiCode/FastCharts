@@ -1,11 +1,11 @@
 <Project>
   <PropertyGroup>
-    <!-- C# version pour tous les projets -->
+    <!-- C# language version for all projects -->
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 
-    <!-- Confort multi-TFM -->
+    <!-- Multi-target convenience -->
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>

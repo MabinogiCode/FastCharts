@@ -20,7 +20,7 @@
 
 #### Current Violation Example (to fix):
 ```csharp
-// ? BAD: LogNumericAxisTests.cs contains 4 classes
+// BAD: LogNumericAxisTests.cs contains 4 classes
 public class LogNumericAxisTests { }
 public class LogScaleTests { }
 public class LogTickerTests { }
@@ -30,11 +30,11 @@ public class ScientificNumberFormatterTests { }
 #### Correct Structure:
 ```
 tests/FastCharts.Core.Tests/Axes/
-??? LogNumericAxisTests.cs      // Only LogNumericAxisTests
-??? LogScaleTests.cs           // Only LogScaleTests  
-??? LogTickerTests.cs          // Only LogTickerTests
-??? Formatting/
-    ??? ScientificNumberFormatterTests.cs  // Only ScientificNumberFormatterTests
+├── LogNumericAxisTests.cs      // Only LogNumericAxisTests
+├── LogScaleTests.cs           // Only LogScaleTests  
+├── LogTickerTests.cs          // Only LogTickerTests
+└── Formatting/
+    └── ScientificNumberFormatterTests.cs  // Only ScientificNumberFormatterTests
 ```
 
 ### Naming Conventions
@@ -122,13 +122,13 @@ public void MethodName_Scenario_ExpectedBehavior()
 ## Project Structure Standards
 ```
 src/
-??? FastCharts.Core/           // Core abstractions and algorithms
-??? FastCharts.Rendering.Skia/ // Cross-platform rendering
-??? FastCharts.Wpf/           // Windows-specific controls
+├── FastCharts.Core/           // Core abstractions and algorithms
+├── FastCharts.Rendering.Skia/ // Cross-platform rendering
+└── FastCharts.Wpf/           // Windows-specific controls
 
 tests/
-??? FastCharts.Core.Tests/     // Core library tests
-??? FastCharts.Tests/          // Integration and rendering tests
+├── FastCharts.Core.Tests/     // Core library tests
+└── FastCharts.Tests/          // Integration and rendering tests
 ```
 
 ### Dependency Rules

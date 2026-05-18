@@ -1,10 +1,10 @@
 # FastCharts Release Process
 
-## ?? Automatic NuGet Release via Git Tags
+## Automatic NuGet Release via Git Tags
 
 FastCharts uses an automated release process that publishes to NuGet when you push a version tag.
 
-### ? Quick Release (Recommended)
+### Quick Release (Recommended)
 
 1. **Ensure you're on main branch:**
    ```bash
@@ -23,14 +23,14 @@ FastCharts uses an automated release process that publishes to NuGet when you pu
    git push origin v1.0.0-beta1
    ```
 
-3. **?? Done!** GitHub Actions will automatically:
-   - ? Run all tests (594 tests)
-   - ? Build all packages (Core, Rendering.Skia, Wpf)
-   - ? Publish to NuGet.org
-   - ? Create GitHub Release
-   - ? Upload artifacts
+3. **Done!** GitHub Actions will automatically:
+   - Run all tests (594 tests)
+   - Build all packages (Core, Rendering.Skia, Wpf)
+   - Publish to NuGet.org
+   - Create GitHub Release
+   - Upload artifacts
 
-### ?? Manual Release Process
+### Manual Release Process
 
 If you prefer manual control or need to test locally:
 
@@ -48,7 +48,7 @@ dotnet pack src/FastCharts.Wpf/FastCharts.Wpf.csproj --configuration Release --o
 dotnet nuget push "./nupkg/*.nupkg" --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json
 ```
 
-## ?? Version Conventions
+## Version Conventions
 
 ### Stable Releases
 - `v1.0.0` - Major release
@@ -60,12 +60,12 @@ dotnet nuget push "./nupkg/*.nupkg" --api-key YOUR_API_KEY --source https://api.
 - `v1.0.0-beta1` - Beta release (feature complete)
 - `v1.0.0-rc1` - Release candidate (production ready)
 
-## ?? Setup Requirements
+## Setup Requirements
 
 ### For Repository Maintainers
 
 1. **Add NuGet API Key to GitHub Secrets:**
-   - Go to repository Settings ? Secrets and variables ? Actions
+   - Go to repository Settings > Secrets and variables > Actions
    - Add secret: `NUGET_API_KEY` = your NuGet.org API key
    - Get API key from: https://www.nuget.org/account/apikeys
 
@@ -73,27 +73,27 @@ dotnet nuget push "./nupkg/*.nupkg" --api-key YOUR_API_KEY --source https://api.
    - Create environments: `nuget-production`, `nuget-prerelease`
    - Add protection rules if desired
 
-## ?? Current Release Status
+## Current Release Status
 
 ### Phase 1 Complete - v1.0.0 Ready!
-- ? **13/13 Phase 1 features** implemented
-- ? **594 tests** passing (100%)
-- ? **Multi-target** support (.NET Standard 2.0, .NET 6/8, Framework 4.8)
-- ? **Cross-platform** ready (Windows, macOS, Linux)
-- ? **Production quality** code with guidelines compliance
+- **13/13 Phase 1 features** implemented
+- **594 tests** passing (100%)
+- **Multi-target** support (.NET Standard 2.0, .NET 6/8, Framework 4.8)
+- **Cross-platform** ready (Windows, macOS, Linux)
+- **Production quality** code with guidelines compliance
 
 ### Featured Capabilities
-- ?? **Multi-axis support** (left/right Y axes)
-- ?? **Logarithmic axes** with custom bases
-- ?? **Real-time streaming** with rolling windows
-- ? **LTTB decimation** for massive datasets (10M+ points)
-- ?? **Interactive behaviors** (pan, zoom, tooltips, crosshair)
-- ?? **PNG export** with clipboard support
-- ?? **Pinned tooltips** (multi-tooltip support)
-- ?? **Annotations** (lines, ranges, labels)
-- ?? **Performance metrics** overlay
+- **Multi-axis support** (left/right Y axes)
+- **Logarithmic axes** with custom bases
+- **Real-time streaming** with rolling windows
+- **LTTB decimation** for massive datasets (10M+ points)
+- **Interactive behaviors** (pan, zoom, tooltips, crosshair)
+- **PNG export** with clipboard support
+- **Pinned tooltips** (multi-tooltip support)
+- **Annotations** (lines, ranges, labels)
+- **Performance metrics** overlay
 
-## ?? Next Steps
+## Next Steps
 
 1. **Release v1.0.0:**
    ```bash
@@ -113,7 +113,7 @@ dotnet nuget push "./nupkg/*.nupkg" --api-key YOUR_API_KEY --source https://api.
    - SVG export (P2-EXPORT-SVG)
    - Data binding improvements (P2-DATA-BIND)
 
-## ?? Troubleshooting
+## Troubleshooting
 
 ### Build Failures
 - Ensure all 594 tests pass: `dotnet test FastChartsSolution.sln`
@@ -131,4 +131,4 @@ dotnet nuget push "./nupkg/*.nupkg" --api-key YOUR_API_KEY --source https://api.
 
 ---
 
-**Ready to release FastCharts v1.0.0? Let's make it happen! ??**
+**Ready to release FastCharts v1.0.0? Let's make it happen!**
