@@ -23,7 +23,7 @@ namespace FastCharts.Wpf.Controls
     /// Includes redraw throttling to coalesce rapid interaction events.
     /// </summary>
     [TemplatePart(Name = PartSkia, Type = typeof(SKElement))]
-    public class FastChart : Control
+    public class FastChart : Control, IDisposable
     {
         private const string PartSkia = "PART_Skia";
         private const int MinRefreshRate = 1;
@@ -37,6 +37,7 @@ namespace FastCharts.Wpf.Controls
         private bool redrawScheduled;
         private TimeSpan minRedrawInterval = TimeSpan.FromMilliseconds(DefaultFrameTimeMs);
         private readonly SkiaChartRenderer renderer = new SkiaChartRenderer();
+        private bool disposed;
 
         public static readonly DependencyProperty ModelProperty =
             DependencyProperty.Register(
@@ -559,6 +560,48 @@ namespace FastCharts.Wpf.Controls
             }
 
             return value;
+        }
+
+        /// <summary>
+        /// Releases the input and paint event subscriptions held by this control.
+        /// Call this when the hosting window/control is closed to avoid leaking
+        /// handlers attached to the internal Skia element.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases event subscriptions held by this control.
+        /// </summary>
+        /// <param name="disposing">True when called from <see cref="Dispose()"/>.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                if (skiaElement != null)
+                {
+                    skiaElement.PaintSurface -= OnSkiaPaintSurface;
+                    skiaElement.MouseDown -= OnSkiaMouseDown;
+                    skiaElement.MouseMove -= OnSkiaMouseMove;
+                    skiaElement.MouseUp -= OnSkiaMouseUp;
+                    skiaElement.MouseLeave -= OnSkiaMouseLeave;
+                    skiaElement.MouseWheel -= OnSkiaMouseWheel;
+                    skiaElement.KeyDown -= OnSkiaKeyDown;
+                }
+
+                this.KeyDown -= OnChartKeyDown;
+                this.Loaded -= OnLoaded;
+            }
+
+            disposed = true;
         }
     }
 }
