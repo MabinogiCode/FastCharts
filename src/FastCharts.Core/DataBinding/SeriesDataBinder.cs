@@ -1,9 +1,9 @@
+using FastCharts.Core.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
-using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.DataBinding
 {
@@ -137,10 +137,14 @@ namespace FastCharts.Core.DataBinding
         /// Refresh throttle interval. Stored for API compatibility; refreshes are
         /// applied immediately so manual and test-driven updates stay deterministic.
         /// </summary>
-        public TimeSpan RefreshThrottle
+        public TimeSpan GetRefreshThrottle()
         {
-            get => _refreshThrottle;
-            set => _refreshThrottle = value;
+            return _refreshThrottle;
+        }
+
+        public void SetRefreshThrottle(TimeSpan value)
+        {
+            _refreshThrottle = value;
         }
 
         /// <summary>

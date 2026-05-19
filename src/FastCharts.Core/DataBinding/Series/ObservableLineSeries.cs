@@ -73,8 +73,8 @@ namespace FastCharts.Core.DataBinding.Series
         /// <inheritdoc />
         public TimeSpan RefreshThrottle
         {
-            get => _binder.RefreshThrottle;
-            set => _binder.RefreshThrottle = value;
+            get => _binder.GetRefreshThrottle();
+            set => _binder.SetRefreshThrottle(value);
         }
 
         /// <inheritdoc />
