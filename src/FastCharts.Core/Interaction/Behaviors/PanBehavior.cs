@@ -1,3 +1,4 @@
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -8,7 +9,7 @@ public sealed class PanBehavior : IBehavior
     private double _lastX;
     private double _lastY;
 
-    public bool OnEvent(ChartModel model, InteractionEvent ev)
+    public bool OnEvent(IChartModel model, InteractionEvent ev)
     {
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;
@@ -38,7 +39,7 @@ public sealed class PanBehavior : IBehavior
         return false;
     }
 
-    private bool HandleMove(ChartModel model, InteractionEvent ev)
+    private bool HandleMove(IChartModel model, InteractionEvent ev)
     {
         if (!_dragging) return false;
 

@@ -1,3 +1,4 @@
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Performance;
 using FastCharts.Core.Primitives;
 
@@ -46,7 +47,7 @@ namespace FastCharts.Core.Interaction.Behaviors
         /// </summary>
         public RenderMetrics Metrics => _metrics;
 
-        public bool OnEvent(ChartModel model, InteractionEvent ev)
+        public bool OnEvent(IChartModel model, InteractionEvent ev)
         {
             // Handle keyboard shortcuts for metrics control
             if (ev.Type == PointerEventType.KeyDown)
@@ -82,7 +83,7 @@ namespace FastCharts.Core.Interaction.Behaviors
         /// Should be called at the end of each render frame
         /// </summary>
         /// <param name="model">Chart model to extract data statistics from</param>
-        public void EndFrame(ChartModel model)
+        public void EndFrame(IChartModel model)
         {
             UpdateDataMetrics(model);
             _metrics.EndFrame();
@@ -137,7 +138,7 @@ namespace FastCharts.Core.Interaction.Behaviors
             };
         }
 
-        private void UpdateDataMetrics(ChartModel model)
+        private void UpdateDataMetrics(IChartModel model)
         {
             // Count total data points across all series
             var totalPoints = 0;

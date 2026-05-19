@@ -1,3 +1,4 @@
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Interaction;
 
 namespace FastCharts.Core.Tests;
@@ -7,7 +8,7 @@ namespace FastCharts.Core.Tests;
 /// </summary>
 public class TestBehavior : IBehavior
 {
-    public bool OnEvent(ChartModel model, InteractionEvent ev)
+    public bool OnEvent(IChartModel model, InteractionEvent ev)
     {
         return false;
     }

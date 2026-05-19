@@ -1,10 +1,11 @@
+using FastCharts.Core.Abstractions;
 using System.Linq;
 
 namespace FastCharts.Core.Interaction.Behaviors;
 
 public sealed class LegendToggleBehavior : IBehavior
 {
-    public bool OnEvent(ChartModel model, InteractionEvent ev)
+    public bool OnEvent(IChartModel model, InteractionEvent ev)
     {
         if (ev.Type != PointerEventType.Down || ev.Button != PointerButton.Left)
         {

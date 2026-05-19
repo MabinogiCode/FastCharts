@@ -1,4 +1,5 @@
 using System;
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Series;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -20,7 +21,7 @@ public sealed class NearestPointBehavior : IBehavior
     /// <param name="model">Chart model containing series data</param>
     /// <param name="ev">Pointer event to process</param>
     /// <returns>True if the event was handled and requires a redraw</returns>
-    public bool OnEvent(ChartModel model, InteractionEvent ev)
+    public bool OnEvent(IChartModel model, InteractionEvent ev)
     {
         // Only handle Move events, ignore all others
         if (ev.Type != PointerEventType.Move)

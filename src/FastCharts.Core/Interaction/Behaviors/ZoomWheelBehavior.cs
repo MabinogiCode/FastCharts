@@ -1,3 +1,4 @@
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -5,7 +6,7 @@ namespace FastCharts.Core.Interaction.Behaviors;
 public sealed class ZoomWheelBehavior : IBehavior
 {
     public double Step { get; set; } = 1.1;
-    public bool OnEvent(ChartModel model, InteractionEvent ev)
+    public bool OnEvent(IChartModel model, InteractionEvent ev)
     {
         if (ev.Type != PointerEventType.Wheel)
         {

@@ -1,3 +1,5 @@
+using FastCharts.Core.Abstractions;
+
 namespace FastCharts.Core.Interaction
 {
     /// <summary>
@@ -6,6 +8,6 @@ namespace FastCharts.Core.Interaction
     /// </summary>
     public interface IBehavior
     {
-        bool OnEvent(ChartModel model, InteractionEvent ev);
+        bool OnEvent(IChartModel model, InteractionEvent ev);
     }
 }

@@ -1,3 +1,4 @@
+using FastCharts.Core.Abstractions;
 using System.Globalization;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -7,7 +8,7 @@ public sealed class CrosshairBehavior : IBehavior
     public string TooltipFormatX { get; set; } = "X: {0}";
     public string TooltipFormatY { get; set; } = "Y: {0}";
 
-    public bool OnEvent(ChartModel model, InteractionEvent ev)
+    public bool OnEvent(IChartModel model, InteractionEvent ev)
     {
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;

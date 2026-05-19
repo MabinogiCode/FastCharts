@@ -1,4 +1,5 @@
 using System;
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Interaction;
 
 namespace FastCharts.Core.Tests;
@@ -10,7 +11,7 @@ public class DisposableTestBehavior : IBehavior, IDisposable
 {
     public bool IsDisposed { get; private set; }
 
-    public bool OnEvent(ChartModel model, InteractionEvent ev)
+    public bool OnEvent(IChartModel model, InteractionEvent ev)
     {
         return false;
     }

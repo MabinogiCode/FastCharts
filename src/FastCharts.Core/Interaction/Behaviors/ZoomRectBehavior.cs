@@ -1,3 +1,4 @@
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Axes;
 
@@ -7,7 +8,7 @@ public sealed class ZoomRectBehavior : IBehavior
 {
     private bool _dragging;
     private PointD _start;
-    public bool OnEvent(ChartModel model, InteractionEvent ev)
+    public bool OnEvent(IChartModel model, InteractionEvent ev)
     {
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;

@@ -1,4 +1,5 @@
 #pragma warning disable S3267
+using FastCharts.Core.Abstractions;
 using FastCharts.Core.Series;
 using System;
 using System.Globalization;
@@ -17,7 +18,7 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
     public string NumberFormatY { get; set; } = "G";
     public string NumberFormatX { get; set; } = "G";
 
-    public bool OnEvent(ChartModel model, InteractionEvent ev)
+    public bool OnEvent(IChartModel model, InteractionEvent ev)
     {
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;
@@ -51,7 +52,7 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
         return false;
     }
 
-    private void Build(ChartModel model, InteractionState st, double x)
+    private void Build(IChartModel model, InteractionState st, double x)
     {
         var xr = model.XAxis.VisibleRange;
         var tol = xr.Size * XSnapToleranceFraction;
