@@ -42,15 +42,17 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
         // Select first chart by default
         SelectedChart = Charts.FirstOrDefault();
 
-        // Setup reactive commands
-        ToggleThemeCommand = ReactiveCommand.Create(ToggleTheme);
-        AddRandomSeriesCommand = ReactiveCommand.Create(AddRandomSeries);
-        ResetViewCommand = ReactiveCommand.Create(ResetView);
-        
+        // Setup reactive commands. The execute bodies are marshalled to the UI
+        // thread: they mutate chart models that the UI is bound to, and
+        // ReactiveCommand does not guarantee the body runs on the dispatcher.
+        ToggleThemeCommand = ReactiveCommand.Create(() => RunOnUiThread(ToggleTheme));
+        AddRandomSeriesCommand = ReactiveCommand.Create(() => RunOnUiThread(AddRandomSeries));
+        ResetViewCommand = ReactiveCommand.Create(() => RunOnUiThread(ResetView));
+
         // P1-EXPORT-PNG: Add export commands
-        ExportSelectedChartCommand = ReactiveCommand.CreateFromTask(ExportSelectedChart, this.WhenAnyValue(x => x.SelectedChart).Select(chart => chart != null));
-        ExportAllChartsCommand = ReactiveCommand.CreateFromTask(ExportAllCharts);
-        CopySelectedChartToClipboardCommand = ReactiveCommand.CreateFromTask(CopySelectedChartToClipboard, this.WhenAnyValue(x => x.SelectedChart).Select(chart => chart != null));
+        ExportSelectedChartCommand = ReactiveCommand.CreateFromTask(() => RunOnUiThreadAsync(ExportSelectedChart), this.WhenAnyValue(x => x.SelectedChart).Select(chart => chart != null));
+        ExportAllChartsCommand = ReactiveCommand.CreateFromTask(() => RunOnUiThreadAsync(ExportAllCharts));
+        CopySelectedChartToClipboardCommand = ReactiveCommand.CreateFromTask(() => RunOnUiThreadAsync(CopySelectedChartToClipboard), this.WhenAnyValue(x => x.SelectedChart).Select(chart => chart != null));
 
         // Setup reactive bindings and animations
         SetupReactiveBindings();
@@ -141,6 +143,40 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
         _animationSubscription = Observable.Interval(TimeSpan.FromMilliseconds(100))
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(_ => UpdateAnimation());
+    }
+
+    /// <summary>
+    /// Runs an action on the WPF UI thread. ReactiveCommand does not guarantee
+    /// the command body executes on the dispatcher thread, and these actions
+    /// mutate chart models and view-model state that the UI is bound to.
+    /// </summary>
+    private static void RunOnUiThread(Action action)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher != null && !dispatcher.CheckAccess())
+        {
+            dispatcher.Invoke(action);
+        }
+        else
+        {
+            action();
+        }
+    }
+
+    /// <summary>
+    /// Runs an asynchronous action on the WPF UI thread so that UI calls (file
+    /// dialogs, message boxes) are valid; awaited work inside may still run on
+    /// background threads.
+    /// </summary>
+    private static Task RunOnUiThreadAsync(Func<Task> action)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher != null && !dispatcher.CheckAccess())
+        {
+            return dispatcher.InvokeAsync(action).Task.Unwrap();
+        }
+
+        return action();
     }
 
     private void InitializeCharts()
@@ -623,31 +659,31 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
         // Temperature data over 24 hours (simulated)
         var temperatureData = new[]
         {
-            new PointD(0, 18.5),    // Midnight: 18.5°C
-            new PointD(2, 16.8),    // 2 AM: 16.8°C
-            new PointD(4, 15.2),    // 4 AM: 15.2°C
-            new PointD(6, 14.5),    // 6 AM: 14.5°C (coldest)
-            new PointD(8, 17.3),    // 8 AM: 17.3°C
-            new PointD(10, 22.1),   // 10 AM: 22.1°C
-            new PointD(12, 26.8),   // Noon: 26.8°C
-            new PointD(14, 29.5),   // 2 PM: 29.5°C (hottest)
-            new PointD(16, 28.2),   // 4 PM: 28.2°C
-            new PointD(18, 25.4),   // 6 PM: 25.4°C
-            new PointD(20, 22.7),   // 8 PM: 22.7°C
-            new PointD(22, 20.1),   // 10 PM: 20.1°C
-            new PointD(24, 18.9)    // Midnight: 18.9°C
+            new PointD(0, 18.5),    // Midnight: 18.5ï¿½C
+            new PointD(2, 16.8),    // 2 AM: 16.8ï¿½C
+            new PointD(4, 15.2),    // 4 AM: 15.2ï¿½C
+            new PointD(6, 14.5),    // 6 AM: 14.5ï¿½C (coldest)
+            new PointD(8, 17.3),    // 8 AM: 17.3ï¿½C
+            new PointD(10, 22.1),   // 10 AM: 22.1ï¿½C
+            new PointD(12, 26.8),   // Noon: 26.8ï¿½C
+            new PointD(14, 29.5),   // 2 PM: 29.5ï¿½C (hottest)
+            new PointD(16, 28.2),   // 4 PM: 28.2ï¿½C
+            new PointD(18, 25.4),   // 6 PM: 25.4ï¿½C
+            new PointD(20, 22.7),   // 8 PM: 22.7ï¿½C
+            new PointD(22, 20.1),   // 10 PM: 20.1ï¿½C
+            new PointD(24, 18.9)    // Midnight: 18.9ï¿½C
         };
 
         model.AddSeries(new LineSeries(temperatureData)
         {
-            Title = "Temperature (°C)",
+            Title = "Temperature (ï¿½C)",
             StrokeThickness = 3
         });
 
         // Add horizontal range annotations for temperature zones
             
-        // Comfort zone (20°C - 25°C)
-        var comfortZone = new AnnotationRange(20.0, 25.0, AnnotationOrientation.Horizontal, "Comfort Zone (20-25°C)")
+        // Comfort zone (20ï¿½C - 25ï¿½C)
+        var comfortZone = new AnnotationRange(20.0, 25.0, AnnotationOrientation.Horizontal, "Comfort Zone (20-25ï¿½C)")
         {
             FillColor = new ColorRgba(0, 255, 0, 40),     // Light green
             BorderColor = new ColorRgba(0, 200, 0, 120),  // Green border
@@ -655,8 +691,8 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
             LabelPosition = LabelPosition.Start
         };
 
-        // Warning zone (25°C - 30°C)
-        var warningZone = new AnnotationRange(25.0, 30.0, AnnotationOrientation.Horizontal, "Warning Zone (25-30°C)")
+        // Warning zone (25ï¿½C - 30ï¿½C)
+        var warningZone = new AnnotationRange(25.0, 30.0, AnnotationOrientation.Horizontal, "Warning Zone (25-30ï¿½C)")
         {
             FillColor = new ColorRgba(255, 165, 0, 50),   // Light orange
             BorderColor = new ColorRgba(255, 140, 0, 150), // Orange border
@@ -664,8 +700,8 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
             LabelPosition = LabelPosition.Start
         };
 
-        // Cold zone (below 15°C)
-        var coldZone = new AnnotationRange(10.0, 15.0, AnnotationOrientation.Horizontal, "Cold Zone (<15°C)")
+        // Cold zone (below 15ï¿½C)
+        var coldZone = new AnnotationRange(10.0, 15.0, AnnotationOrientation.Horizontal, "Cold Zone (<15ï¿½C)")
         {
             FillColor = new ColorRgba(0, 100, 255, 40),      // Light blue
             BorderColor = new ColorRgba(0, 80, 200, 120),    // Blue border
