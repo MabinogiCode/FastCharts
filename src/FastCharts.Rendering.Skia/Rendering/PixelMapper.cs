@@ -10,7 +10,7 @@ namespace FastCharts.Rendering.Skia.Rendering
     /// <summary>
     /// Centralized mapping between data space and pixel space based on axis VisibleRange and plotRect.
     /// </summary>
-    internal static class PixelMapper
+    public static class PixelMapper
     {
         // Data -> Pixel (X) no clamp (caller clips to plot)
         public static float X<T>(T value, IAxis<T> axis, SKRect plotRect)

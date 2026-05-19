@@ -8,6 +8,7 @@ using FastCharts.Rendering.Skia.Rendering;
 using FastCharts.Rendering.Skia.Rendering.Layers;
 using SkiaSharp;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -18,10 +19,27 @@ namespace FastCharts.Rendering.Skia
     public sealed class SkiaChartRenderer : IAsyncChartRenderer<SKCanvas>, IChartExporter, IRenderer<SKCanvas>
     {
         private readonly GridLayer _grid = new();
-        private readonly SeriesLayer _series = new();
+        private readonly SeriesLayer _series;
         private readonly AnnotationLayer _annotations = new();
         private readonly AxesTicksLayer _axesTicks = new();
         private readonly LegendLayer _legend = new();
+        private readonly List<ISeriesRenderer> _customSeriesRenderers = new();
+
+        /// <summary>
+        /// Renderers for custom series types that the built-in layers do not draw.
+        /// Add an <see cref="ISeriesRenderer"/> here to support a custom series
+        /// without modifying this assembly; custom renderers run after (on top of)
+        /// the built-in layers.
+        /// </summary>
+        public IList<ISeriesRenderer> CustomSeriesRenderers => _customSeriesRenderers;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SkiaChartRenderer"/> class.
+        /// </summary>
+        public SkiaChartRenderer()
+        {
+            _series = new SeriesLayer(_customSeriesRenderers);
+        }
 
         public void Render(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight)
         {

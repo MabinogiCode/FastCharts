@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+
+using FastCharts.Rendering.Skia.Rendering;
+
 namespace FastCharts.Rendering.Skia.Rendering.Layers
 {
     internal sealed class SeriesLayer : IRenderLayer
@@ -15,11 +19,24 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             new LineLayer()        // plain lines on top
         };
 
+        private readonly IReadOnlyList<ISeriesRenderer> _customRenderers;
+
+        public SeriesLayer(IReadOnlyList<ISeriesRenderer> customRenderers)
+        {
+            _customRenderers = customRenderers;
+        }
+
         public void Render(RenderContext ctx)
         {
             foreach (var l in _layers)
             {
                 l.Render(ctx);
+            }
+
+            // Custom series renderers draw after (on top of) the built-in layers.
+            for (var i = 0; i < _customRenderers.Count; i++)
+            {
+                _customRenderers[i].Render(ctx);
             }
         }
     }
