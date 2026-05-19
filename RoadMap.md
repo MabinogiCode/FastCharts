@@ -138,7 +138,7 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 - [x] T-ARCH-AXREF ✅ **COMPLETED** - Series→axis mapping via YAxisIndex, clean service architecture
 - [x] T-ARCH-SERVICES ✅ **COMPLETED** - AxisManagementService, LegendSyncService, InteractionService
 - [x] T-CI-LINT ✅ **COMPLETED** - One type‑per‑file guard; the checker now also detects interfaces, records and delegates
-- [ ] T-PERF-PROF
+- [x] T-PERF-PROF ✅ **COMPLETED** - BenchmarkDotNet suite (`benchmarks/FastCharts.Benchmarks`) covering full render and LTTB decimation
 - [ ] T-QA-VISUAL
 
 ### Phase 2 Progress

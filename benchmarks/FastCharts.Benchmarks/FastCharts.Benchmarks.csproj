@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <!-- Benchmarks run optimized and are intentionally kept out of the main
+         solution so CI builds and `dotnet test` do not pick them up.
+         Run with: dotnet run -c Release --project benchmarks/FastCharts.Benchmarks -->
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FastCharts.Core\FastCharts.Core.csproj" />
+    <ProjectReference Include="..\..\src\FastCharts.Rendering.Skia\FastCharts.Rendering.Skia.csproj" />
+  </ItemGroup>
+
+</Project>
