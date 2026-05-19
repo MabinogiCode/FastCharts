@@ -24,6 +24,8 @@ internal sealed class StackedBarLayer : ISeriesSubLayer
             if (groupIndex < 0) { groupIndex = 0; }
             if (groupIndex >= groupCount) { groupIndex = groupCount - 1; }
             const double innerGap = 0.9;
+            using var fillSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
+            using var strokeSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, sbs.StrokeThickness) };
             ctx.Canvas.Save();
             ctx.Canvas.ClipRect(pr);
             for (var i = 0; i < sbs.Data.Count; i++)
@@ -54,8 +56,8 @@ internal sealed class StackedBarLayer : ISeriesSubLayer
                         }
                         var col = (paletteCount > 0 && palette != null) ? palette[seg % paletteCount] : model.Theme.PrimarySeriesColor;
                         var alpha = (byte)(RenderMath.Clamp01(sbs.FillOpacity) * col.A);
-                        using var fillSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(col.R, col.G, col.B, alpha) };
-                        using var strokeSeg = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, sbs.StrokeThickness), Color = new SKColor(col.R, col.G, col.B, col.A) };
+                        fillSeg.Color = new SKColor(col.R, col.G, col.B, alpha);
+                        strokeSeg.Color = new SKColor(col.R, col.G, col.B, col.A);
                         var y0 = PixelMapper.Y(yStart, yAxis, pr);
                         var y1 = PixelMapper.Y(yEnd, yAxis, pr);
                         var rect = SKRect.Create(System.Math.Min(xL, xR), System.Math.Min(y0, y1), System.Math.Abs(xR - xL), System.Math.Abs(y1 - y0));

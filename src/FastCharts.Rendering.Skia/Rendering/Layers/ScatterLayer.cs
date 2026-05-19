@@ -26,6 +26,7 @@ internal sealed class ScatterLayer : ISeriesSubLayer
             }
             var half = size * 0.5f;
             using var mp = new SKPaint { IsAntialias = size > 3, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, c.A) };
+            using var trianglePath = new SKPath();
             ctx.Canvas.Save();
             ctx.Canvas.ClipRect(pr);
             foreach (var p in ss.Data)
@@ -48,12 +49,12 @@ internal sealed class ScatterLayer : ISeriesSubLayer
                     case MarkerShape.Triangle:
                     default:
                         {
-                            using var path = new SKPath();
-                            path.MoveTo(px, py - half);
-                            path.LineTo(px - half, py + half);
-                            path.LineTo(px + half, py + half);
-                            path.Close();
-                            ctx.Canvas.DrawPath(path, mp);
+                            trianglePath.Reset();
+                            trianglePath.MoveTo(px, py - half);
+                            trianglePath.LineTo(px - half, py + half);
+                            trianglePath.LineTo(px + half, py + half);
+                            trianglePath.Close();
+                            ctx.Canvas.DrawPath(trianglePath, mp);
                             break;
                         }
                 }

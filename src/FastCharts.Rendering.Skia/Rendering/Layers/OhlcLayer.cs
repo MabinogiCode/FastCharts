@@ -22,6 +22,9 @@ internal sealed class OhlcLayer : ISeriesSubLayer
                 ? palette[1]
                 : new FastCharts.Core.Primitives.ColorRgba((byte)(cUp.R * 0.7), (byte)(cUp.G * 0.3), (byte)(cUp.B * 0.3), cUp.A);
             var wickStroke = (float)System.Math.Max(1.0, os.WickThickness);
+            using var wick = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = wickStroke };
+            using var bodyFill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
+            using var bodyStroke = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
             ctx.Canvas.Save();
             ctx.Canvas.ClipRect(pr);
             for (var i = 0; i < os.Data.Count; i++)
@@ -40,9 +43,10 @@ internal sealed class OhlcLayer : ISeriesSubLayer
                 var up = p.Close >= p.Open;
                 var bodyColor = up ? cUp : cDown;
                 var fillAlpha = (byte)(RenderMath.Clamp01(up ? os.UpFillOpacity : os.DownFillOpacity) * bodyColor.A);
-                using var wick = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = wickStroke, Color = new SKColor(bodyColor.R, bodyColor.G, bodyColor.B, bodyColor.A) };
-                using var bodyFill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(bodyColor.R, bodyColor.G, bodyColor.B, fillAlpha) };
-                using var bodyStroke = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, Color = new SKColor(bodyColor.R, bodyColor.G, bodyColor.B, bodyColor.A) };
+                var bodyStrokeColor = new SKColor(bodyColor.R, bodyColor.G, bodyColor.B, bodyColor.A);
+                wick.Color = bodyStrokeColor;
+                bodyFill.Color = new SKColor(bodyColor.R, bodyColor.G, bodyColor.B, fillAlpha);
+                bodyStroke.Color = bodyStrokeColor;
                 ctx.Canvas.DrawLine(xC, yHigh, xC, yLow, wick);
                 var top = System.Math.Min(yOpen, yClose);
                 var bot = System.Math.Max(yOpen, yClose);
