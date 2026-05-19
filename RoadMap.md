@@ -139,7 +139,7 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 - [x] T-ARCH-SERVICES ✅ **COMPLETED** - AxisManagementService, LegendSyncService, InteractionService
 - [x] T-CI-LINT ✅ **COMPLETED** - One type‑per‑file guard; the checker now also detects interfaces, records and delegates
 - [x] T-PERF-PROF ✅ **COMPLETED** - BenchmarkDotNet suite (`benchmarks/FastCharts.Benchmarks`) covering full render and LTTB decimation
-- [ ] T-QA-VISUAL
+- [x] T-QA-VISUAL ✅ **COMPLETED** - Visual-regression harness comparing renders against committed baseline images (`VisualRegressionTests`)
 
 ### Phase 2 Progress
 - [x] P2-DATA-BIND ✅ **COMPLETED** - Observable series (ObservableLineSeries / ObservableScatterSeries / ObservableBarSeries) bound to source collections via property paths. They derive from the concrete series types, so they are rendered like any other series.
