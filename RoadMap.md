@@ -137,9 +137,22 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 ### Technical Tasks Progress
 - [x] T-ARCH-AXREF ✅ **COMPLETED** - Series→axis mapping via YAxisIndex, clean service architecture
 - [x] T-ARCH-SERVICES ✅ **COMPLETED** - AxisManagementService, LegendSyncService, InteractionService
-- [x] T-CI-LINT ✅ **COMPLETED** - One type‑per‑file guard via GitHub Actions workflow (fails PR on violations)
+- [x] T-CI-LINT ✅ **COMPLETED** - One type‑per‑file guard; the checker now also detects interfaces, records and delegates
 - [ ] T-PERF-PROF
 - [ ] T-QA-VISUAL
+
+### Phase 2 Progress
+- [x] P2-DATA-BIND ✅ **COMPLETED** - Observable series (ObservableLineSeries / ObservableScatterSeries / ObservableBarSeries) bound to source collections via property paths. They derive from the concrete series types, so they are rendered like any other series.
+
+### Code Review & Hardening
+A full code-review pass (SOLID, Microsoft guidelines, 1.0 readiness) was run and its findings addressed:
+- Removed ~1,300 lines of dead and duplicate code (the unused `ChartModelEnhanced` model, dead abstraction interfaces, a duplicate `NumericTicker`/`Margin`, the unused WPF `Contracts`/`ChartAxis`/`ChartViewModel`/`Downsampling` types, empty marker interfaces).
+- Fixed observable data binding: the `Observable*` series now derive from the concrete series and are actually rendered (composition via `SeriesDataBinder`).
+- Fixed `StreamingLineSeries`: it no longer shadows base members (so it renders), and append/read operations are synchronized for background-thread producers.
+- Fixed `LogarithmicAxisExtensions`, which previously never applied the axis to the model.
+- `FastChart` now implements `IDisposable` to release input/paint handlers.
+- Fixed a WPF cross-thread crash in the .NET 8 demo (command bodies marshalled to the UI thread).
+- Repaired mojibake in docs/scripts, broken README links, CI issues (deprecated release action, overlapping tag triggers) and enforced one type per file repository-wide.
 
 ### 🎯 Phase 1 Completion Status: **13/13 features completed (100%)**
 
@@ -167,60 +180,29 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 - Financial indicators (dedicated libs like StockCharts)
 
 ---
-## 11. Next Immediate Steps
-🎊🎊 **MAJOR MILESTONE ACHIEVED: Phase 1 is 100% COMPLETE!** 🎊🎊
+## 11. Current Status & Next Steps
 
-**ALL Phase 1 features completed**: 
-- ✅ P1-AX-CAT (CategoryAxis with discrete string labels)
-- ✅ P1-EXPORT-PNG (Complete PNG export functionality with UI integration)
-- ✅ P1-ANN-LINE (Annotation lines with horizontal/vertical lines and labels)
-- ✅ P1-AX-MULTI (Multiple Y axes with series attachment via YAxisIndex)
-- ✅ T-ARCH-AXREF (Complete architecture refactor with service pattern)
-- ✅ T-ARCH-SERVICES (Clean service separation and MVVM support)
-- ✅ P1-ANN-RANGE (Range highlight annotations with horizontal/vertical filled bands)
-- ✅ T-CI-LINT (One type‑per‑file CI guard)
-- ✅ P1-RESAMPLE-LTTB (LTTB decimation algorithm with IResampler interface, comprehensive tests, and performance metrics)
-- ✅ P1-AX-LOG (Logarithmic axis with base-10/custom bases, LogScale, LogTicker, and ScientificNumberFormatter)
-- ✅ P1-STREAM-APPEND (StreamingLineSeries with rolling windows, real-time append API, and batch operations)
-- ✅ P1-TOOLTIP-PIN (PinnedTooltipBehavior with multi-tooltip support, right-click interactions, and data export)
-- ✅ P1-METRICS (Complete metrics system: RenderMetrics, MetricsOverlayBehavior, FPS tracking, memory monitoring, keyboard shortcuts)
+**Phase 1 (foundational features): complete.** All 13 features are implemented —
+multi-axis, logarithmic and category axes, line/range annotations, PNG export,
+LTTB decimation, streaming series, pinned tooltips and the metrics overlay.
 
-**🎉 PHASE 1 ACHIEVEMENT UNLOCKED**: FastCharts now has a **complete foundational framework** with:
+**Phase 2: in progress.** P2-DATA-BIND (observable data binding for MVVM) is done.
 
-### **📊 Complete Axis System**: 
-- Numeric, Category, Logarithmic axes
-- Multi-axis support (left/right Y axes)
-- Automatic scaling and smart ticks
+A code-review and hardening pass has removed dead/duplicate code, fixed the
+data-binding and streaming-series defects, made `FastChart` disposable, fixed a
+demo cross-thread crash, and corrected build/CI/documentation issues (see
+section 8). The solution builds across all targets and the unit-test suite passes.
 
-### **🎨 Full Annotation System**: 
-- Line annotations (horizontal/vertical with labels)
-- Range annotations (filled bands)
-- Styling and positioning options
+### Known limitations / not yet done
+- No benchmark suite yet (T-PERF-PROF). The targets in section 7 are design
+  goals, not measured results.
+- No visual-regression harness (T-QA-VISUAL).
+- Rendering is not open for extension: custom series cannot supply their own
+  drawing (no `ISeriesRenderer` extension point).
+- Some Skia layers still allocate paints/paths per frame.
 
-### **⚡ High-Performance Rendering**: 
-- PNG export with clipboard integration
-- LTTB decimation for massive datasets (100K+ points)
-- Real-time streaming with rolling windows
-- Performance metrics and monitoring
-
-### **🖱️ Advanced Interactions**: 
-- Pinned tooltips (multi-tooltip support)
-- Right-click interactions
-- Comprehensive crosshair and pan behaviors
-
-### **🏗️ Clean Architecture**: 
-- Service pattern with MVVM support
-- Extensible interfaces (IResampler, IBehavior, IAnnotation)
-- Reactive UI integration
-- CI/CD quality guards
-
-**FastCharts is now PRODUCTION-READY** for real-time, financial, and analytical applications!
-
-**Ready for Phase 2**: Advanced charting features await:
-- **P2-SERIES-PIE** (Pie/Donut charts) 
-- **P2-HEATMAP** (HeatMap series with color scale)
-- **P2-EXPORT-SVG** (Vector export)
-- **P2-SERIES-CANDLESTICK** (Enhanced financial OHLC)
-- **P2-DATA-BIND** (Observable data binding for MVVM)
-
-**🚀 Phase 1 Complete - Ready to conquer Phase 2!** 🚀
+### Next priorities
+- **P2-HEATMAP**, **P2-EXPORT-SVG**, **P2-SERIES-PIE**, **P2-SERIES-CANDLESTICK**.
+- **T-PERF-PROF**: a BenchmarkDotNet suite to validate the section 7 targets.
+- Renderer extensibility (`ISeriesRenderer`) so new series types no longer
+  require changes inside the rendering assembly.
