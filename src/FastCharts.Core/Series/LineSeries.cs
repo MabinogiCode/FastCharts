@@ -82,7 +82,7 @@ namespace FastCharts.Core.Series
         /// </summary>
         /// <param name="viewportPixelWidth">Available pixel width for rendering</param>
         /// <returns>Optimized data for rendering</returns>
-        public IReadOnlyList<PointD> GetRenderData(int viewportPixelWidth = 800)
+        public virtual IReadOnlyList<PointD> GetRenderData(int viewportPixelWidth = 800)
         {
             // If resampling is disabled or no resampler, return raw data
             if (!_enableAutoResampling || _resampler == null)
@@ -167,7 +167,7 @@ namespace FastCharts.Core.Series
             InvalidateCache();
         }
 
-        public FRange GetXRange()
+        public virtual FRange GetXRange()
         {
             if (Data.Count == 0)
             {
@@ -177,7 +177,7 @@ namespace FastCharts.Core.Series
             return new FRange(min, max);
         }
 
-        public FRange GetYRange()
+        public virtual FRange GetYRange()
         {
             if (Data.Count == 0)
             {

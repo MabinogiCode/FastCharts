@@ -1,323 +1,326 @@
-using FastCharts.Core.Abstractions;
-using FastCharts.Core.Primitives;
-using FastCharts.Core.Resampling;
-using FastCharts.Core.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FastCharts.Core.Abstractions;
+using FastCharts.Core.Primitives;
+using FastCharts.Core.Resampling;
 
 namespace FastCharts.Core.Series
 {
     /// <summary>
-    /// High-performance streaming line series with rolling window support
-    /// Optimized for real-time applications with thousands of points per second
+    /// High-performance streaming line series with rolling-window support.
+    /// Designed for real-time scenarios: append operations and the data reads
+    /// used by rendering and range calculation are synchronized on a private
+    /// lock, so points may be appended from a background thread while the chart
+    /// renders. The series stores its points in the inherited <see cref="LineSeries"/>
+    /// data list, so it is rendered like any other line series.
     /// </summary>
     public class StreamingLineSeries : LineSeries, IStreamingSeries
     {
-        private readonly List<PointD> _streamingData;
+        private readonly object _sync = new();
         private int? _maxPointCount;
         private TimeSpan? _rollingWindowDuration;
         private DateTime _referenceTime = DateTime.UtcNow;
 
         /// <summary>
-        /// Creates a new streaming line series
+        /// Creates a new streaming line series.
         /// </summary>
-        /// <param name="maxPointCount">Maximum points to keep (null = unlimited)</param>
-        /// <param name="rollingWindow">Rolling window duration (null = no time-based trimming)</param>
+        /// <param name="maxPointCount">Maximum points to keep (null = unlimited).</param>
+        /// <param name="rollingWindow">Rolling window duration (null = no time-based trimming).</param>
         public StreamingLineSeries(int? maxPointCount = null, TimeSpan? rollingWindow = null)
         {
-            _streamingData = new List<PointD>();
             _maxPointCount = maxPointCount;
             _rollingWindowDuration = rollingWindow;
 
-            // Optimize for streaming performance
             EnableAutoResampling = true;
-            AutoResampleThreshold = 1000; // Start resampling at 1K points
+            AutoResampleThreshold = 1000;
             Resampler = new LttbResampler();
         }
 
         /// <summary>
-        /// Creates a streaming series from existing data
+        /// Creates a streaming series seeded with existing data.
         /// </summary>
-        /// <param name="initialData">Initial data points</param>
-        /// <param name="maxPointCount">Maximum points to keep</param>
-        /// <param name="rollingWindow">Rolling window duration</param>
+        /// <param name="initialData">Initial data points.</param>
+        /// <param name="maxPointCount">Maximum points to keep.</param>
+        /// <param name="rollingWindow">Rolling window duration.</param>
         public StreamingLineSeries(IEnumerable<PointD> initialData, int? maxPointCount = null, TimeSpan? rollingWindow = null)
             : this(maxPointCount, rollingWindow)
         {
-            _streamingData.AddRange(initialData);
-
-            // Set reference time based on latest data point if available
-            if (_streamingData.Count > 0)
+            if (initialData == null)
             {
-                var latestPoint = _streamingData.OrderByDescending(p => p.X).First();
-                _referenceTime = DateTime.FromOADate(latestPoint.X);
+                throw new ArgumentNullException(nameof(initialData));
             }
 
-            TrimToWindow(); // Apply window limits to initial data
-            InvalidateCache();
+            lock (_sync)
+            {
+                Buffer.AddRange(initialData);
+                if (Buffer.Count > 0)
+                {
+                    _referenceTime = DateTime.FromOADate(Buffer.Max(p => p.X));
+                }
+
+                TrimToWindowInternal();
+                InvalidateCache();
+            }
         }
 
         /// <summary>
-        /// Gets or sets the maximum number of points to keep in the series
+        /// Gets or sets the maximum number of points to keep in the series.
         /// </summary>
         public int? MaxPointCount
         {
-            get => _maxPointCount;
+            get
+            {
+                lock (_sync)
+                {
+                    return _maxPointCount;
+                }
+            }
+
             set
             {
-                _maxPointCount = value;
-                if (_maxPointCount.HasValue && _maxPointCount.Value > 0)
+                lock (_sync)
                 {
-                    TrimToWindow();
+                    _maxPointCount = value;
                 }
+
+                TrimToWindow();
             }
         }
 
         /// <summary>
-        /// Gets or sets the rolling window duration
+        /// Gets or sets the rolling window duration.
         /// </summary>
         public TimeSpan? RollingWindowDuration
         {
-            get => _rollingWindowDuration;
+            get
+            {
+                lock (_sync)
+                {
+                    return _rollingWindowDuration;
+                }
+            }
+
             set
             {
-                _rollingWindowDuration = value;
-                if (_rollingWindowDuration.HasValue)
+                lock (_sync)
                 {
-                    TrimToWindow();
+                    _rollingWindowDuration = value;
+                }
+
+                TrimToWindow();
+            }
+        }
+
+        /// <summary>
+        /// Gets the current point count.
+        /// </summary>
+        public int PointCount
+        {
+            get
+            {
+                lock (_sync)
+                {
+                    return Data.Count;
                 }
             }
         }
 
         /// <summary>
-        /// Gets the current point count
-        /// </summary>
-        public int PointCount => _streamingData.Count;
-
-        /// <summary>
-        /// Gets the age of the oldest point in the series
+        /// Gets the age of the oldest point, or null when the series is empty.
         /// </summary>
         public TimeSpan? OldestPointAge
         {
             get
             {
-                if (_streamingData.Count == 0)
-                    return null;
+                lock (_sync)
+                {
+                    if (Buffer.Count == 0)
+                    {
+                        return null;
+                    }
 
-                var oldestPoint = _streamingData.OrderBy(p => p.X).First();
-                var oldestTime = DateTime.FromOADate(oldestPoint.X);
-                return DateTime.UtcNow - oldestTime;
+                    return DateTime.UtcNow - DateTime.FromOADate(Buffer.Min(p => p.X));
+                }
             }
         }
 
         /// <summary>
-        /// Event raised when points are added to the series
+        /// Event raised when points are appended to the series.
         /// </summary>
         public event EventHandler<StreamingDataEventArgs>? PointsAdded;
 
         /// <summary>
-        /// Event raised when points are removed from the series
+        /// Event raised when points are removed from the series by window trimming.
         /// </summary>
         public event EventHandler<StreamingDataEventArgs>? PointsRemoved;
 
         /// <summary>
-        /// Appends a new data point efficiently
+        /// Appends a single data point.
         /// </summary>
-        /// <param name="point">Point to append</param>
+        /// <param name="point">Point to append.</param>
         public void AppendPoint(PointD point)
         {
             AppendPoints(new[] { point });
         }
 
         /// <summary>
-        /// Appends multiple data points efficiently with batched window management
+        /// Appends multiple data points with batched window management.
         /// </summary>
-        /// <param name="points">Points to append</param>
+        /// <param name="points">Points to append.</param>
         public void AppendPoints(IEnumerable<PointD> points)
         {
             if (points == null)
+            {
                 return;
+            }
 
-            var pointArray = points.ToArray();
+            var pointArray = points as PointD[] ?? points.ToArray();
             if (pointArray.Length == 0)
+            {
                 return;
+            }
 
-            // Add points efficiently
-            _streamingData.AddRange(pointArray);
+            int total;
+            int removedCount;
 
-            // Update reference time based on latest point
-            var latestPoint = pointArray.OrderByDescending(p => p.X).First();
-            _referenceTime = DateTime.FromOADate(latestPoint.X);
+            lock (_sync)
+            {
+                Buffer.AddRange(pointArray);
+                _referenceTime = DateTime.FromOADate(pointArray.Max(p => p.X));
+                removedCount = TrimToWindowInternal();
+                InvalidateCache();
+                total = Data.Count;
+            }
 
-            // Apply window limits
-            var removedCount = TrimToWindowInternal();
-
-            // Invalidate render cache
-            InvalidateCache();
-
-            // Raise events
-            PointsAdded?.Invoke(this, new StreamingDataEventArgs(_streamingData.Count, pointArray.Length, 0));
-
+            PointsAdded?.Invoke(this, new StreamingDataEventArgs(total, pointArray.Length, 0));
             if (removedCount > 0)
             {
-                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(_streamingData.Count, 0, removedCount));
+                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(total, 0, removedCount));
             }
         }
 
         /// <summary>
-        /// Trims old data points based on current window settings
+        /// Trims old data points based on the current window settings.
         /// </summary>
         public void TrimToWindow()
         {
-            var removedCount = TrimToWindowInternal();
+            int total;
+            int removedCount;
+
+            lock (_sync)
+            {
+                removedCount = TrimToWindowInternal();
+                if (removedCount > 0)
+                {
+                    InvalidateCache();
+                }
+
+                total = Data.Count;
+            }
 
             if (removedCount > 0)
             {
-                InvalidateCache();
-                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(_streamingData.Count, 0, removedCount));
+                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(total, 0, removedCount));
             }
         }
 
-        /// <summary>
-        /// Gets the streaming data as IList for compatibility
-        /// This property provides access to the internal data while maintaining streaming capabilities
-        /// </summary>
-        public new IList<PointD> Data => _streamingData;
-
-        /// <summary>
-        /// Override to use streaming data
-        /// </summary>
-        public override bool IsEmpty => _streamingData.Count == 0;
-
-        /// <summary>
-        /// Gets render data optimized for streaming scenarios
-        /// </summary>
-        /// <param name="viewportPixelWidth">Viewport pixel width</param>
-        /// <returns>Optimized render data</returns>
-        public new IReadOnlyList<PointD> GetRenderData(int viewportPixelWidth = 800)
+        /// <inheritdoc />
+        public override IReadOnlyList<PointD> GetRenderData(int viewportPixelWidth = 800)
         {
-            // Use base class LTTB logic but with our streaming data
-            if (!EnableAutoResampling || Resampler == null)
+            lock (_sync)
             {
-                return _streamingData.ToArray();
+                return base.GetRenderData(viewportPixelWidth);
             }
+        }
 
-            if (_streamingData.Count <= AutoResampleThreshold)
+        /// <inheritdoc />
+        public override FRange GetXRange()
+        {
+            lock (_sync)
             {
-                return _streamingData.ToArray();
+                return base.GetXRange();
             }
-
-            // Calculate optimal point count and resample
-            var targetPointCount = CalculateOptimalPointCount(viewportPixelWidth);
-            return Resampler.Resample(_streamingData.ToArray(), targetPointCount);
         }
 
-        /// <summary>
-        /// Override range calculation to use streaming data
-        /// </summary>
-        public new FRange GetXRange()
+        /// <inheritdoc />
+        public override FRange GetYRange()
         {
-            if (_streamingData.Count == 0)
-                return new FRange(0, 0);
-
-            var (min, max) = DataHelper.GetMinMax(_streamingData, p => p.X);
-            return new FRange(min, max);
-        }
-
-        /// <summary>
-        /// Override range calculation to use streaming data
-        /// </summary>
-        public new FRange GetYRange()
-        {
-            if (_streamingData.Count == 0)
-                return new FRange(0, 0);
-
-            var (min, max) = DataHelper.GetMinMax(_streamingData, p => p.Y);
-            return new FRange(min, max);
-        }
-
-        /// <summary>
-        /// Internal method for trimming data with return count
-        /// </summary>
-        private int TrimToWindowInternal()
-        {
-            var initialCount = _streamingData.Count;
-
-            // Apply count-based limit
-            if (_maxPointCount.HasValue && _streamingData.Count > _maxPointCount.Value)
+            lock (_sync)
             {
-                var pointsToRemove = _streamingData.Count - _maxPointCount.Value;
-                _streamingData.RemoveRange(0, pointsToRemove);
+                return base.GetYRange();
             }
-
-            // Apply time-based limit
-            if (_rollingWindowDuration.HasValue && _streamingData.Count > 0)
-            {
-                var cutoffTime = (_referenceTime - _rollingWindowDuration.Value).ToOADate();
-                var oldPointsCount = _streamingData.Count(p => p.X < cutoffTime);
-
-                if (oldPointsCount > 0)
-                {
-                    _streamingData.RemoveAll(p => p.X < cutoffTime);
-                }
-            }
-
-            return initialCount - _streamingData.Count;
         }
 
         /// <summary>
-        /// Calculates optimal point count based on viewport (same as base class)
+        /// Appends a real-time point timestamped with the current (or supplied) time.
         /// </summary>
-        private int CalculateOptimalPointCount(int viewportPixelWidth)
-        {
-            var baseTarget = viewportPixelWidth * 2;
-            var minPoints = Math.Min(100, _streamingData.Count);
-            var maxPoints = Math.Min(5000, _streamingData.Count);
-            return Math.Max(minPoints, Math.Min(maxPoints, baseTarget));
-        }
-
-        /// <summary>
-        /// Appends a real-time data point with current timestamp
-        /// Convenience method for real-time scenarios
-        /// </summary>
-        /// <param name="yValue">Y value to append</param>
-        /// <param name="timestamp">Optional timestamp (defaults to current time)</param>
+        /// <param name="yValue">Y value to append.</param>
+        /// <param name="timestamp">Optional timestamp (defaults to the current UTC time).</param>
         public void AppendRealTimePoint(double yValue, DateTime? timestamp = null)
         {
             var time = timestamp ?? DateTime.UtcNow;
-            var point = new PointD(time.ToOADate(), yValue);
-            AppendPoint(point);
+            AppendPoint(new PointD(time.ToOADate(), yValue));
         }
 
         /// <summary>
-        /// Appends multiple real-time points with timestamps
+        /// Appends multiple timestamped real-time points.
         /// </summary>
-        /// <param name="values">Y values with timestamps</param>
+        /// <param name="values">Y values with timestamps.</param>
         public void AppendRealTimePoints(IEnumerable<(DateTime timestamp, double value)> values)
         {
-            var points = values.Select(v => new PointD(v.timestamp.ToOADate(), v.value));
-            AppendPoints(points);
+            if (values == null)
+            {
+                return;
+            }
+
+            AppendPoints(values.Select(v => new PointD(v.timestamp.ToOADate(), v.value)));
         }
 
         /// <summary>
-        /// Creates a streaming series optimized for real-time data
+        /// Creates a streaming series preconfigured for real-time data.
         /// </summary>
-        /// <param name="maxPoints">Maximum points to keep (default: 10,000)</param>
-        /// <param name="rollingWindow">Rolling window duration (default: 1 hour)</param>
-        /// <param name="title">Series title</param>
-        /// <returns>Configured streaming series</returns>
+        /// <param name="maxPoints">Maximum points to keep (default: 10,000).</param>
+        /// <param name="rollingWindow">Rolling window duration (default: 1 hour).</param>
+        /// <param name="title">Series title.</param>
+        /// <returns>A configured streaming series.</returns>
         public static StreamingLineSeries CreateRealTime(int maxPoints = 10_000, TimeSpan? rollingWindow = null, string? title = null)
         {
-            var series = new StreamingLineSeries(maxPoints, rollingWindow ?? TimeSpan.FromHours(1))
+            return new StreamingLineSeries(maxPoints, rollingWindow ?? TimeSpan.FromHours(1))
             {
                 Title = title ?? "Real-time Data",
                 StrokeThickness = 1.5,
                 EnableAutoResampling = true,
                 AutoResampleThreshold = 2000
             };
+        }
 
-            return series;
+        /// <summary>
+        /// Gets the inherited point list typed as a concrete list for efficient
+        /// front-trimming. LineSeries always backs its data with a list of points.
+        /// </summary>
+        private List<PointD> Buffer => (List<PointD>)Data;
+
+        /// <summary>
+        /// Applies window limits. The caller must hold the synchronization lock.
+        /// </summary>
+        /// <returns>The number of points removed.</returns>
+        private int TrimToWindowInternal()
+        {
+            var initialCount = Buffer.Count;
+
+            if (_maxPointCount.HasValue && Buffer.Count > _maxPointCount.Value)
+            {
+                Buffer.RemoveRange(0, Buffer.Count - _maxPointCount.Value);
+            }
+
+            if (_rollingWindowDuration.HasValue && Buffer.Count > 0)
+            {
+                var cutoff = (_referenceTime - _rollingWindowDuration.Value).ToOADate();
+                Buffer.RemoveAll(p => p.X < cutoff);
+            }
+
+            return initialCount - Buffer.Count;
         }
     }
 }
