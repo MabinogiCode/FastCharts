@@ -1,97 +1,118 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using FastCharts.Core.DataBinding;
-using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 
 namespace FastCharts.Core.DataBinding.Series
 {
     /// <summary>
-    /// Observable line series that supports data binding
-    /// Automatically synchronizes with source collections and updates when data changes
+    /// Line series that binds its points to a source collection through property
+    /// paths. It is a <see cref="LineSeries"/>, so it can be added to a chart and
+    /// rendered like any other line series.
     /// </summary>
-    public class ObservableLineSeries : ObservableSeriesBase<object>, ILineSeries
+    public sealed class ObservableLineSeries : LineSeries, IObservableSeries<object>, IDisposable
     {
-        private readonly List<PointD> _data = new();
+        private readonly SeriesDataBinder _binder;
+        private bool _disposed;
 
-        /// <summary>
-        /// Gets the line series data as points
-        /// </summary>
-        public IReadOnlyList<PointD> Data => _data.AsReadOnly();
-
-        /// <inheritdoc />
-        public override bool IsEmpty => _data.Count == 0;
-
-        /// <summary>
-        /// Gets or sets whether to show markers on data points
-        /// </summary>
-        public bool ShowMarkers { get; set; }
-
-        /// <summary>
-        /// Gets or sets the marker size in pixels
-        /// </summary>
-        public double MarkerSize { get; set; } = 4.0;
-
-        /// <summary>
-        /// Gets or sets the marker shape
-        /// </summary>
-        public MarkerShape MarkerShape { get; set; } = MarkerShape.Circle;
-
-        /// <summary>
-        /// Gets or sets whether to enable auto-resampling for large datasets
-        /// </summary>
-        public bool EnableAutoResampling { get; set; } = true;
-
-        /// <summary>
-        /// Initializes a new instance of the ObservableLineSeries class
-        /// </summary>
+        /// <summary>Initializes a new empty observable line series.</summary>
         public ObservableLineSeries()
         {
+            _binder = new SeriesDataBinder(RefreshData);
         }
 
         /// <summary>
-        /// Initializes a new instance of the ObservableLineSeries class with data source
+        /// Initializes a new observable line series bound to a source collection.
         /// </summary>
-        /// <param name="itemsSource">Data source</param>
-        /// <param name="xPath">Property path for X values</param>
-        /// <param name="yPath">Property path for Y values</param>
+        /// <param name="itemsSource">Source collection.</param>
+        /// <param name="xPath">Property path for X values.</param>
+        /// <param name="yPath">Property path for Y values.</param>
         public ObservableLineSeries(IEnumerable<object> itemsSource, string xPath, string yPath)
+            : this()
         {
-            ItemsSource = itemsSource;
-            XPath = xPath;
-            YPath = yPath;
+            _binder.XPath = xPath;
+            _binder.YPath = yPath;
+            _binder.ItemsSource = itemsSource;
         }
 
         /// <inheritdoc />
-        protected override void UpdateSeriesData(IEnumerable<PointD> points)
+        public IEnumerable<object> ItemsSource
         {
-            _data.Clear();
-            _data.AddRange(points);
+            get => _binder.ItemsSource;
+            set => _binder.ItemsSource = value;
         }
 
         /// <inheritdoc />
-        protected override int GetPointCount()
+        public string? XPath
         {
-            return _data.Count;
+            get => _binder.XPath;
+            set => _binder.XPath = value;
         }
 
-        /// <summary>
-        /// Gets the data points for rendering
-        /// </summary>
-        /// <returns>Data points</returns>
-        public IEnumerable<PointD> GetRenderPoints()
+        /// <inheritdoc />
+        public string? YPath
         {
-            return _data;
+            get => _binder.YPath;
+            set => _binder.YPath = value;
         }
 
-        /// <summary>
-        /// Gets a human-readable summary of the series
-        /// </summary>
-        /// <returns>Series summary</returns>
-        public override string ToString()
+        /// <inheritdoc />
+        public string? TitlePath
         {
-            var sourceType = ItemsSource?.GetType().Name ?? "null";
-            return $"ObservableLineSeries: {_data.Count} points from {sourceType} (X: {XPath}, Y: {YPath})";
+            get => _binder.TitlePath;
+            set => _binder.TitlePath = value;
+        }
+
+        /// <inheritdoc />
+        public bool AutoRefresh
+        {
+            get => _binder.AutoRefresh;
+            set => _binder.AutoRefresh = value;
+        }
+
+        /// <inheritdoc />
+        public TimeSpan RefreshThrottle
+        {
+            get => _binder.RefreshThrottle;
+            set => _binder.RefreshThrottle = value;
+        }
+
+        /// <inheritdoc />
+        public event EventHandler<DataBindingUpdatedEventArgs>? DataBindingUpdated;
+
+        /// <inheritdoc />
+        public void RefreshData()
+        {
+            var before = Data.Count;
+            var points = _binder.Project(useIndexForInvalidX: false);
+
+            Data.Clear();
+            foreach (var point in points)
+            {
+                Data.Add(point);
+            }
+
+            InvalidateCache();
+
+            DataBindingUpdated?.Invoke(this, new DataBindingUpdatedEventArgs
+            {
+                ItemsAdded = Math.Max(0, Data.Count - before),
+                ItemsRemoved = Math.Max(0, before - Data.Count),
+                TotalItems = Data.Count,
+                UpdateType = DataBindingUpdateType.FullRefresh
+            });
+        }
+
+        /// <summary>Releases the source-collection subscriptions held by this series.</summary>
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _binder.Dispose();
         }
     }
 }

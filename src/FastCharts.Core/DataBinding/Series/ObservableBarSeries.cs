@@ -1,137 +1,117 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using FastCharts.Core.DataBinding;
-using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 
 namespace FastCharts.Core.DataBinding.Series
 {
     /// <summary>
-    /// Observable bar series that supports data binding
-    /// Automatically synchronizes with source collections and updates when data changes
+    /// Bar series that binds its bars to a source collection through property paths.
+    /// It is a <see cref="BarSeries"/>, so it can be added to a chart and rendered
+    /// like any other bar series. Items whose X value is not numeric (e.g. string
+    /// categories) are placed at their zero-based index.
     /// </summary>
-    public class ObservableBarSeries : ObservableSeriesBase<object>, IBarSeries
+    public sealed class ObservableBarSeries : BarSeries, IObservableSeries<object>, IDisposable
     {
-        private readonly List<BarPoint> _data = new();
+        private readonly SeriesDataBinder _binder;
+        private bool _disposed;
 
-        /// <summary>
-        /// Gets the bar series data as bar points
-        /// </summary>
-        public IReadOnlyList<BarPoint> Data => _data.AsReadOnly();
-
-        /// <inheritdoc />
-        public override bool IsEmpty => _data.Count == 0;
-
-        /// <summary>
-        /// Gets or sets the bar width (null for auto-sizing)
-        /// </summary>
-        public double? Width { get; set; }
-
-        /// <summary>
-        /// Gets or sets the baseline Y value for bars
-        /// </summary>
-        public double Baseline { get; set; } = 0.0;
-
-        /// <summary>
-        /// Gets or sets the bar fill opacity (0.0 to 1.0)
-        /// </summary>
-        public double FillOpacity { get; set; } = 0.8;
-
-        /// <summary>
-        /// Gets or sets the property path for bar labels
-        /// </summary>
-        public string? LabelPath { get; set; }
-
-        /// <summary>
-        /// Initializes a new instance of the ObservableBarSeries class
-        /// </summary>
+        /// <summary>Initializes a new empty observable bar series.</summary>
         public ObservableBarSeries()
         {
+            _binder = new SeriesDataBinder(RefreshData);
         }
 
         /// <summary>
-        /// Initializes a new instance of the ObservableBarSeries class with data source
+        /// Initializes a new observable bar series bound to a source collection.
         /// </summary>
-        /// <param name="itemsSource">Data source</param>
-        /// <param name="xPath">Property path for X values (categories)</param>
-        /// <param name="yPath">Property path for Y values (heights)</param>
+        /// <param name="itemsSource">Source collection.</param>
+        /// <param name="xPath">Property path for X values (categories or numbers).</param>
+        /// <param name="yPath">Property path for Y values (bar heights).</param>
         public ObservableBarSeries(IEnumerable<object> itemsSource, string xPath, string yPath)
+            : this()
         {
-            ItemsSource = itemsSource;
-            XPath = xPath;
-            YPath = yPath;
+            _binder.XPath = xPath;
+            _binder.YPath = yPath;
+            _binder.ItemsSource = itemsSource;
         }
 
         /// <inheritdoc />
-        protected override void UpdateSeriesData(IEnumerable<PointD> points)
+        public IEnumerable<object> ItemsSource
         {
-            _data.Clear();
+            get => _binder.ItemsSource;
+            set => _binder.ItemsSource = value;
+        }
 
+        /// <inheritdoc />
+        public string? XPath
+        {
+            get => _binder.XPath;
+            set => _binder.XPath = value;
+        }
+
+        /// <inheritdoc />
+        public string? YPath
+        {
+            get => _binder.YPath;
+            set => _binder.YPath = value;
+        }
+
+        /// <inheritdoc />
+        public string? TitlePath
+        {
+            get => _binder.TitlePath;
+            set => _binder.TitlePath = value;
+        }
+
+        /// <inheritdoc />
+        public bool AutoRefresh
+        {
+            get => _binder.AutoRefresh;
+            set => _binder.AutoRefresh = value;
+        }
+
+        /// <inheritdoc />
+        public TimeSpan RefreshThrottle
+        {
+            get => _binder.RefreshThrottle;
+            set => _binder.RefreshThrottle = value;
+        }
+
+        /// <inheritdoc />
+        public event EventHandler<DataBindingUpdatedEventArgs>? DataBindingUpdated;
+
+        /// <inheritdoc />
+        public void RefreshData()
+        {
+            var before = Data.Count;
+            var points = _binder.Project(useIndexForInvalidX: true);
+
+            Data.Clear();
             foreach (var point in points)
             {
-                var barPoint = new BarPoint(point.X, point.Y);
-                // Note: BarPoint doesn't have Label property yet, this will be added when BarPoint is enhanced
-                _data.Add(barPoint);
+                Data.Add(new BarPoint(point.X, point.Y));
             }
-        }
 
-        /// <inheritdoc />
-        protected override int GetPointCount()
-        {
-            return _data.Count;
-        }
-
-        /// <summary>
-        /// Converts source items to bar points using property paths
-        /// </summary>
-        /// <param name="items">Source items</param>
-        /// <returns>Converted bar points</returns>
-        protected override IEnumerable<PointD> ConvertToPoints(IEnumerable<object> items)
-        {
-            var itemList = items.ToList();
-            for (var i = 0; i < itemList.Count; i++)
+            DataBindingUpdated?.Invoke(this, new DataBindingUpdatedEventArgs
             {
-                var item = itemList[i];
-                var xValue = GetCoordinateValue(item, XPath, i);
-                var yValue = GetCoordinateValue(item, YPath, 0.0);
+                ItemsAdded = Math.Max(0, Data.Count - before),
+                ItemsRemoved = Math.Max(0, before - Data.Count),
+                TotalItems = Data.Count,
+                UpdateType = DataBindingUpdateType.FullRefresh
+            });
+        }
 
-                // For bar series, if X is not a valid coordinate (like a string category), use index
-                double x;
-                if (DataBindingConverter.IsValidCoordinate(xValue))
-                {
-                    x = DataBindingConverter.ToDouble(xValue);
-                }
-                else
-                {
-                    // Use index for string categories like "A", "B", "C"
-                    x = i;
-                }
-
-                if (DataBindingConverter.IsValidCoordinate(yValue))
-                {
-                    var y = DataBindingConverter.ToDouble(yValue);
-                    yield return new PointD(x, y);
-                }
+        /// <summary>Releases the source-collection subscriptions held by this series.</summary>
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
             }
-        }
 
-        /// <summary>
-        /// Gets the data points for rendering
-        /// </summary>
-        /// <returns>Data points as bar points</returns>
-        public IEnumerable<BarPoint> GetRenderPoints()
-        {
-            return _data;
-        }
-
-        /// <summary>
-        /// Gets a human-readable summary of the series
-        /// </summary>
-        /// <returns>Series summary</returns>
-        public override string ToString()
-        {
-            var sourceType = ItemsSource?.GetType().Name ?? "null";
-            return $"ObservableBarSeries: {_data.Count} bars from {sourceType} (X: {XPath}, Y: {YPath})";
+            _disposed = true;
+            _binder.Dispose();
         }
     }
 }

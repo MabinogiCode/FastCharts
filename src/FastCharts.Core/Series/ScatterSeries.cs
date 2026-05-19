@@ -6,7 +6,7 @@ using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Series;
 
-public sealed class ScatterSeries : SeriesBase, ISeriesRangeProvider
+public class ScatterSeries : SeriesBase, ISeriesRangeProvider
 {
     public IList<PointD> Data { get; }
     public double MarkerSize { get; set; }

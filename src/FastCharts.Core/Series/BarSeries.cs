@@ -6,7 +6,7 @@ using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Series;
 
-public sealed class BarSeries : SeriesBase, ISeriesRangeProvider
+public class BarSeries : SeriesBase, ISeriesRangeProvider
 {
     public IList<BarPoint> Data { get; }
     public double? Width { get; set; }
