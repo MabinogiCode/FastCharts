@@ -15,20 +15,6 @@ namespace FastCharts.Core.DataBinding.Series
     public class ObservableLineSeries : LineSeries, IObservableSeries<object>, ILineSeries, IDisposable
     {
         private readonly SeriesDataBinder _binder;
-        /// <summary>
-        /// Gets or sets whether to show markers on data points
-        /// </summary>
-        public bool ShowMarkers { get; set; }
-
-        /// <summary>
-        /// Gets or sets the marker size in pixels
-        /// </summary>
-        public double MarkerSize { get; set; } = 4.0;
-
-        /// <summary>
-        /// Gets or sets the marker shape
-        /// </summary>
-        public MarkerShape MarkerShape { get; set; } = MarkerShape.Circle;
 
         /// <summary>
         /// Initializes a new instance of the ObservableLineSeries class

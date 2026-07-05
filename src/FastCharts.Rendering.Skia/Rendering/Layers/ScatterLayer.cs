@@ -33,30 +33,7 @@ internal sealed class ScatterLayer : ISeriesSubLayer
                 var px = PixelMapper.X(p.X, model.XAxis, pr);
                 var yAxis = (ss.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
                 var py = PixelMapper.Y(p.Y, yAxis, pr);
-                switch (ss.MarkerShape)
-                {
-                    case MarkerShape.Circle:
-                        {
-                            ctx.Canvas.DrawCircle(px, py, half, mp);
-                            break;
-                        }
-                    case MarkerShape.Square:
-                        {
-                            ctx.Canvas.DrawRect(new SKRect(px - half, py - half, px + half, py + half), mp);
-                            break;
-                        }
-                    case MarkerShape.Triangle:
-                    default:
-                        {
-                            using var path = new SKPath();
-                            path.MoveTo(px, py - half);
-                            path.LineTo(px - half, py + half);
-                            path.LineTo(px + half, py + half);
-                            path.Close();
-                            ctx.Canvas.DrawPath(path, mp);
-                            break;
-                        }
-                }
+                MarkerRenderer.Draw(ctx.Canvas, ss.MarkerShape, px, py, half, mp);
             }
             ctx.Canvas.Restore();
             scatterIndex++;

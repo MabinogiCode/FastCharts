@@ -5,6 +5,20 @@ All notable changes to FastCharts will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-05
+
+### ✨ **Added — "Everyday chart"**
+
+- **Markers on line series**: `ShowMarkers`, `MarkerSize`, `MarkerShape` moved to `LineSeries` (inherited by streaming & observable series) and now actually rendered. `MarkerShape` extended with `Diamond`, `Cross`, `Plus` (shared with scatter).
+- **Spline smoothing** (P2-SERIES-SPLINE): `series.Smoothing = LineSmoothing.Spline` renders a smooth Catmull-Rom curve through the points (works with LTTB resampling).
+- **SVG vector export** (P2-EXPORT-SVG): `SkiaChartRenderer.ExportSvg(model, stream, w, h)`, plus `ChartExportService.ExportToSvgFile/ExportToSvgString`. New optional capability interface `ISvgChartExporter` (non-breaking).
+- **Dynamic themes** (P2-THEME-DYNAMIC): `ChartThemes.Light/Dark/HighContrast` singletons for one-liner runtime switching (`model.Theme = ChartThemes.Dark`), new `HighContrastTheme`, and mutable `CustomTheme` seeded from any base theme with overridable palette.
+- **KISS chart kinds**: `model.AddSeries(data, ChartKind.Area|Scatter|Bar|StepLine, title)` — the dictionary one-liner now covers all basic series types.
+
+### ⚠️ **Changed**
+
+- Duplicate `FastCharts.Core.DataBinding.Series.MarkerShape` enum removed; the canonical `FastCharts.Core.Series.MarkerShape` is used everywhere (values preserved: Circle=0, Square=1, Triangle=2).
+
 ## [1.1.0] - 2026-07-05
 
 ### 🛠️ **Fixed — the library is now truly functional for streaming & MVVM**

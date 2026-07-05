@@ -170,6 +170,40 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 - Financial indicators (dedicated libs like StockCharts)
 
 ---
+## 11bis. Release Plan 1.2+ (validated 2026-07-05)
+
+Guiding rule: each release is small, shippable, and keeps the KISS promise
+(a beautiful curve from a `Dictionary<double, double>` with zero decisions).
+Long-term target: feature parity with premium WPF charting (SciChart).
+
+### v1.2 — "Everyday chart"
+- Markers on LineSeries (render ShowMarkers/MarkerSize/MarkerShape)
+- Spline smoothing (P2-SERIES-SPLINE) via `LineSeries.Smoothing`
+- SVG export (P2-EXPORT-SVG) through SKSvgCanvas
+- Dynamic themes (P2-THEME-DYNAMIC): `Themes.Light/Dark/HighContrast`, custom palettes
+- KISS: `model.AddSeries(data, ChartKind.Area|Scatter|Bar|StepLine)`
+
+### v1.3 — "Finance"
+- Enhanced candlestick + volume (P2-SERIES-CANDLESTICK)
+- Indicators: SMA, EMA, Bollinger first; RSI/MACD next (P3-FIN-INDICATORS)
+- Linked axes across charts (P2-AX-LINK) — price + indicator sync pattern
+
+### v1.4 — "Large volumes & GPU"
+- BenchmarkDotNet suite first (T-PERF-PROF)
+- Opt-in Skia GPU backend (T-PERF-GPU)
+- Geometry caching / dirty rectangles (T-PERF-CACHE)
+
+### v1.5 — "Analytics"
+- Heatmap + color axis (P2-HEATMAP, P1-AX-COLOR)
+- Histogram with auto-binning (P2-HISTOGRAM): `model.AddHistogram(values)`
+- Draggable text/shape annotations (P2-ANNOT-TEXT/SHAPE)
+
+### Continuous (from 1.2)
+- Visual regression tests via image hashing (T-QA-VISUAL) — prerequisite for GPU work
+- Merge/bridge ChartModelEnhanced with the WPF FastChart control
+- Out of scope until further notice: 3D, Sankey, TreeMap
+
+---
 ## 11. Next Immediate Steps
 🎊🎊 **MAJOR MILESTONE ACHIEVED: Phase 1 is 100% COMPLETE!** 🎊🎊
 

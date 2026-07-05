@@ -295,6 +295,42 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     }
 
     /// <summary>
+    /// One-liner: plots X/Y pairs as the requested series kind
+    /// (line, area, scatter, bar, or step line). Points are sorted by X.
+    /// </summary>
+    /// <param name="data">X/Y pairs (key = X, value = Y)</param>
+    /// <param name="kind">Series kind to create</param>
+    /// <param name="title">Optional legend title</param>
+    /// <returns>The created series, for further customization</returns>
+    public SeriesBase AddSeries(IEnumerable<KeyValuePair<double, double>> data, ChartKind kind, string? title = null)
+    {
+        var sorted = new LineSeries(data).Data; // sorted PointD list
+
+        SeriesBase series = kind switch
+        {
+            ChartKind.Area => new AreaSeries(sorted) { Title = title },
+            ChartKind.Scatter => new ScatterSeries(sorted) { Title = title },
+            ChartKind.Bar => new BarSeries(ToBarPoints(sorted)) { Title = title },
+            ChartKind.StepLine => new StepLineSeries(sorted) { Title = title },
+            _ => new LineSeries(sorted) { Title = title }
+        };
+
+        AddSeries(series);
+        return series;
+    }
+
+    private static List<BarPoint> ToBarPoints(IList<PointD> points)
+    {
+        var bars = new List<BarPoint>(points.Count);
+        for (var i = 0; i < points.Count; i++)
+        {
+            bars.Add(new BarPoint(points[i].X, points[i].Y));
+        }
+
+        return bars;
+    }
+
+    /// <summary>
     /// Clears all series and resets axis ranges to defaults
     /// </summary>
     public void ClearSeries()

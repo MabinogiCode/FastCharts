@@ -22,7 +22,7 @@ FastCharts is a **high-performance .NET charting library** designed for real-tim
 - 🔄 **Streaming Data**: Rolling windows with efficient append operations
 - 🎨 **Interactive**: Pan, zoom, crosshair, pinned tooltips
 - 📍 **Annotations**: Lines, ranges, labels with full styling
-- 💾 **Export Ready**: PNG export with clipboard integration
+- 💾 **Export Ready**: PNG + SVG (vector) export, clipboard integration
 - 🌐 **Cross-Platform**: Windows, macOS, Linux support
 - 🏗️ **MVVM Ready**: Full WPF integration with ReactiveUI
 
@@ -62,6 +62,15 @@ model.AddSeries(measures, "Sales Data");
 
 // Y values only? X becomes the index
 model.AddSeries(new[] { 10.0, 20.0, 15.0, 25.0 }, "Quick values");
+
+// Other kinds, same one-liner
+model.AddSeries(measures, ChartKind.Area);      // or Scatter, Bar, StepLine
+
+// Make it pretty in two more lines
+var curve = model.AddSeries(measures, "Smooth");
+curve.Smoothing = LineSmoothing.Spline;         // smooth curve
+curve.ShowMarkers = true;                       // dots on data points
+model.Theme = ChartThemes.Dark;                 // runtime theme switch
 
 // Bind to your ViewModel
 this.DataContext = new { ChartModel = model };
