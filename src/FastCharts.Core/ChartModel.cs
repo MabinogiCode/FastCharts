@@ -268,6 +268,33 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     }
 
     /// <summary>
+    /// One-liner: plots X/Y pairs (e.g. a <c>Dictionary&lt;double, double&gt;</c>) as a line.
+    /// Points are sorted by X automatically; the view auto-fits the data.
+    /// </summary>
+    /// <param name="data">X/Y pairs (key = X, value = Y)</param>
+    /// <param name="title">Optional legend title</param>
+    /// <returns>The created line series, for further customization</returns>
+    public LineSeries AddSeries(IEnumerable<KeyValuePair<double, double>> data, string? title = null)
+    {
+        var series = new LineSeries(data) { Title = title };
+        AddSeries(series);
+        return series;
+    }
+
+    /// <summary>
+    /// One-liner: plots Y values as a line, X being the 0-based index.
+    /// </summary>
+    /// <param name="values">Y values</param>
+    /// <param name="title">Optional legend title</param>
+    /// <returns>The created line series, for further customization</returns>
+    public LineSeries AddSeries(IEnumerable<double> values, string? title = null)
+    {
+        var series = new LineSeries(values) { Title = title };
+        AddSeries(series);
+        return series;
+    }
+
+    /// <summary>
     /// Clears all series and resets axis ranges to defaults
     /// </summary>
     public void ClearSeries()

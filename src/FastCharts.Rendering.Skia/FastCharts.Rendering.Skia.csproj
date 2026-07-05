@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
@@ -13,7 +13,7 @@
         <!-- NuGet Package Metadata -->
         <PackageId>FastCharts.Rendering.Skia</PackageId>
         <Title>FastCharts Skia Rendering Engine</Title>
-        <Version>1.0.0</Version>
+        <Version>1.1.0</Version>
         <Authors>FastCharts Team</Authors>
         <Company>FastCharts</Company>
         <Product>FastCharts</Product>
@@ -31,7 +31,18 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         
-        <PackageReleaseNotes>FastCharts.Rendering.Skia v1.0.0 - Cross-platform rendering ready!</PackageReleaseNotes>
+        <PackageReleaseNotes>FastCharts v1.1.0
+
+Critical fixes: StreamingLineSeries now actually renders (virtual GetRenderData);
+Observable MVVM series (Line/Scatter/Bar) now derive from renderable series and can
+be added to ChartModel. RefreshThrottle honored; late-added items tracked.
+
+Performance: zero-copy render path (no per-frame ToArray), compiled property-path
+resolver with delegate cache, allocation-free palette resolution, faster streaming appends.
+
+New APIs: LineSeries.ReplacePoints, SeriesDataBinder, CachedPropertyPathResolver.
+
+See CHANGELOG.md for details.</PackageReleaseNotes>
     </PropertyGroup>
     
     <!-- Include README and icon in package -->

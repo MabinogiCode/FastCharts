@@ -50,28 +50,33 @@ dotnet add package FastCharts.Wpf
 </Window>
 ```
 
-**C# Code:**
+**C# Code — a curve from a dictionary, zero ceremony:**
 ```csharp
 using FastCharts.Core;
-using FastCharts.Core.Series;
 
-// Create chart model
 var model = new ChartModel();
 
-// Add data series
-model.AddSeries(new LineSeries(new[] {
-    new PointD(0, 10),
-    new PointD(1, 20),
-    new PointD(2, 15),
-    new PointD(3, 25)
-}) { 
-    Title = "Sales Data",
-    Color = ColorRgba.Blue,
-    StrokeWidth = 2
-});
+// Any Dictionary<double, double> plots as a sorted line in one call
+var measures = new Dictionary<double, double> { [0] = 10, [1] = 20, [2] = 15, [3] = 25 };
+model.AddSeries(measures, "Sales Data");
+
+// Y values only? X becomes the index
+model.AddSeries(new[] { 10.0, 20.0, 15.0, 25.0 }, "Quick values");
 
 // Bind to your ViewModel
 this.DataContext = new { ChartModel = model };
+```
+
+Need full control? Build the series yourself:
+```csharp
+using FastCharts.Core.Series;
+using FastCharts.Core.Primitives;
+
+model.AddSeries(new LineSeries(new[] { new PointD(0, 10), new PointD(1, 20) })
+{
+    Title = "Sales Data",
+    StrokeThickness = 2
+});
 ```
 
 ### Real-Time Streaming Example
@@ -147,6 +152,21 @@ model.AddBehavior(new MetricsOverlayBehavior {
 // Press F3 to toggle, F4 for detail level, F5 to reset
 ```
 
+### MVVM Data Binding (Observable Series)
+```csharp
+// Bind a chart series directly to your ViewModel collection
+var readings = new ObservableCollection<SensorReading>();
+
+var series = new ObservableLineSeries(readings, nameof(SensorReading.Time), nameof(SensorReading.Temperature))
+{
+    Title = "Temperature",
+    RefreshThrottle = TimeSpan.FromMilliseconds(50) // coalesce rapid updates (optional)
+};
+
+model.AddSeries(series);          // renders like any other series
+readings.Add(new SensorReading()); // chart updates automatically
+```
+
 ### Interactive Behaviors
 ```csharp
 model.AddBehavior(new PanBehavior());
@@ -194,6 +214,11 @@ model.AddAnnotation(new RangeAnnotation {
 
 **Platforms**: Windows, macOS, Linux (Core + Skia), Windows only (WPF)
 
+> **Linux note**: `FastCharts.Rendering.Skia` relies on SkiaSharp. On Linux, add the
+> [`SkiaSharp.NativeAssets.Linux`](https://www.nuget.org/packages/SkiaSharp.NativeAssets.Linux)
+> (or `SkiaSharp.NativeAssets.Linux.NoDependencies`) package to your application so the
+> native `libSkiaSharp` library is deployed.
+
 ## 📖 **Documentation**
 
 - 🚀 [**Getting Started**](docs/getting-started.md) | [**Démarrage Rapide**](docs/getting-started-fr.md)
@@ -213,7 +238,7 @@ git clone https://github.com/MabinogiCode/FastCharts.git
 cd FastCharts
 dotnet restore
 dotnet build
-dotnet test # 594 tests should pass
+dotnet test # full test suite should pass
 ```
 
 ## 📝 **License**
