@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
@@ -14,7 +14,7 @@
     <!-- NuGet Package Metadata -->
     <PackageId>FastCharts.Core</PackageId>
     <Title>FastCharts Core Library</Title>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>FastCharts Team</Authors>
     <Company>FastCharts</Company>
     <Product>FastCharts</Product>
@@ -33,27 +33,18 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     
     <!-- Release Notes -->
-    <PackageReleaseNotes>
-FastCharts v1.0.0 - Phase 1 Complete!
+    <PackageReleaseNotes>FastCharts v1.1.0
 
-🚀 MAJOR FEATURES:
-✅ Multi-axis support (left/right Y axes)
-✅ Logarithmic axes with custom bases
-✅ Category axes for discrete data
-✅ Line and range annotations
-✅ PNG export with clipboard support
-✅ LTTB decimation for massive datasets (10M+ points)
-✅ Streaming series with rolling windows
-✅ Pinned tooltips (multi-tooltip support)
-✅ Performance metrics overlay
-✅ Cross-platform (.NET Standard 2.0, .NET 6/8, Framework 4.8)
+Critical fixes: StreamingLineSeries now actually renders (virtual GetRenderData);
+Observable MVVM series (Line/Scatter/Bar) now derive from renderable series and can
+be added to ChartModel. RefreshThrottle honored; late-added items tracked.
 
-🎯 13/13 Phase 1 features implemented
-🧪 594 tests passing
-📊 Production-ready for real-time and analytical applications
+Performance: zero-copy render path (no per-frame ToArray), compiled property-path
+resolver with delegate cache, allocation-free palette resolution, faster streaming appends.
 
-See GitHub for full documentation and examples.
-    </PackageReleaseNotes>
+New APIs: LineSeries.ReplacePoints, SeriesDataBinder, CachedPropertyPathResolver.
+
+See CHANGELOG.md for details.</PackageReleaseNotes>
   </PropertyGroup>
   
   <!-- Include README and icon in package -->

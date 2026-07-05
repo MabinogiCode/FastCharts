@@ -170,7 +170,7 @@ namespace FastCharts.Core.Tests.DataBinding
         }
 
         [Fact]
-        public async Task ObservableLineSeries_WithThrottling_ShouldBatchUpdates()
+        public void ObservableLineSeries_WithThrottling_ShouldBatchUpdates()
         {
             // Arrange
             var data = new ObservableCollection<SensorReading>();

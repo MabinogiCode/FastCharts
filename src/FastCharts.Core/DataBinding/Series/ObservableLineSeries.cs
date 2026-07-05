@@ -1,27 +1,20 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using FastCharts.Core.DataBinding;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 
 namespace FastCharts.Core.DataBinding.Series
 {
     /// <summary>
-    /// Observable line series that supports data binding
-    /// Automatically synchronizes with source collections and updates when data changes
+    /// Line series with observable data binding (MVVM).
+    /// Inherits <see cref="LineSeries"/>, so it renders, resamples (LTTB) and participates in
+    /// range calculation like any other series while staying synchronized with its
+    /// <see cref="ItemsSource"/> through X/Y property paths.
     /// </summary>
-    public class ObservableLineSeries : ObservableSeriesBase<object>, ILineSeries
+    public class ObservableLineSeries : LineSeries, IObservableSeries<object>, ILineSeries, IDisposable
     {
-        private readonly List<PointD> _data = new();
-
-        /// <summary>
-        /// Gets the line series data as points
-        /// </summary>
-        public IReadOnlyList<PointD> Data => _data.AsReadOnly();
-
-        /// <inheritdoc />
-        public override bool IsEmpty => _data.Count == 0;
-
+        private readonly SeriesDataBinder _binder;
         /// <summary>
         /// Gets or sets whether to show markers on data points
         /// </summary>
@@ -38,15 +31,12 @@ namespace FastCharts.Core.DataBinding.Series
         public MarkerShape MarkerShape { get; set; } = MarkerShape.Circle;
 
         /// <summary>
-        /// Gets or sets whether to enable auto-resampling for large datasets
-        /// </summary>
-        public bool EnableAutoResampling { get; set; } = true;
-
-        /// <summary>
         /// Initializes a new instance of the ObservableLineSeries class
         /// </summary>
         public ObservableLineSeries()
         {
+            _binder = new SeriesDataBinder(ReplacePoints, () => Data.Count);
+            _binder.DataBindingUpdated += (_, args) => DataBindingUpdated?.Invoke(this, args);
         }
 
         /// <summary>
@@ -56,24 +46,71 @@ namespace FastCharts.Core.DataBinding.Series
         /// <param name="xPath">Property path for X values</param>
         /// <param name="yPath">Property path for Y values</param>
         public ObservableLineSeries(IEnumerable<object> itemsSource, string xPath, string yPath)
+            : this()
         {
-            ItemsSource = itemsSource;
-            XPath = xPath;
-            YPath = yPath;
+            _binder.XPath = xPath;
+            _binder.YPath = yPath;
+            _binder.ItemsSource = itemsSource;
         }
 
         /// <inheritdoc />
-        protected override void UpdateSeriesData(IEnumerable<PointD> points)
+        public event EventHandler<DataBindingUpdatedEventArgs>? DataBindingUpdated;
+
+        /// <inheritdoc />
+        public IEnumerable<object> ItemsSource
         {
-            _data.Clear();
-            _data.AddRange(points);
+            get => (_binder.ItemsSource as IEnumerable<object>) ?? Enumerable.Empty<object>();
+            set => _binder.ItemsSource = value;
         }
 
         /// <inheritdoc />
-        protected override int GetPointCount()
+        public string? XPath
         {
-            return _data.Count;
+            get => _binder.XPath;
+            set => _binder.XPath = value;
         }
+
+        /// <inheritdoc />
+        public string? YPath
+        {
+            get => _binder.YPath;
+            set => _binder.YPath = value;
+        }
+
+        /// <inheritdoc />
+        public string? TitlePath { get; set; }
+
+        /// <inheritdoc />
+        public bool AutoRefresh
+        {
+            get => _binder.AutoRefresh;
+            set => _binder.AutoRefresh = value;
+        }
+
+        /// <inheritdoc />
+        public TimeSpan RefreshThrottle
+        {
+            get => _binder.RefreshThrottle;
+            set => _binder.RefreshThrottle = value;
+        }
+
+        /// <inheritdoc />
+        public void RefreshData()
+        {
+            _binder.RefreshNow();
+        }
+
+        /// <summary>
+        /// Gets or sets the property path resolver used for data binding
+        /// </summary>
+        public IPropertyPathResolver PropertyPathResolver
+        {
+            get => _binder.PropertyPathResolver;
+            set => _binder.PropertyPathResolver = value;
+        }
+
+        /// <inheritdoc />
+        IReadOnlyList<PointD> ILineSeries.Data => (IReadOnlyList<PointD>)Data;
 
         /// <summary>
         /// Gets the data points for rendering
@@ -81,7 +118,7 @@ namespace FastCharts.Core.DataBinding.Series
         /// <returns>Data points</returns>
         public IEnumerable<PointD> GetRenderPoints()
         {
-            return _data;
+            return Data;
         }
 
         /// <summary>
@@ -90,8 +127,29 @@ namespace FastCharts.Core.DataBinding.Series
         /// <returns>Series summary</returns>
         public override string ToString()
         {
-            var sourceType = ItemsSource?.GetType().Name ?? "null";
-            return $"ObservableLineSeries: {_data.Count} points from {sourceType} (X: {XPath}, Y: {YPath})";
+            var sourceType = _binder.ItemsSource?.GetType().Name ?? "null";
+            return $"ObservableLineSeries: {Data.Count} points from {sourceType} (X: {XPath}, Y: {YPath})";
+        }
+
+        /// <summary>
+        /// Releases data-binding subscriptions
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases data-binding subscriptions
+        /// </summary>
+        /// <param name="disposing">True when called from Dispose</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _binder.Dispose();
+            }
         }
     }
 }

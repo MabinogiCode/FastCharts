@@ -1,20 +1,19 @@
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Resampling;
-using FastCharts.Core.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace FastCharts.Core.Series
 {
     /// <summary>
     /// High-performance streaming line series with rolling window support
-    /// Optimized for real-time applications with thousands of points per second
+    /// Optimized for real-time applications with thousands of points per second.
+    /// Data is stored in the base <see cref="LineSeries"/> list, so rendering,
+    /// resampling and range calculation all see the streamed points.
     /// </summary>
     public class StreamingLineSeries : LineSeries, IStreamingSeries
     {
-        private readonly List<PointD> _streamingData;
         private int? _maxPointCount;
         private TimeSpan? _rollingWindowDuration;
         private DateTime _referenceTime = DateTime.UtcNow;
@@ -26,7 +25,6 @@ namespace FastCharts.Core.Series
         /// <param name="rollingWindow">Rolling window duration (null = no time-based trimming)</param>
         public StreamingLineSeries(int? maxPointCount = null, TimeSpan? rollingWindow = null)
         {
-            _streamingData = new List<PointD>();
             _maxPointCount = maxPointCount;
             _rollingWindowDuration = rollingWindow;
 
@@ -45,13 +43,21 @@ namespace FastCharts.Core.Series
         public StreamingLineSeries(IEnumerable<PointD> initialData, int? maxPointCount = null, TimeSpan? rollingWindow = null)
             : this(maxPointCount, rollingWindow)
         {
-            _streamingData.AddRange(initialData);
+            DataCore.AddRange(initialData);
 
             // Set reference time based on latest data point if available
-            if (_streamingData.Count > 0)
+            if (DataCore.Count > 0)
             {
-                var latestPoint = _streamingData.OrderByDescending(p => p.X).First();
-                _referenceTime = DateTime.FromOADate(latestPoint.X);
+                var maxX = double.NegativeInfinity;
+                for (var i = 0; i < DataCore.Count; i++)
+                {
+                    if (DataCore[i].X > maxX)
+                    {
+                        maxX = DataCore[i].X;
+                    }
+                }
+
+                _referenceTime = FromOADateSafe(maxX) ?? _referenceTime;
             }
 
             TrimToWindow(); // Apply window limits to initial data
@@ -93,7 +99,7 @@ namespace FastCharts.Core.Series
         /// <summary>
         /// Gets the current point count
         /// </summary>
-        public int PointCount => _streamingData.Count;
+        public int PointCount => DataCore.Count;
 
         /// <summary>
         /// Gets the age of the oldest point in the series
@@ -102,12 +108,22 @@ namespace FastCharts.Core.Series
         {
             get
             {
-                if (_streamingData.Count == 0)
+                if (DataCore.Count == 0)
+                {
                     return null;
+                }
 
-                var oldestPoint = _streamingData.OrderBy(p => p.X).First();
-                var oldestTime = DateTime.FromOADate(oldestPoint.X);
-                return DateTime.UtcNow - oldestTime;
+                var minX = double.PositiveInfinity;
+                for (var i = 0; i < DataCore.Count; i++)
+                {
+                    if (DataCore[i].X < minX)
+                    {
+                        minX = DataCore[i].X;
+                    }
+                }
+
+                var oldestTime = FromOADateSafe(minX);
+                return oldestTime.HasValue ? DateTime.UtcNow - oldestTime.Value : (TimeSpan?)null;
             }
         }
 
@@ -122,12 +138,20 @@ namespace FastCharts.Core.Series
         public event EventHandler<StreamingDataEventArgs>? PointsRemoved;
 
         /// <summary>
-        /// Appends a new data point efficiently
+        /// Appends a new data point efficiently (no intermediate allocations)
         /// </summary>
         /// <param name="point">Point to append</param>
         public void AppendPoint(PointD point)
         {
-            AppendPoints(new[] { point });
+            DataCore.Add(point);
+
+            var time = FromOADateSafe(point.X);
+            if (time.HasValue)
+            {
+                _referenceTime = time.Value;
+            }
+
+            FinishAppend(addedCount: 1);
         }
 
         /// <summary>
@@ -137,19 +161,39 @@ namespace FastCharts.Core.Series
         public void AppendPoints(IEnumerable<PointD> points)
         {
             if (points == null)
+            {
                 return;
+            }
 
-            var pointArray = points.ToArray();
-            if (pointArray.Length == 0)
+            var added = 0;
+            var maxX = double.NegativeInfinity;
+
+            foreach (var point in points)
+            {
+                DataCore.Add(point);
+                added++;
+                if (point.X > maxX)
+                {
+                    maxX = point.X;
+                }
+            }
+
+            if (added == 0)
+            {
                 return;
+            }
 
-            // Add points efficiently
-            _streamingData.AddRange(pointArray);
+            var latestTime = FromOADateSafe(maxX);
+            if (latestTime.HasValue)
+            {
+                _referenceTime = latestTime.Value;
+            }
 
-            // Update reference time based on latest point
-            var latestPoint = pointArray.OrderByDescending(p => p.X).First();
-            _referenceTime = DateTime.FromOADate(latestPoint.X);
+            FinishAppend(added);
+        }
 
+        private void FinishAppend(int addedCount)
+        {
             // Apply window limits
             var removedCount = TrimToWindowInternal();
 
@@ -157,11 +201,11 @@ namespace FastCharts.Core.Series
             InvalidateCache();
 
             // Raise events
-            PointsAdded?.Invoke(this, new StreamingDataEventArgs(_streamingData.Count, pointArray.Length, 0));
+            PointsAdded?.Invoke(this, new StreamingDataEventArgs(DataCore.Count, addedCount, 0));
 
             if (removedCount > 0)
             {
-                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(_streamingData.Count, 0, removedCount));
+                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(DataCore.Count, 0, removedCount));
             }
         }
 
@@ -175,66 +219,8 @@ namespace FastCharts.Core.Series
             if (removedCount > 0)
             {
                 InvalidateCache();
-                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(_streamingData.Count, 0, removedCount));
+                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(DataCore.Count, 0, removedCount));
             }
-        }
-
-        /// <summary>
-        /// Gets the streaming data as IList for compatibility
-        /// This property provides access to the internal data while maintaining streaming capabilities
-        /// </summary>
-        public new IList<PointD> Data => _streamingData;
-
-        /// <summary>
-        /// Override to use streaming data
-        /// </summary>
-        public override bool IsEmpty => _streamingData.Count == 0;
-
-        /// <summary>
-        /// Gets render data optimized for streaming scenarios
-        /// </summary>
-        /// <param name="viewportPixelWidth">Viewport pixel width</param>
-        /// <returns>Optimized render data</returns>
-        public new IReadOnlyList<PointD> GetRenderData(int viewportPixelWidth = 800)
-        {
-            // Use base class LTTB logic but with our streaming data
-            if (!EnableAutoResampling || Resampler == null)
-            {
-                return _streamingData.ToArray();
-            }
-
-            if (_streamingData.Count <= AutoResampleThreshold)
-            {
-                return _streamingData.ToArray();
-            }
-
-            // Calculate optimal point count and resample
-            var targetPointCount = CalculateOptimalPointCount(viewportPixelWidth);
-            return Resampler.Resample(_streamingData.ToArray(), targetPointCount);
-        }
-
-        /// <summary>
-        /// Override range calculation to use streaming data
-        /// </summary>
-        public new FRange GetXRange()
-        {
-            if (_streamingData.Count == 0)
-                return new FRange(0, 0);
-
-            var (min, max) = DataHelper.GetMinMax(_streamingData, p => p.X);
-            return new FRange(min, max);
-        }
-
-        /// <summary>
-        /// Override range calculation to use streaming data
-        /// </summary>
-        public new FRange GetYRange()
-        {
-            if (_streamingData.Count == 0)
-                return new FRange(0, 0);
-
-            var (min, max) = DataHelper.GetMinMax(_streamingData, p => p.Y);
-            return new FRange(min, max);
         }
 
         /// <summary>
@@ -242,39 +228,23 @@ namespace FastCharts.Core.Series
         /// </summary>
         private int TrimToWindowInternal()
         {
-            var initialCount = _streamingData.Count;
+            var initialCount = DataCore.Count;
 
             // Apply count-based limit
-            if (_maxPointCount.HasValue && _streamingData.Count > _maxPointCount.Value)
+            if (_maxPointCount.HasValue && DataCore.Count > _maxPointCount.Value)
             {
-                var pointsToRemove = _streamingData.Count - _maxPointCount.Value;
-                _streamingData.RemoveRange(0, pointsToRemove);
+                var pointsToRemove = DataCore.Count - _maxPointCount.Value;
+                DataCore.RemoveRange(0, pointsToRemove);
             }
 
             // Apply time-based limit
-            if (_rollingWindowDuration.HasValue && _streamingData.Count > 0)
+            if (_rollingWindowDuration.HasValue && DataCore.Count > 0)
             {
                 var cutoffTime = (_referenceTime - _rollingWindowDuration.Value).ToOADate();
-                var oldPointsCount = _streamingData.Count(p => p.X < cutoffTime);
-
-                if (oldPointsCount > 0)
-                {
-                    _streamingData.RemoveAll(p => p.X < cutoffTime);
-                }
+                DataCore.RemoveAll(p => p.X < cutoffTime);
             }
 
-            return initialCount - _streamingData.Count;
-        }
-
-        /// <summary>
-        /// Calculates optimal point count based on viewport (same as base class)
-        /// </summary>
-        private int CalculateOptimalPointCount(int viewportPixelWidth)
-        {
-            var baseTarget = viewportPixelWidth * 2;
-            var minPoints = Math.Min(100, _streamingData.Count);
-            var maxPoints = Math.Min(5000, _streamingData.Count);
-            return Math.Max(minPoints, Math.Min(maxPoints, baseTarget));
+            return initialCount - DataCore.Count;
         }
 
         /// <summary>
@@ -296,8 +266,31 @@ namespace FastCharts.Core.Series
         /// <param name="values">Y values with timestamps</param>
         public void AppendRealTimePoints(IEnumerable<(DateTime timestamp, double value)> values)
         {
-            var points = values.Select(v => new PointD(v.timestamp.ToOADate(), v.value));
-            AppendPoints(points);
+            if (values == null)
+            {
+                return;
+            }
+
+            var added = 0;
+            DateTime latest = default;
+
+            foreach (var (timestamp, value) in values)
+            {
+                DataCore.Add(new PointD(timestamp.ToOADate(), value));
+                added++;
+                if (timestamp > latest)
+                {
+                    latest = timestamp;
+                }
+            }
+
+            if (added == 0)
+            {
+                return;
+            }
+
+            _referenceTime = latest;
+            FinishAppend(added);
         }
 
         /// <summary>
@@ -318,6 +311,28 @@ namespace FastCharts.Core.Series
             };
 
             return series;
+        }
+
+        /// <summary>
+        /// Converts an OADate X value to DateTime, returning null when the value is out of the valid OADate range.
+        /// Streaming series may carry non-time X values; time-based trimming is then skipped gracefully.
+        /// </summary>
+        private static DateTime? FromOADateSafe(double value)
+        {
+            // Valid OADate range is roughly [-657435.0, 2958466.0]
+            if (double.IsNaN(value) || double.IsInfinity(value) || value < -657435.0 || value > 2958465.999999)
+            {
+                return null;
+            }
+
+            try
+            {
+                return DateTime.FromOADate(value);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
         }
     }
 }

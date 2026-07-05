@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Resampling;
@@ -13,28 +12,40 @@ namespace FastCharts.Core.Series
     /// </summary>
     public class LineSeries : SeriesBase, ISeriesRangeProvider
     {
+        private readonly List<PointD> _data;
         private IResampler? _resampler;
         private bool _enableAutoResampling = true;
         private int _autoResampleThreshold = 2000; // Start resampling above 2K points
         private IReadOnlyList<PointD>? _cachedResampledData;
         private int _lastViewportPixelWidth = -1;
+        private int _lastResampledCount = -1;
 
-        public IList<PointD> Data { get; }
-        public override bool IsEmpty => Data == null || Data.Count == 0;
+        /// <summary>
+        /// Raw data points. Mutations through this list are visible immediately;
+        /// call <see cref="InvalidateCache"/> after external bulk edits so resampling is recomputed.
+        /// </summary>
+        public IList<PointD> Data => _data;
+
+        public override bool IsEmpty => _data.Count == 0;
 
         public LineSeries()
         {
-            Data = new List<PointD>();
+            _data = new List<PointD>();
             StrokeThickness = 1.0;
             _resampler = new LttbResampler(); // Default to LTTB
         }
 
         public LineSeries(IEnumerable<PointD> points)
         {
-            Data = new List<PointD>(points);
+            _data = new List<PointD>(points);
             StrokeThickness = 1.0;
             _resampler = new LttbResampler(); // Default to LTTB
         }
+
+        /// <summary>
+        /// Direct access to the backing list for derived classes (no copy).
+        /// </summary>
+        protected List<PointD> DataCore => _data;
 
         /// <summary>
         /// Gets or sets the resampling algorithm used for large datasets
@@ -77,53 +88,49 @@ namespace FastCharts.Core.Series
         }
 
         /// <summary>
-        /// Gets the effective data for rendering, with resampling applied if needed
-        /// This is what renderers should use instead of raw Data
+        /// Gets the effective data for rendering, with resampling applied if needed.
+        /// This is what renderers should use instead of raw Data.
+        /// Fast paths return the backing list directly (no per-frame allocation).
         /// </summary>
         /// <param name="viewportPixelWidth">Available pixel width for rendering</param>
         /// <returns>Optimized data for rendering</returns>
-        public IReadOnlyList<PointD> GetRenderData(int viewportPixelWidth = 800)
+        public virtual IReadOnlyList<PointD> GetRenderData(int viewportPixelWidth = 800)
         {
-            // If resampling is disabled or no resampler, return raw data
-            if (!_enableAutoResampling || _resampler == null)
+            // If resampling is disabled, no resampler, or data is small: render raw data (zero copy)
+            if (!_enableAutoResampling || _resampler == null || _data.Count <= _autoResampleThreshold)
             {
-                return Data.ToArray(); // Convert to IReadOnlyList
+                return _data;
             }
 
-            // If data is small, no need to resample
-            if (Data.Count <= _autoResampleThreshold)
-            {
-                return Data.ToArray(); // Convert to IReadOnlyList
-            }
-
-            // Check cache validity
-            if (_cachedResampledData != null && _lastViewportPixelWidth == viewportPixelWidth)
+            // Cache is valid only for the same viewport width and unchanged point count
+            if (_cachedResampledData != null &&
+                _lastViewportPixelWidth == viewportPixelWidth &&
+                _lastResampledCount == _data.Count)
             {
                 return _cachedResampledData;
             }
 
-            // Calculate optimal point count based on viewport
             var targetPointCount = CalculateOptimalPointCount(viewportPixelWidth);
 
-            // Perform resampling
-            _cachedResampledData = _resampler.Resample(Data.ToArray(), targetPointCount); // Convert to IReadOnlyList
+            _cachedResampledData = _resampler.Resample(_data, targetPointCount);
             _lastViewportPixelWidth = viewportPixelWidth;
+            _lastResampledCount = _data.Count;
 
             return _cachedResampledData;
         }
 
         /// <summary>
         /// Calculates optimal point count based on viewport pixel width
-        /// Strategy: ~2-4 points per pixel for smooth curves, capped at reasonable limits
+        /// Strategy: ~2 points per pixel for smooth curves, capped at reasonable limits
         /// </summary>
-        private int CalculateOptimalPointCount(int viewportPixelWidth)
+        protected int CalculateOptimalPointCount(int viewportPixelWidth)
         {
-            // Base calculation: 2-3 points per pixel for smooth rendering
+            // Base calculation: 2 points per pixel for smooth rendering
             var baseTarget = viewportPixelWidth * 2;
 
             // Apply reasonable bounds
-            var minPoints = Math.Min(100, Data.Count);
-            var maxPoints = Math.Min(5000, Data.Count); // Cap at 5K for performance
+            var minPoints = Math.Min(100, _data.Count);
+            var maxPoints = Math.Min(5000, _data.Count); // Cap at 5K for performance
 
             return Math.Max(minPoints, Math.Min(maxPoints, baseTarget));
         }
@@ -135,6 +142,7 @@ namespace FastCharts.Core.Series
         {
             _cachedResampledData = null;
             _lastViewportPixelWidth = -1;
+            _lastResampledCount = -1;
         }
 
         /// <summary>
@@ -142,7 +150,7 @@ namespace FastCharts.Core.Series
         /// </summary>
         public void AddPoint(PointD point)
         {
-            Data.Add(point);
+            _data.Add(point);
             InvalidateCache();
         }
 
@@ -151,10 +159,18 @@ namespace FastCharts.Core.Series
         /// </summary>
         public void AddPoints(IEnumerable<PointD> points)
         {
-            foreach (var point in points)
-            {
-                Data.Add(point);
-            }
+            _data.AddRange(points);
+            InvalidateCache();
+        }
+
+        /// <summary>
+        /// Replaces the whole series content in a single operation and invalidates cache.
+        /// More efficient than Clear + AddPoints for data-binding scenarios.
+        /// </summary>
+        public void ReplacePoints(IEnumerable<PointD> points)
+        {
+            _data.Clear();
+            _data.AddRange(points);
             InvalidateCache();
         }
 
@@ -163,27 +179,27 @@ namespace FastCharts.Core.Series
         /// </summary>
         public void Clear()
         {
-            Data.Clear();
+            _data.Clear();
             InvalidateCache();
         }
 
-        public FRange GetXRange()
+        public virtual FRange GetXRange()
         {
-            if (Data.Count == 0)
+            if (_data.Count == 0)
             {
                 return new FRange(0, 0);
             }
-            var (min, max) = DataHelper.GetMinMax(Data, p => p.X);
+            var (min, max) = DataHelper.GetMinMax(_data, p => p.X);
             return new FRange(min, max);
         }
 
-        public FRange GetYRange()
+        public virtual FRange GetYRange()
         {
-            if (Data.Count == 0)
+            if (_data.Count == 0)
             {
                 return new FRange(0, 0);
             }
-            var (min, max) = DataHelper.GetMinMax(Data, p => p.Y);
+            var (min, max) = DataHelper.GetMinMax(_data, p => p.Y);
             return new FRange(min, max);
         }
 
@@ -207,7 +223,7 @@ namespace FastCharts.Core.Series
         {
             if (_resampler is LttbResampler lttb && _cachedResampledData != null)
             {
-                return lttb.GetLastStats(Data.Count, _cachedResampledData.Count);
+                return lttb.GetLastStats(_data.Count, _cachedResampledData.Count);
             }
             return null;
         }
