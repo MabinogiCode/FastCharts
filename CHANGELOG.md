@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ **Added**
 
+- **KISS quick-plot API**: `model.AddSeries(myDictionary)` plots a `Dictionary<double, double>` as a sorted line in one call (also `model.AddSeries(doubleValues)` with index as X, `LineSeries(IEnumerable<KeyValuePair<double, double>>)`, `LineSeries(IEnumerable<double>)` and `ToLineSeries()` extensions).
 - `LineSeries.ReplacePoints(IEnumerable<PointD>)`: single-operation content swap for data-binding scenarios.
 - `SeriesDataBinder`: reusable data-binding engine (collection + item observation, throttling, property paths) used by all observable series and available for custom series.
 - `CachedPropertyPathResolver.Instance`: high-performance path resolver usable standalone.

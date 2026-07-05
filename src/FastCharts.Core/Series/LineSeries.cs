@@ -43,6 +43,48 @@ namespace FastCharts.Core.Series
         }
 
         /// <summary>
+        /// Creates a line series from X/Y pairs — e.g. a <c>Dictionary&lt;double, double&gt;</c>.
+        /// Points are sorted by X so the curve renders correctly regardless of source ordering.
+        /// </summary>
+        /// <param name="points">X/Y pairs (key = X, value = Y)</param>
+        public LineSeries(IEnumerable<KeyValuePair<double, double>> points)
+        {
+            _data = new List<PointD>();
+            if (points != null)
+            {
+                foreach (var pair in points)
+                {
+                    _data.Add(new PointD(pair.Key, pair.Value));
+                }
+
+                _data.Sort((a, b) => a.X.CompareTo(b.X));
+            }
+
+            StrokeThickness = 1.0;
+            _resampler = new LttbResampler(); // Default to LTTB
+        }
+
+        /// <summary>
+        /// Creates a line series from Y values only; X becomes the 0-based index.
+        /// </summary>
+        /// <param name="values">Y values</param>
+        public LineSeries(IEnumerable<double> values)
+        {
+            _data = new List<PointD>();
+            if (values != null)
+            {
+                var i = 0;
+                foreach (var value in values)
+                {
+                    _data.Add(new PointD(i++, value));
+                }
+            }
+
+            StrokeThickness = 1.0;
+            _resampler = new LttbResampler(); // Default to LTTB
+        }
+
+        /// <summary>
         /// Direct access to the backing list for derived classes (no copy).
         /// </summary>
         protected List<PointD> DataCore => _data;
