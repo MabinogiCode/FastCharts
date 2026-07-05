@@ -14,7 +14,7 @@
     <!-- NuGet Package Metadata -->
     <PackageId>FastCharts.Core</PackageId>
     <Title>FastCharts Core Library</Title>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>FastCharts Team</Authors>
     <Company>FastCharts</Company>
     <Product>FastCharts</Product>
@@ -33,16 +33,13 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     
     <!-- Release Notes -->
-    <PackageReleaseNotes>FastCharts v1.1.0
+    <PackageReleaseNotes>FastCharts v1.2.0 — "Everyday chart"
 
-Critical fixes: StreamingLineSeries now actually renders (virtual GetRenderData);
-Observable MVVM series (Line/Scatter/Bar) now derive from renderable series and can
-be added to ChartModel. RefreshThrottle honored; late-added items tracked.
-
-Performance: zero-copy render path (no per-frame ToArray), compiled property-path
-resolver with delegate cache, allocation-free palette resolution, faster streaming appends.
-
-New APIs: LineSeries.ReplacePoints, SeriesDataBinder, CachedPropertyPathResolver.
+- Markers on LineSeries (ShowMarkers, MarkerSize, MarkerShape incl. Diamond/Cross/Plus)
+- Spline smoothing: series.Smoothing = LineSmoothing.Spline
+- SVG vector export: SkiaChartRenderer.ExportSvg / ChartExportService.ExportToSvgFile
+- Dynamic themes: ChartThemes.Light/Dark/HighContrast + CustomTheme palettes
+- KISS: model.AddSeries(data, ChartKind.Area|Scatter|Bar|StepLine)
 
 See CHANGELOG.md for details.</PackageReleaseNotes>
   </PropertyGroup>

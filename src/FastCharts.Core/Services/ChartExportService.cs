@@ -65,5 +65,46 @@ namespace FastCharts.Core.Services
             await _exporter.ExportPngAsync(model, memoryStream, pixelWidth, pixelHeight, quality, transparentBackground, cancellationToken).ConfigureAwait(false);
             return memoryStream.ToArray();
         }
+
+        /// <summary>
+        /// Exports the chart to an SVG file. Requires the configured exporter to support
+        /// vector output (<see cref="ISvgChartExporter"/>, e.g. SkiaChartRenderer).
+        /// </summary>
+        public void ExportToSvgFile(ChartModel model, string filePath, int pixelWidth, int pixelHeight)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ArgumentException("File path cannot be null or empty", nameof(filePath));
+            }
+
+            var directory = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+            GetSvgExporter().ExportSvg(model, fileStream, pixelWidth, pixelHeight);
+        }
+
+        /// <summary>
+        /// Exports the chart as an SVG document string.
+        /// </summary>
+        public string ExportToSvgString(ChartModel model, int pixelWidth, int pixelHeight)
+        {
+            using var memoryStream = new MemoryStream();
+            GetSvgExporter().ExportSvg(model, memoryStream, pixelWidth, pixelHeight);
+            return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+        }
+
+        private ISvgChartExporter GetSvgExporter()
+        {
+            if (_exporter is ISvgChartExporter svgExporter)
+            {
+                return svgExporter;
+            }
+
+            throw new NotSupportedException($"The configured exporter ({_exporter.GetType().Name}) does not support SVG export. Use an exporter implementing {nameof(ISvgChartExporter)}, such as SkiaChartRenderer.");
+        }
     }
 }

@@ -90,6 +90,27 @@ namespace FastCharts.Core.Series
         protected List<PointD> DataCore => _data;
 
         /// <summary>
+        /// Gets or sets whether markers are drawn on data points
+        /// </summary>
+        public bool ShowMarkers { get; set; }
+
+        /// <summary>
+        /// Gets or sets the marker size in pixels (when <see cref="ShowMarkers"/> is true)
+        /// </summary>
+        public double MarkerSize { get; set; } = 5.0;
+
+        /// <summary>
+        /// Gets or sets the marker shape (when <see cref="ShowMarkers"/> is true)
+        /// </summary>
+        public MarkerShape MarkerShape { get; set; } = MarkerShape.Circle;
+
+        /// <summary>
+        /// Gets or sets the line interpolation mode. <see cref="LineSmoothing.Spline"/>
+        /// renders a smooth curve through the points.
+        /// </summary>
+        public LineSmoothing Smoothing { get; set; } = LineSmoothing.None;
+
+        /// <summary>
         /// Gets or sets the resampling algorithm used for large datasets
         /// </summary>
         public IResampler? Resampler

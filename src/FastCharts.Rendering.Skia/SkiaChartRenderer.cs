@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace FastCharts.Rendering.Skia
 {
-    public sealed class SkiaChartRenderer : IAsyncChartRenderer<SKCanvas>, IChartExporter, IRenderer<SKCanvas>
+    public sealed class SkiaChartRenderer : IAsyncChartRenderer<SKCanvas>, IChartExporter, ISvgChartExporter, IRenderer<SKCanvas>
     {
         private readonly GridLayer _grid = new();
         private readonly SeriesLayer _series = new();
@@ -128,6 +128,42 @@ namespace FastCharts.Rendering.Skia
                 canvas.Flush();
             }
             return bmp;
+        }
+
+        /// <summary>
+        /// Exports the chart as a scalable SVG document. The full render pipeline is replayed
+        /// onto an SVG canvas, so output stays vector-based (no rasterization).
+        /// </summary>
+        /// <param name="model">Chart model to export</param>
+        /// <param name="destination">Writable stream receiving the SVG document</param>
+        /// <param name="pixelWidth">Nominal width (SVG viewBox)</param>
+        /// <param name="pixelHeight">Nominal height (SVG viewBox)</param>
+        public void ExportSvg(ChartModel model, Stream destination, int pixelWidth, int pixelHeight)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+            if (!destination.CanWrite)
+            {
+                throw new ArgumentException("Destination stream must be writable", nameof(destination));
+            }
+            if (pixelWidth <= 0 || pixelHeight <= 0)
+            {
+                throw new ArgumentOutOfRangeException(pixelWidth <= 0 ? nameof(pixelWidth) : nameof(pixelHeight), "Export dimensions must be positive");
+            }
+
+            var bounds = SKRect.Create(pixelWidth, pixelHeight);
+            using (var canvas = SKSvgCanvas.Create(bounds, destination))
+            {
+                Render(model, canvas, pixelWidth, pixelHeight);
+            }
+
+            destination.Flush();
         }
 
         public void ExportPng(ChartModel model, Stream destination, int pixelWidth, int pixelHeight, int quality = 100, bool transparentBackground = false)
