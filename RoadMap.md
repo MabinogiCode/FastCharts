@@ -134,6 +134,9 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 - [x] P1-TOOLTIP-PIN ✅ **COMPLETED** - Pinned tooltips with multi-tooltip support, right-click pinning, and export functionality
 - [x] P1-METRICS ✅ **COMPLETED** - RenderMetrics system with FPS tracking, memory monitoring, and MetricsOverlayBehavior with F3/F4/F5 shortcuts
 
+### Phase 2 Progress
+- [x] P2-DATA-BIND ✅ **COMPLETED & FIXED (v1.1.0)** - Observable series (Line/Scatter/Bar) now derive from renderable series, bind to INotifyCollectionChanged sources with throttling, compiled property-path resolution, and per-item change tracking
+
 ### Technical Tasks Progress
 - [x] T-ARCH-AXREF ✅ **COMPLETED** - Series→axis mapping via YAxisIndex, clean service architecture
 - [x] T-ARCH-SERVICES ✅ **COMPLETED** - AxisManagementService, LegendSyncService, InteractionService

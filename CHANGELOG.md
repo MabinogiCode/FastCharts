@@ -5,6 +5,35 @@ All notable changes to FastCharts will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-05
+
+### 🛠️ **Fixed — the library is now truly functional for streaming & MVVM**
+
+- **StreamingLineSeries rendered nothing**: the series hid (`new`) `GetRenderData`/`GetXRange`/`GetYRange`/`Data` instead of overriding them. Renderers hold `LineSeries` references, so they always read the (empty) base data list. Streaming data is now stored in the base `LineSeries` list and `GetRenderData`/`GetXRange`/`GetYRange` are `virtual` — streamed points render, resample and auto-fit correctly.
+- **Observable (MVVM) series could not be charted**: `ObservableLineSeries`, `ObservableScatterSeries` and `ObservableBarSeries` did not derive from `SeriesBase`, so they could not be added to `ChartModel.Series`. They now derive from `LineSeries`/`ScatterSeries`/`BarSeries` respectively and render like any other series while staying bound to their `ItemsSource`.
+- **`RefreshThrottle` was ignored** in observable series: a positive throttle now coalesces refresh bursts into a single update (default remains `TimeSpan.Zero` = synchronous refresh).
+- **Items added to a bound collection after the initial subscription were not observed** for `INotifyPropertyChanged`: per-item listeners now track adds/removes/replaces/resets.
+- **SkiaSharp native assets on Linux**: test suite now runs cross-platform (Linux natives referenced in tests).
+
+### ⚡ **Performance**
+
+- **Zero-copy render path**: `LineSeries.GetRenderData` no longer calls `Data.ToArray()` on every frame (previously a full copy of the series — even 1M points — up to 60×/s). Small/non-resampled datasets return the backing list directly; resampled output is cached and invalidated by point count + viewport width.
+- **Compiled property-path resolver**: new `CachedPropertyPathResolver` (default for data binding) compiles property access chains into cached delegates instead of reflecting per item per refresh.
+- **Allocation-free series color resolution**: the Skia renderer no longer allocates `List<T>` per series per frame to find palette indexes.
+- **StreamingLineSeries appends**: no more LINQ `ToArray`/`OrderByDescending` per append; single-pass min/max tracking.
+
+### ✨ **Added**
+
+- `LineSeries.ReplacePoints(IEnumerable<PointD>)`: single-operation content swap for data-binding scenarios.
+- `SeriesDataBinder`: reusable data-binding engine (collection + item observation, throttling, property paths) used by all observable series and available for custom series.
+- `CachedPropertyPathResolver.Instance`: high-performance path resolver usable standalone.
+
+### ⚠️ **Changed**
+
+- `ObservableSeriesBase<T>` was removed; observable series now inherit their renderable counterparts. The `IObservableSeries` / `IObservableSeries<T>` contracts are unchanged. (The 1.0.0 observable series could not be attached to a chart, so no functional consumer is affected.)
+- `ScatterSeries` and `BarSeries` are no longer `sealed` (enables observable variants).
+- `FastCharts.Core.Examples.ServiceConfigurationExample` was removed from the shipped assembly (example code now lives in documentation).
+
 ## [1.0.0] - 2025-12-15
 
 ### ?? **PHASE 1 COMPLETE - MAJOR RELEASE**

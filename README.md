@@ -147,6 +147,21 @@ model.AddBehavior(new MetricsOverlayBehavior {
 // Press F3 to toggle, F4 for detail level, F5 to reset
 ```
 
+### MVVM Data Binding (Observable Series)
+```csharp
+// Bind a chart series directly to your ViewModel collection
+var readings = new ObservableCollection<SensorReading>();
+
+var series = new ObservableLineSeries(readings, nameof(SensorReading.Time), nameof(SensorReading.Temperature))
+{
+    Title = "Temperature",
+    RefreshThrottle = TimeSpan.FromMilliseconds(50) // coalesce rapid updates (optional)
+};
+
+model.AddSeries(series);          // renders like any other series
+readings.Add(new SensorReading()); // chart updates automatically
+```
+
 ### Interactive Behaviors
 ```csharp
 model.AddBehavior(new PanBehavior());
@@ -194,6 +209,11 @@ model.AddAnnotation(new RangeAnnotation {
 
 **Platforms**: Windows, macOS, Linux (Core + Skia), Windows only (WPF)
 
+> **Linux note**: `FastCharts.Rendering.Skia` relies on SkiaSharp. On Linux, add the
+> [`SkiaSharp.NativeAssets.Linux`](https://www.nuget.org/packages/SkiaSharp.NativeAssets.Linux)
+> (or `SkiaSharp.NativeAssets.Linux.NoDependencies`) package to your application so the
+> native `libSkiaSharp` library is deployed.
+
 ## 📖 **Documentation**
 
 - 🚀 [**Getting Started**](docs/getting-started.md) | [**Démarrage Rapide**](docs/getting-started-fr.md)
@@ -213,7 +233,7 @@ git clone https://github.com/MabinogiCode/FastCharts.git
 cd FastCharts
 dotnet restore
 dotnet build
-dotnet test # 594 tests should pass
+dotnet test # full test suite should pass
 ```
 
 ## 📝 **License**
