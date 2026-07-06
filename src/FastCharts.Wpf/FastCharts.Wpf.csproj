@@ -57,6 +57,7 @@ See CHANGELOG.md for details.</PackageReleaseNotes>
     <ItemGroup>
         <PackageReference Include="DynamicData" Version="9.4.1" />
         <PackageReference Include="ReactiveUI" Version="22.3.1" />
+        <PackageReference Include="ReactiveUI.WPF" Version="22.3.1" />
         <PackageReference Include="System.Reactive" Version="6.*" />
         <PackageReference Include="SkiaSharp" Version="3.119.1" />
         <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.1" />
