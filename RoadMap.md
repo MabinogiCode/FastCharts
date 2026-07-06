@@ -192,7 +192,7 @@ Long-term target: feature parity with premium WPF charting (SciChart).
 ### v1.4 — "Large volumes & GPU"
 - [x] BenchmarkDotNet suite first (T-PERF-PROF) — `benchmarks/FastCharts.Benchmarks`
 - Opt-in Skia GPU backend (T-PERF-GPU)
-- Geometry caching / dirty rectangles (T-PERF-CACHE)
+- [x] Geometry caching (T-PERF-CACHE) — per-series SKPath/pixel cache keyed on DataVersion + ranges + plot rect; dirty rectangles remain open
 
 ### v1.5 — "Analytics"
 - Heatmap + color axis (P2-HEATMAP, P1-AX-COLOR)
