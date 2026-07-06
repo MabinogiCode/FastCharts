@@ -1,6 +1,4 @@
-using System.Reactive.Concurrency;
 using System.Windows;
-using System.Windows.Threading;
 using ReactiveUI;
 
 namespace DemoApp
@@ -9,9 +7,10 @@ namespace DemoApp
     {
         public App()
         {
-            // ? CRITICAL: Initialize ReactiveUI with proper WPF scheduler
-            // This ensures RxApp.MainThreadScheduler uses the WPF Dispatcher
-            RxApp.MainThreadScheduler = new DispatcherScheduler(Dispatcher.CurrentDispatcher);
+            // Restrict ReactiveUI platform probing to WPF: prevents Assembly.Load attempts
+            // for ReactiveUI.XamForms & co at startup. ReactiveUI.WPF (referenced through
+            // FastCharts.Wpf) wires RxApp.MainThreadScheduler to the WPF Dispatcher.
+            PlatformRegistrationManager.SetRegistrationNamespaces(RegistrationNamespace.Wpf);
         }
     }
 }

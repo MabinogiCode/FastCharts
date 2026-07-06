@@ -199,6 +199,13 @@ namespace FastCharts.Core.Series
         }
 
         /// <summary>
+        /// Monotonic version incremented on every data mutation through the series API.
+        /// Renderers use it to cache derived geometry (paths, pixel buffers) safely.
+        /// Direct edits through <see cref="Data"/> bypass it — call <see cref="InvalidateCache"/> after those.
+        /// </summary>
+        public int DataVersion { get; private set; }
+
+        /// <summary>
         /// Invalidates the resampling cache, forcing recalculation on next render
         /// </summary>
         public void InvalidateCache()
@@ -206,6 +213,7 @@ namespace FastCharts.Core.Series
             _cachedResampledData = null;
             _lastViewportPixelWidth = -1;
             _lastResampledCount = -1;
+            DataVersion++;
         }
 
         /// <summary>

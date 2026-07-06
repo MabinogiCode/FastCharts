@@ -68,7 +68,6 @@ See CHANGELOG.md for details.</PackageReleaseNotes>
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
     <!-- SonarAnalyzer for strict S1244 floating point equality enforcement -->
     <PackageReference Include="SonarAnalyzer.CSharp" Version="10.16.1.129956" PrivateAssets="all" IncludeAssets="analyzers" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     
     <!-- Source Link for debugging -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
