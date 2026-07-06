@@ -10,6 +10,32 @@ public sealed class OhlcSeries : SeriesBase, ISeriesRangeProvider
 {
     public IList<OhlcPoint> Data { get; }
     public double? Width { get; set; }
+
+    /// <summary>
+    /// Body/wick color for rising candles (Close >= Open). Null = theme default.
+    /// </summary>
+    public ColorRgba? BullColor { get; set; }
+
+    /// <summary>
+    /// Body/wick color for falling candles (Close &lt; Open). Null = theme default.
+    /// </summary>
+    public ColorRgba? BearColor { get; set; }
+
+    /// <summary>
+    /// When true, volume bars are drawn in a band at the bottom of the plot
+    /// (classic trading layout) using each point's Volume value.
+    /// </summary>
+    public bool ShowVolume { get; set; }
+
+    /// <summary>
+    /// Fraction of the plot height reserved for volume bars (0.05 to 0.5, default 0.2).
+    /// </summary>
+    public double VolumePaneRatio { get; set; } = 0.2;
+
+    /// <summary>
+    /// Opacity of volume bars [0..1] (default 0.35).
+    /// </summary>
+    public double VolumeOpacity { get; set; } = 0.35;
     public double WickThickness { get; set; } = 1.0;
     public double UpFillOpacity { get; set; } = 0.9;
     public double DownFillOpacity { get; set; } = 0.4;

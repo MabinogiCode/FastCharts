@@ -176,17 +176,18 @@ Guiding rule: each release is small, shippable, and keeps the KISS promise
 (a beautiful curve from a `Dictionary<double, double>` with zero decisions).
 Long-term target: feature parity with premium WPF charting (SciChart).
 
-### v1.2 — "Everyday chart"
-- Markers on LineSeries (render ShowMarkers/MarkerSize/MarkerShape)
-- Spline smoothing (P2-SERIES-SPLINE) via `LineSeries.Smoothing`
-- SVG export (P2-EXPORT-SVG) through SKSvgCanvas
-- Dynamic themes (P2-THEME-DYNAMIC): `Themes.Light/Dark/HighContrast`, custom palettes
-- KISS: `model.AddSeries(data, ChartKind.Area|Scatter|Bar|StepLine)`
+### v1.2 — "Everyday chart" ✅ SHIPPED
+- [x] Markers on LineSeries (render ShowMarkers/MarkerSize/MarkerShape)
+- [x] Spline smoothing (P2-SERIES-SPLINE) via `LineSeries.Smoothing`
+- [x] SVG export (P2-EXPORT-SVG) through SKSvgCanvas
+- [x] Dynamic themes (P2-THEME-DYNAMIC): `ChartThemes.Light/Dark/HighContrast`, custom palettes
+- [x] KISS: `model.AddSeries(data, ChartKind.Area|Scatter|Bar|StepLine)`
 
-### v1.3 — "Finance"
-- Enhanced candlestick + volume (P2-SERIES-CANDLESTICK)
-- Indicators: SMA, EMA, Bollinger first; RSI/MACD next (P3-FIN-INDICATORS)
-- Linked axes across charts (P2-AX-LINK) — price + indicator sync pattern
+### v1.3 — "Finance" ✅ SHIPPED
+- [x] Enhanced candlestick + volume (P2-SERIES-CANDLESTICK)
+- [x] Indicators: SMA, EMA, Bollinger (P3-FIN-INDICATORS — RSI/MACD remain for later)
+- [x] Linked axes across charts (P2-AX-LINK) — ChartLinkGroup
+- [x] Browser-triggered release workflow (workflow_dispatch)
 
 ### v1.4 — "Large volumes & GPU"
 - BenchmarkDotNet suite first (T-PERF-PROF)

@@ -5,6 +5,16 @@ All notable changes to FastCharts will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-05
+
+### ✨ **Added — "Finance"**
+
+- **Enhanced candlesticks** (P2-SERIES-CANDLESTICK): `OhlcSeries.BullColor`/`BearColor` (null = theme-derived, unchanged default), optional `OhlcPoint.Volume` and `ShowVolume` rendering volume bars in a bottom band of the plot (`VolumePaneRatio`, `VolumeOpacity`) colored bull/bear — the classic trading layout.
+- **Financial indicators** (P3-FIN-INDICATORS, first batch): `Indicators.Sma`, `Indicators.Ema` (SMA-seeded), `Indicators.BollingerBands` (middle `LineSeries` + ±kσ `BandSeries`). All return ready-to-add series and accept either `IReadOnlyList<PointD>` or an `OhlcSeries` (Close prices). O(n) sliding-window SMA/EMA.
+- **Linked charts** (P2-AX-LINK): `ChartLinkGroup` synchronizes the visible X range across models (price chart + indicator chart stay aligned under zoom/pan); survives axis replacement (e.g. switching to log X); `Remove`/`Dispose` unlink cleanly.
+- **`AxisBase.VisibleRangeChanged` event**: raised on any visible-range change (zoom, pan, auto-fit) — the hook behind axis linking, also usable by apps.
+- **Release from the browser**: the *Publish NuGet Packages* workflow now supports manual dispatch (Actions → Run workflow → enter version) — it creates the tag, builds, tests, publishes to NuGet and creates the GitHub release. No local git needed.
+
 ## [1.2.0] - 2026-07-05
 
 ### ✨ **Added — "Everyday chart"**

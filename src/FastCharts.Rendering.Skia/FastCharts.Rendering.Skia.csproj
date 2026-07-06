@@ -13,7 +13,7 @@
         <!-- NuGet Package Metadata -->
         <PackageId>FastCharts.Rendering.Skia</PackageId>
         <Title>FastCharts Skia Rendering Engine</Title>
-        <Version>1.2.0</Version>
+        <Version>1.3.0</Version>
         <Authors>FastCharts Team</Authors>
         <Company>FastCharts</Company>
         <Product>FastCharts</Product>
@@ -31,13 +31,14 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         
-        <PackageReleaseNotes>FastCharts v1.2.0 — "Everyday chart"
+        <PackageReleaseNotes>FastCharts v1.3.0 — "Finance"
 
-- Markers on LineSeries (ShowMarkers, MarkerSize, MarkerShape incl. Diamond/Cross/Plus)
-- Spline smoothing: series.Smoothing = LineSmoothing.Spline
-- SVG vector export: SkiaChartRenderer.ExportSvg / ChartExportService.ExportToSvgFile
-- Dynamic themes: ChartThemes.Light/Dark/HighContrast + CustomTheme palettes
-- KISS: model.AddSeries(data, ChartKind.Area|Scatter|Bar|StepLine)
+- Enhanced candlesticks: BullColor/BearColor, per-point Volume with bottom volume band
+- Indicators: Indicators.Sma / Ema / BollingerBands producing ready-to-add series
+  (PointD lists or OhlcSeries Close prices)
+- Cross-chart X axis sync: ChartLinkGroup (price + indicator layout)
+- AxisBase.VisibleRangeChanged event
+- Release from browser: run the 'Publish NuGet Packages' workflow manually with a version
 
 See CHANGELOG.md for details.</PackageReleaseNotes>
     </PropertyGroup>

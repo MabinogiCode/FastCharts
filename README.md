@@ -176,6 +176,26 @@ model.AddSeries(series);          // renders like any other series
 readings.Add(new SensorReading()); // chart updates automatically
 ```
 
+### Finance: Candlesticks, Volume & Indicators
+```csharp
+var candles = new OhlcSeries(ohlcPoints)   // OhlcPoint(x, o, h, l, c, volume)
+{
+    ShowVolume = true,                      // volume bars at the bottom
+    BullColor = new ColorRgba(0, 200, 80),
+    BearColor = new ColorRgba(220, 40, 40)
+};
+model.AddSeries(candles);
+model.AddSeries(Indicators.Sma(candles, 20));       // moving average overlay
+var bb = Indicators.BollingerBands(candles, 20, 2);
+model.AddSeries(bb.Band);                            // ±2σ envelope
+model.AddSeries(bb.Middle);
+
+// Keep a price chart and an indicator chart zoom-synced
+var link = new ChartLinkGroup();
+link.Add(priceModel);
+link.Add(indicatorModel);
+```
+
 ### Interactive Behaviors
 ```csharp
 model.AddBehavior(new PanBehavior());
