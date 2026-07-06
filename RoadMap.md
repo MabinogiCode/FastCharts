@@ -141,7 +141,7 @@ Deliverables for phase closure: feature flags, tests, basic docs updates.
 - [x] T-ARCH-AXREF ✅ **COMPLETED** - Series→axis mapping via YAxisIndex, clean service architecture
 - [x] T-ARCH-SERVICES ✅ **COMPLETED** - AxisManagementService, LegendSyncService, InteractionService
 - [x] T-CI-LINT ✅ **COMPLETED** - One type‑per‑file guard via GitHub Actions workflow (fails PR on violations)
-- [ ] T-PERF-PROF
+- [x] T-PERF-PROF ✅ **COMPLETED (v1.4)** - BenchmarkDotNet suite in benchmarks/ (LTTB, streaming, indicators, binding resolver)
 - [ ] T-QA-VISUAL
 
 ### 🎯 Phase 1 Completion Status: **13/13 features completed (100%)**
@@ -190,7 +190,7 @@ Long-term target: feature parity with premium WPF charting (SciChart).
 - [x] Browser-triggered release workflow (workflow_dispatch)
 
 ### v1.4 — "Large volumes & GPU"
-- BenchmarkDotNet suite first (T-PERF-PROF)
+- [x] BenchmarkDotNet suite first (T-PERF-PROF) — `benchmarks/FastCharts.Benchmarks`
 - Opt-in Skia GPU backend (T-PERF-GPU)
 - Geometry caching / dirty rectangles (T-PERF-CACHE)
 
