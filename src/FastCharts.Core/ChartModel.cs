@@ -319,6 +319,23 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
         return series;
     }
 
+    /// <summary>
+    /// One-liner: bins raw values into a histogram and plots it as contiguous bars.
+    /// Bin count is chosen automatically (Sturges' rule) unless <paramref name="binCount"/>
+    /// is supplied. The view auto-fits the data.
+    /// </summary>
+    /// <param name="values">Raw sample values (NaN/infinities ignored)</param>
+    /// <param name="binCount">Optional fixed bin count; null = automatic</param>
+    /// <param name="title">Optional legend title</param>
+    /// <returns>The created bar series, for further customization</returns>
+    public BarSeries AddHistogram(IEnumerable<double> values, int? binCount = null, string? title = null)
+    {
+        var series = HistogramBuilder.Build(values, binCount);
+        series.Title = title;
+        AddSeries(series);
+        return series;
+    }
+
     private static List<BarPoint> ToBarPoints(IList<PointD> points)
     {
         var bars = new List<BarPoint>(points.Count);

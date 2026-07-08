@@ -5,6 +5,12 @@ All notable changes to FastCharts will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### ✨ **Added — "Analytics" (v1.5, in progress)**
+
+- **Histogram with auto-binning** (P2-HISTOGRAM): `model.AddHistogram(values)` bins raw values into contiguous bars in one line. Bin count is chosen automatically (Sturges' rule) or can be fixed via `binCount`. NaN/infinities are ignored; all-identical values collapse to a single bar. The pure, unit-tested `HistogramBuilder.Build(values, binCount?)` returns a ready-to-add `BarSeries` (bars centered on each bin, width = bin width, Y = count).
+
 ## [1.4.0] - 2026-07-08
 
 ### ✨ **Added — "Large volumes & GPU"**

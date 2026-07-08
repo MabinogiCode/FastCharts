@@ -165,6 +165,7 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
         Charts.Add(BuildRangeAnnotationDemo()); // 7
         Charts.Add(BuildLogarithmicAxisDemo()); // 8 - P1-AX-LOG
         Charts.Add(BuildLttbPerformanceDemo()); // 9 - P1-RESAMPLE-LTTB
+        Charts.Add(BuildHistogramDemo());       // 10 - P2-HISTOGRAM (v1.5)
     }
 
     private void ToggleTheme()
@@ -533,6 +534,32 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
     /// <summary>
     /// P1-AX-LOG: Build a demo chart showcasing the LogarithmicAxis functionality
     /// </summary>
+    private static ChartModel BuildHistogramDemo()
+    {
+        var model = new ChartModel
+        {
+            Title = "Histogram (auto-binning) — model.AddHistogram(values)"
+        };
+
+        // Approximate a normal distribution (sum of uniforms → central limit theorem).
+        var random = new Random(42);
+        var samples = new List<double>();
+        for (var i = 0; i < 2000; i++)
+        {
+            var s = 0.0;
+            for (var j = 0; j < 6; j++)
+            {
+                s += random.NextDouble();
+            }
+
+            samples.Add(s - 3.0); // centered on 0
+        }
+
+        // One line: bins are chosen automatically (Sturges' rule).
+        model.AddHistogram(samples, title: "Distribution");
+        return model;
+    }
+
     private static ChartModel BuildLogarithmicAxisDemo()
     {
         var model = new ChartModel

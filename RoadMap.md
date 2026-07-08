@@ -194,9 +194,9 @@ Long-term target: feature parity with premium WPF charting (SciChart).
 - [x] Opt-in Skia GPU backend (T-PERF-GPU) — `FastChart.UseGpu` swaps SKElement→SKGLElement (default false, CPU path untouched); validated pixel-identical on net8 + net48 demos
 - [x] Geometry caching (T-PERF-CACHE) — per-series SKPath/pixel cache keyed on DataVersion + ranges + plot rect; dirty rectangles remain open
 
-### v1.5 — "Analytics"
+### v1.5 — "Analytics" (in progress)
 - Heatmap + color axis (P2-HEATMAP, P1-AX-COLOR)
-- Histogram with auto-binning (P2-HISTOGRAM): `model.AddHistogram(values)`
+- [x] Histogram with auto-binning (P2-HISTOGRAM): `model.AddHistogram(values)` — Sturges auto-bins, contiguous bars, `HistogramBuilder` unit-tested
 - Draggable text/shape annotations (P2-ANNOT-TEXT/SHAPE)
 
 ### Continuous (from 1.2)
