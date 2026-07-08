@@ -44,3 +44,13 @@ jobs:
           path: |
             **/TestResults/*.trx
             **/TestResults/**/coverage.cobertura.xml
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/coverage.cobertura.xml'
+          flags: unittests
+          fail_ci_if_error: false
+          verbose: true

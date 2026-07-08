@@ -6,6 +6,7 @@
   [![NuGet](https://img.shields.io/nuget/v/FastCharts.Wpf.svg)](https://www.nuget.org/packages/FastCharts.Wpf/)
   [![Downloads](https://img.shields.io/nuget/dt/FastCharts.Core.svg)](https://www.nuget.org/packages/FastCharts.Core/)
   [![Build Status](https://github.com/MabinogiCode/FastCharts/workflows/.NET%20CI/badge.svg)](https://github.com/MabinogiCode/FastCharts/actions)
+  [![codecov](https://codecov.io/gh/MabinogiCode/FastCharts/branch/main/graph/badge.svg)](https://codecov.io/gh/MabinogiCode/FastCharts)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 </div>
 
@@ -15,16 +16,19 @@ FastCharts is a **high-performance .NET charting library** designed for real-tim
 
 ### ⚡ **Key Features**
 
-- 🚀 **Real-time Performance**: 60 FPS rendering with LTTB decimation
-- 📊 **Rich Chart Types**: Line, Scatter, Bar, Area, Band, OHLC, ErrorBar
-- 🎯 **Multi-Axis Support**: Independent left/right Y axes
+- 🚀 **Real-time Performance**: 60 FPS rendering with LTTB decimation + per-series geometry cache
+- ⚡ **Opt-in GPU backend**: `FastChart.UseGpu` renders through OpenGL (`SKGLElement`); default stays CPU raster
+- 📊 **Rich Chart Types**: Line, Scatter, Bar, Stacked Bar, Area, Band, OHLC (candlesticks + volume), ErrorBar, Step
+- 📉 **Financial toolkit**: SMA / EMA / Bollinger Bands indicators, bull/bear candlesticks, linked-axis charts
+- 🎯 **Multi-Axis Support**: Independent left/right Y axes, cross-chart X sync (`ChartLinkGroup`)
 - 📈 **Advanced Axes**: Linear, Logarithmic, Category with custom bases  
 - 🔄 **Streaming Data**: Rolling windows with efficient append operations
-- 🎨 **Interactive**: Pan, zoom, crosshair, pinned tooltips
+- 〰️ **Spline smoothing**: Catmull-Rom curves via `LineSeries.Smoothing`
+- 🎨 **Interactive & Themed**: Pan, zoom, crosshair, pinned tooltips; Light / Dark / High-Contrast / custom themes
 - 📍 **Annotations**: Lines, ranges, labels with full styling
 - 💾 **Export Ready**: PNG + SVG (vector) export, clipboard integration
 - 🌐 **Cross-Platform**: Windows, macOS, Linux support
-- 🏗️ **MVVM Ready**: Full WPF integration with ReactiveUI
+- 🏗️ **MVVM Ready**: Full WPF integration with ReactiveUI, one-liner `model.AddSeries(dictionary)`
 
 ### 🎯 **Perfect For**
 
