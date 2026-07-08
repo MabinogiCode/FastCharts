@@ -25,6 +25,10 @@
                 
                 <!-- Interaction Toggle -->
                 <CheckBox Content="Allow Interaction" IsChecked="{Binding AllowInteraction}" VerticalAlignment="Center" Margin="10,0"/>
+
+                <!-- GPU backend toggle (opt-in) -->
+                <CheckBox Content="Use GPU (OpenGL)" IsChecked="{Binding UseGpu}" VerticalAlignment="Center" Margin="10,0"
+                          ToolTip="Render all charts through an OpenGL-backed surface instead of the CPU raster surface"/>
                 
                 <!-- Chart Selection - Made more prominent -->
                 <Border Background="White" BorderBrush="DarkBlue" BorderThickness="2" CornerRadius="5" Padding="5" Margin="10,0">
@@ -68,21 +72,21 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
             <UniformGrid Rows="4" Columns="4" Margin="16" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 <!-- All charts with reactive binding to individual models -->
-                <controls:FastChart Margin="8" Model="{Binding Charts[0], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[1], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[2], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[3], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[4], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[5], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[6], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[7], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[8], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[9], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[10], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[11], Mode=OneWay}" />
-                <controls:FastChart Margin="8" Model="{Binding Charts[12], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[0], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[1], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[2], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[3], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[4], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[5], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[6], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[7], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[8], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[9], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[10], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[11], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[12], Mode=OneWay}" />
                 <!-- New reactive realtime chart -->
-                <controls:FastChart Margin="8" Model="{Binding Charts[13], Mode=OneWay}" />
+                <controls:FastChart Margin="8" UseGpu="{Binding UseGpu}" Model="{Binding Charts[13], Mode=OneWay}" />
             </UniformGrid>
         </ScrollViewer>
         

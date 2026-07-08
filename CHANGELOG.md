@@ -5,6 +5,18 @@ All notable changes to FastCharts will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-07-08
+
+### ✨ **Added — "Large volumes & GPU"**
+
+- **Opt-in GPU backend** (T-PERF-GPU): `FastChart.UseGpu` renders the chart through an OpenGL-backed `SKGLElement` instead of the default CPU raster `SKElement`. Default is `false` — the CPU path is untouched (the templated `SKElement` is reused as-is), so existing apps are unaffected. Set `UseGpu="True"` (or bind it) to offload rasterization to the GPU; the surface rebuilds live when the value changes. Visually validated pixel-identical to the CPU path on both .NET 8 and .NET Framework 4.8 demos. `GLWpfControl`/`OpenTK` ship transitively with `SkiaSharp.Views.WPF`, so no extra package references are needed.
+- **Geometry caching** (T-PERF-CACHE): per-series `SKPath`/pixel cache in `LineLayer`, keyed on `LineSeries.DataVersion` + ranges + plot rect — identical frames are byte-for-byte reused (shipped in 1.4 dev, now released).
+- **BenchmarkDotNet suite** (T-PERF-PROF): `benchmarks/FastCharts.Benchmarks` for measuring resampling/render costs (LTTB 1M points ≈ 4.8 ms).
+
+### 🛠️ **Fixed**
+
+- **Demo apps failed to start**: `DemoApp.Net48` crashed on first render with `FileLoadException` in `SkiaSharp.HandleDictionary..cctor` — SkiaSharp 3.x is built against older facade versions (`System.Runtime.CompilerServices.Unsafe` 4.0.4.1, `System.Buffers` 4.0.3.0) than the ones restored transitively, and `AutoGenerateBindingRedirects` did not bridge them. Added an explicit `app.config` with the missing binding redirects. (`DemoApp.Net8`'s `ReactiveUI.XamForms` `FileNotFoundException` was only a first-chance exception ReactiveUI catches internally — the app always ran fine outside the debugger.)
+
 ## [1.3.0] - 2026-07-05
 
 ### ✨ **Added — "Finance"**
