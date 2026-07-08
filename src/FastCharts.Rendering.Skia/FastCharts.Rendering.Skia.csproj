@@ -13,7 +13,7 @@
         <!-- NuGet Package Metadata -->
         <PackageId>FastCharts.Rendering.Skia</PackageId>
         <Title>FastCharts Skia Rendering Engine</Title>
-        <Version>1.3.0</Version>
+        <Version>1.4.0</Version>
         <Authors>FastCharts Team</Authors>
         <Company>FastCharts</Company>
         <Product>FastCharts</Product>

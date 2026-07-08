@@ -1,4 +1,4 @@
-using FastCharts.Core;
+癤퓎sing FastCharts.Core;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Axes;
 using FastCharts.Core.Primitives;
@@ -27,6 +27,7 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
     private ChartModel? _selectedChart;
     private string _selectedTheme = "Light";
     private bool _allowInteraction = true;
+    private bool _useGpu;
     private double _animationProgress;
     private IDisposable? _animationSubscription;
     private readonly SkiaChartRenderer _renderer;
@@ -86,6 +87,15 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
     {
         get => _allowInteraction;
         set => this.RaiseAndSetIfChanged(ref _allowInteraction, value);
+    }
+
+    /// <summary>
+    /// Toggles the opt-in GPU (OpenGL) rendering backend on all charts. Default off (CPU raster).
+    /// </summary>
+    public bool UseGpu
+    {
+        get => _useGpu;
+        set => this.RaiseAndSetIfChanged(ref _useGpu, value);
     }
 
     /// <summary>
@@ -623,31 +633,31 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
         // Temperature data over 24 hours (simulated)
         var temperatureData = new[]
         {
-            new PointD(0, 18.5),    // Midnight: 18.5캜
-            new PointD(2, 16.8),    // 2 AM: 16.8캜
-            new PointD(4, 15.2),    // 4 AM: 15.2캜
-            new PointD(6, 14.5),    // 6 AM: 14.5캜 (coldest)
-            new PointD(8, 17.3),    // 8 AM: 17.3캜
-            new PointD(10, 22.1),   // 10 AM: 22.1캜
-            new PointD(12, 26.8),   // Noon: 26.8캜
-            new PointD(14, 29.5),   // 2 PM: 29.5캜 (hottest)
-            new PointD(16, 28.2),   // 4 PM: 28.2캜
-            new PointD(18, 25.4),   // 6 PM: 25.4캜
-            new PointD(20, 22.7),   // 8 PM: 22.7캜
-            new PointD(22, 20.1),   // 10 PM: 20.1캜
-            new PointD(24, 18.9)    // Midnight: 18.9캜
+            new PointD(0, 18.5),    // Midnight: 18.5째C
+            new PointD(2, 16.8),    // 2 AM: 16.8째C
+            new PointD(4, 15.2),    // 4 AM: 15.2째C
+            new PointD(6, 14.5),    // 6 AM: 14.5째C (coldest)
+            new PointD(8, 17.3),    // 8 AM: 17.3째C
+            new PointD(10, 22.1),   // 10 AM: 22.1째C
+            new PointD(12, 26.8),   // Noon: 26.8째C
+            new PointD(14, 29.5),   // 2 PM: 29.5째C (hottest)
+            new PointD(16, 28.2),   // 4 PM: 28.2째C
+            new PointD(18, 25.4),   // 6 PM: 25.4째C
+            new PointD(20, 22.7),   // 8 PM: 22.7째C
+            new PointD(22, 20.1),   // 10 PM: 20.1째C
+            new PointD(24, 18.9)    // Midnight: 18.9째C
         };
 
         model.AddSeries(new LineSeries(temperatureData)
         {
-            Title = "Temperature (캜)",
+            Title = "Temperature (째C)",
             StrokeThickness = 3
         });
 
         // Add horizontal range annotations for temperature zones
             
-        // Comfort zone (20캜 - 25캜)
-        var comfortZone = new AnnotationRange(20.0, 25.0, AnnotationOrientation.Horizontal, "Comfort Zone (20-25캜)")
+        // Comfort zone (20째C - 25째C)
+        var comfortZone = new AnnotationRange(20.0, 25.0, AnnotationOrientation.Horizontal, "Comfort Zone (20-25째C)")
         {
             FillColor = new ColorRgba(0, 255, 0, 40),     // Light green
             BorderColor = new ColorRgba(0, 200, 0, 120),  // Green border
@@ -655,8 +665,8 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
             LabelPosition = LabelPosition.Start
         };
 
-        // Warning zone (25캜 - 30캜)
-        var warningZone = new AnnotationRange(25.0, 30.0, AnnotationOrientation.Horizontal, "Warning Zone (25-30캜)")
+        // Warning zone (25째C - 30째C)
+        var warningZone = new AnnotationRange(25.0, 30.0, AnnotationOrientation.Horizontal, "Warning Zone (25-30째C)")
         {
             FillColor = new ColorRgba(255, 165, 0, 50),   // Light orange
             BorderColor = new ColorRgba(255, 140, 0, 150), // Orange border
@@ -664,8 +674,8 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
             LabelPosition = LabelPosition.Start
         };
 
-        // Cold zone (below 15캜)
-        var coldZone = new AnnotationRange(10.0, 15.0, AnnotationOrientation.Horizontal, "Cold Zone (<15캜)")
+        // Cold zone (below 15째C)
+        var coldZone = new AnnotationRange(10.0, 15.0, AnnotationOrientation.Horizontal, "Cold Zone (<15째C)")
         {
             FillColor = new ColorRgba(0, 100, 255, 40),      // Light blue
             BorderColor = new ColorRgba(0, 80, 200, 120),    // Blue border

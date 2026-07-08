@@ -189,9 +189,9 @@ Long-term target: feature parity with premium WPF charting (SciChart).
 - [x] Linked axes across charts (P2-AX-LINK) — ChartLinkGroup
 - [x] Browser-triggered release workflow (workflow_dispatch)
 
-### v1.4 — "Large volumes & GPU"
+### v1.4 — "Large volumes & GPU" ✅ SHIPPED
 - [x] BenchmarkDotNet suite first (T-PERF-PROF) — `benchmarks/FastCharts.Benchmarks`
-- Opt-in Skia GPU backend (T-PERF-GPU)
+- [x] Opt-in Skia GPU backend (T-PERF-GPU) — `FastChart.UseGpu` swaps SKElement→SKGLElement (default false, CPU path untouched); validated pixel-identical on net8 + net48 demos
 - [x] Geometry caching (T-PERF-CACHE) — per-series SKPath/pixel cache keyed on DataVersion + ranges + plot rect; dirty rectangles remain open
 
 ### v1.5 — "Analytics"
