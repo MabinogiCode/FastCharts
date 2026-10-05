@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
     <PropertyGroup>
-        <TargetFrameworks>net48;net6.0-windows10.0.19041.0;net8.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks>net48;net8.0-windows10.0.19041.0</TargetFrameworks>
         <UseWPF>true</UseWPF>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -19,7 +19,7 @@
         <Authors>FastCharts Team</Authors>
         <Company>FastCharts</Company>
         <Product>FastCharts</Product>
-        <Description>WPF controls for FastCharts charting library. Includes FastChart control with full MVVM support, interactive behaviors, and reactive UI integration. Supports .NET Framework 4.8, .NET 6, and .NET 8.</Description>
+        <Description>WPF controls for FastCharts charting library. Includes FastChart control with full MVVM support, interactive behaviors, and reactive UI integration. Supports .NET Framework 4.8 and .NET 8.</Description>
         <Summary>WPF controls and MVVM integration for FastCharts</Summary>
         <PackageTags>wpf;charts;controls;mvvm;reactive;windows;ui;visualization;interactive</PackageTags>
         <PackageProjectUrl>https://github.com/MabinogiCode/FastCharts</PackageProjectUrl>
@@ -49,9 +49,7 @@
     <ItemGroup>
         <PackageReference Include="DynamicData" Version="9.4.1" />
         <PackageReference Include="ReactiveUI" Version="22.3.1" />
-        <!-- ReactiveUI.WPF has no net6.0-windows target (net462+/net8.0-windows only);
-             net6 consumers keep core ReactiveUI without the WPF scheduler wiring -->
-        <PackageReference Include="ReactiveUI.WPF" Version="22.3.1" Condition="'$(TargetFramework)' != 'net6.0-windows10.0.19041.0'" />
+        <PackageReference Include="ReactiveUI.WPF" Version="22.3.1" />
         <PackageReference Include="System.Reactive" Version="6.*" />
         <PackageReference Include="SkiaSharp" Version="3.119.1" />
         <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.1" />

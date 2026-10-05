@@ -91,7 +91,7 @@ model.Behaviors.Add(new PinnedTooltipBehavior()); // Right-click to pin
 |---------|-------------------|-----------|
 | FastCharts.Core | .NET Standard 2.0, .NET 8 | All |
 | FastCharts.Rendering.Skia | .NET Standard 2.0, .NET 8 | All |
-| FastCharts.Wpf | .NET Framework 4.8, .NET 6, .NET 8 (Windows) | Windows |
+| FastCharts.Wpf | .NET Framework 4.8, .NET 8 (Windows) | Windows |
 
 ## Architecture
 

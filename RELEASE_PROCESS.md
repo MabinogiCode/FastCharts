@@ -78,7 +78,7 @@ dotnet nuget push "./nupkg/*.nupkg" --api-key YOUR_API_KEY --source https://api.
 ### Phase 1 Complete - v1.0.0 Ready!
 - ? **13/13 Phase 1 features** implemented
 - ? **594 tests** passing (100%)
-- ? **Multi-target** support (.NET Standard 2.0, .NET 6/8, Framework 4.8)
+- ? **Multi-target** support (.NET Standard 2.0, .NET 8, Framework 4.8)
 - ? **Cross-platform** ready (Windows, macOS, Linux)
 - ? **Production quality** code with guidelines compliance
 

@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `ChartModelEnhanced`: unused duplicate of `ChartModel` with its own bugs (auto-fit mutating the model from a thread-pool thread, mirrored secondary axis). Its `DynamicData` package reference in `FastCharts.Core` went with it (ReactiveUI still brings DynamicData transitively).
 - Unused `System.Text.Json` dependency of `FastCharts.Rendering.Skia`.
+- **`net6.0-windows` target of `FastCharts.Wpf`** (breaking for .NET 6 WPF apps): .NET 6 has been out of support since November 2024 and ReactiveUI's transitive dependencies no longer support it (build warnings), while `ReactiveUI.WPF` never shipped a net6 build. WPF apps on .NET 6 should move to .NET 8; `FastCharts.Core` and `FastCharts.Rendering.Skia` remain usable from .NET 6 through .NET Standard 2.0. CI and release workflows no longer install the .NET 6 runtime.
 
 ### 🔧 **Tooling**
 

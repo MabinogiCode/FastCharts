@@ -246,7 +246,7 @@ model.AddAnnotation(new AnnotationRange(90, 110, AnnotationOrientation.Horizonta
 |-----------|:---------------:|:--------------:|:---:|
 | .NET Standard 2.0 | ✅ | ✅ | ❌ |
 | .NET Framework 4.8 | ✅ | ✅ | ✅ |
-| .NET 6 | ✅ | ✅ | ✅ |
+| .NET 6 | ✅ | ✅ | ❌ |
 | .NET 8 | ✅ | ✅ | ✅ |
 
 **Platforms**: Windows, macOS, Linux (Core + Skia), Windows only (WPF)
