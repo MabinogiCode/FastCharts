@@ -8,49 +8,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers;
 
 internal sealed class LineLayer : ISeriesSubLayer
 {
-    /// <summary>
-    /// Cached geometry per series (T-PERF-CACHE): projected pixels and the built SKPath
-    /// are reused across frames while the data version, visible ranges, plot rect and
-    /// smoothing mode are unchanged — the common case during tooltip/crosshair redraws.
-    /// Entries for series no longer rendered are swept and disposed each frame.
-    /// </summary>
-    private sealed class CachedGeometry : IDisposable
-    {
-        public SKPath Path { get; } = new SKPath();
-
-        public SKPoint[] Pixels { get; set; } = Array.Empty<SKPoint>();
-
-        public int DataVersion { get; set; } = -1;
-
-        public double XMin { get; set; }
-
-        public double XMax { get; set; }
-
-        public double YMin { get; set; }
-
-        public double YMax { get; set; }
-
-        public SKRect PlotRect { get; set; }
-
-        public LineSmoothing Smoothing { get; set; }
-
-        public int YAxisIndex { get; set; }
-
-        // Axis instances the pixels were projected with: replacing an axis (e.g. linear -> log)
-        // with the same visible range must still rebuild the geometry.
-        public object? XAxis { get; set; }
-
-        public object? YAxis { get; set; }
-
-        public bool Seen { get; set; }
-
-        public void Dispose()
-        {
-            Path.Dispose();
-        }
-    }
-
-    private readonly Dictionary<LineSeries, CachedGeometry> _cache = new();
+    private readonly Dictionary<LineSeries, LineGeometryCacheEntry> _cache = new();
     private readonly List<LineSeries> _sweepList = new();
 
     public void Render(RenderContext ctx)
@@ -77,7 +35,7 @@ internal sealed class LineLayer : ISeriesSubLayer
             var c = SeriesColorResolver.ResolveSeriesColor(model, ls, palette);
             using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)ls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
 
-            CachedGeometry geometry;
+            LineGeometryCacheEntry geometry;
             lock (ls.SyncRoot)
             {
                 // Data may be appended from another thread: project it under the series lock.
@@ -102,7 +60,7 @@ internal sealed class LineLayer : ISeriesSubLayer
         SweepUnseen();
     }
 
-    private CachedGeometry GetOrBuildGeometry(RenderContext ctx, LineSeries ls, SKRect pr)
+    private LineGeometryCacheEntry GetOrBuildGeometry(RenderContext ctx, LineSeries ls, SKRect pr)
     {
         var model = ctx.Model;
         var yAxis = (ls.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
@@ -111,7 +69,7 @@ internal sealed class LineLayer : ISeriesSubLayer
 
         if (!_cache.TryGetValue(ls, out var geometry))
         {
-            geometry = new CachedGeometry();
+            geometry = new LineGeometryCacheEntry();
             _cache[ls] = geometry;
         }
 

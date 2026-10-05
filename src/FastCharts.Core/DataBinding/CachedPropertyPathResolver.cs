@@ -18,8 +18,8 @@ namespace FastCharts.Core.DataBinding
         /// </summary>
         public static readonly CachedPropertyPathResolver Instance = new CachedPropertyPathResolver();
 
-        private readonly ConcurrentDictionary<GetterKey, Func<object, object?>?> _getterCache =
-            new ConcurrentDictionary<GetterKey, Func<object, object?>?>();
+        private readonly ConcurrentDictionary<PropertyGetterKey, Func<object, object?>?> _getterCache =
+            new ConcurrentDictionary<PropertyGetterKey, Func<object, object?>?>();
 
         private CachedPropertyPathResolver()
         {
@@ -33,7 +33,7 @@ namespace FastCharts.Core.DataBinding
                 return null;
             }
 
-            var getter = _getterCache.GetOrAdd(new GetterKey(source.GetType(), path!), BuildGetter);
+            var getter = _getterCache.GetOrAdd(new PropertyGetterKey(source.GetType(), path!), BuildGetter);
             if (getter == null)
             {
                 return null;
@@ -69,7 +69,7 @@ namespace FastCharts.Core.DataBinding
             return ReflectionPropertyPathResolver.Instance.GetPropertyType(sourceType, path);
         }
 
-        private static Func<object, object?>? BuildGetter(GetterKey key)
+        private static Func<object, object?>? BuildGetter(PropertyGetterKey key)
         {
             try
             {
@@ -131,35 +131,5 @@ namespace FastCharts.Core.DataBinding
             }
         }
 
-        private readonly struct GetterKey : IEquatable<GetterKey>
-        {
-            public GetterKey(Type type, string path)
-            {
-                Type = type;
-                Path = path;
-            }
-
-            public Type Type { get; }
-
-            public string Path { get; }
-
-            public bool Equals(GetterKey other)
-            {
-                return Type == other.Type && string.Equals(Path, other.Path, StringComparison.Ordinal);
-            }
-
-            public override bool Equals(object? obj)
-            {
-                return obj is GetterKey other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    return (Type.GetHashCode() * 397) ^ StringComparer.Ordinal.GetHashCode(Path);
-                }
-            }
-        }
     }
 }

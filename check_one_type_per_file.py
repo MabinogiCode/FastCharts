@@ -3,9 +3,14 @@ import os
 import re
 import sys
 
-# Regex pour identifier class / struct / enum (compte aussi les types imbriqués)
+# Regex pour identifier class / struct / enum / interface / record (compte aussi les types
+# imbriqués). Tous les modificateurs sont acceptés dans n'importe quel ordre : l'ancienne
+# version ne reconnaissait ni "sealed", ni "static", ni "abstract", ni "readonly" et laissait
+# donc passer la plupart des violations.
 DECLARATION_RE = re.compile(
-    r'^\s*(public|internal|protected|private)?\s*(partial\s+)?(class|struct|enum)\s+\w+'
+    r'^\s*(?:\[[^\]]*\]\s*)*'
+    r'(?:(?:public|internal|protected|private|file|sealed|static|abstract|partial|readonly|unsafe|new|ref)\s+)*'
+    r'(?:class|struct|enum|interface|record)\s+\w+'
 )
 
 SKIP_DIRS = {'.git', '.github', 'bin', 'obj', '.vs', '.idea'}
@@ -62,12 +67,12 @@ def main(root: str = "."):
                 errors.append((fpath, count))
 
     if errors:
-        print("❌ Files with more than one class/struct/enum:")
+        print("❌ Files with more than one type (class/struct/enum/interface/record):")
         for path, count in errors:
             print(f"  {path}: {count} top-level types")
         sys.exit(1)
     else:
-        print("✅ All .cs files contain at most one class/struct/enum.")
+        print("✅ All .cs files contain at most one type (class/struct/enum/interface/record).")
         sys.exit(0)
 
 if __name__ == "__main__":

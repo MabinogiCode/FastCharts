@@ -11,14 +11,8 @@ namespace FastCharts.Benchmarks
     [MemoryDiagnoser]
     public class PropertyPathResolverBenchmarks
     {
-        private sealed class Sample
-        {
-            public double Value { get; set; }
 
-            public Sample? Nested { get; set; }
-        }
-
-        private readonly Sample _item = new Sample { Value = 42, Nested = new Sample { Value = 7 } };
+        private readonly ResolverSample _item = new ResolverSample { Value = 42, Nested = new ResolverSample { Value = 7 } };
 
         [Benchmark(Baseline = true, Description = "Reflection resolver, simple path x1000")]
         public object? Reflection_Simple()
