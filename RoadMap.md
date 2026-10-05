@@ -201,7 +201,6 @@ Long-term target: feature parity with premium WPF charting (SciChart).
 
 ### Continuous (from 1.2)
 - Visual regression tests via image hashing (T-QA-VISUAL) — prerequisite for GPU work
-- Merge/bridge ChartModelEnhanced with the WPF FastChart control
 - Out of scope until further notice: 3D, Sankey, TreeMap
 
 ---
