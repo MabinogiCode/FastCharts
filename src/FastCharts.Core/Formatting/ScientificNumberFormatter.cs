@@ -70,7 +70,7 @@ public sealed class ScientificNumberFormatter : INumberFormatter
         var roundedMult = Math.Round(multiplier);
         if (Math.Abs(multiplier - roundedMult) < tol && roundedMult >= 2 && roundedMult <= 9)
         {
-            return sign + roundedMult.ToString(CultureInfo.InvariantCulture) + "×10^" + exponent.ToString(CultureInfo.InvariantCulture);
+            return sign + roundedMult.ToString(CultureInfo.InvariantCulture) + "Ã—10^" + exponent.ToString(CultureInfo.InvariantCulture);
         }
 
         // Case 4: generic scientific notation  

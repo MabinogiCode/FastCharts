@@ -88,10 +88,10 @@ namespace FastCharts.Core.Tests.Axes
 
             // Assert
             minorTicks.Should().NotBeEmpty();
-            minorTicks.Should().Contain(2);  // 2 × 10^0
-            minorTicks.Should().Contain(5);  // 5 × 10^0
-            minorTicks.Should().Contain(20); // 2 × 10^1
-            minorTicks.Should().Contain(50); // 5 × 10^1
+            minorTicks.Should().Contain(2);  // 2 Ã— 10^0
+            minorTicks.Should().Contain(5);  // 5 Ã— 10^0
+            minorTicks.Should().Contain(20); // 2 Ã— 10^1
+            minorTicks.Should().Contain(50); // 5 Ã— 10^1
             minorTicks.Should().NotContain(majorTicks); // Should not duplicate major ticks
             minorTicks.Should().BeInAscendingOrder();
         }

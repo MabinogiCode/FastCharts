@@ -14,7 +14,7 @@ namespace FastCharts.Core.Interaction.Behaviors
         /// <summary>
         /// Usage instructions for pinned tooltips
         /// </summary>
-        public static string UsageInstructions => "Right-click to pin tooltip • Right-click pinned tooltip to remove • Left-click pinned tooltip to toggle visibility";
+        public static string UsageInstructions => "Right-click to pin tooltip â€¢ Right-click pinned tooltip to remove â€¢ Left-click pinned tooltip to toggle visibility";
 
         /// <summary>
         /// Maximum number of pinned tooltips allowed
