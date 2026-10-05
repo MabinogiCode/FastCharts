@@ -43,14 +43,20 @@ public sealed class DateTicker : ITicker<double>
                 ticks.Capacity = (int)est;
             }
         }
-        for (var d = start; d <= dtMax.AddSeconds(1); d = DateTickerHelper.Add(d, unit, stepCount))
+        // Advance until past the range; stop at the DateTime limits instead of overflowing
+        var d = start;
+        while (true)
         {
             var oa = d.ToOADate();
-            if ((oa >= (min - 1e-7)) && (oa <= (max + 1e-7)))
+            if (oa > (max + 1e-7))
+            {
+                break;
+            }
+            if (oa >= (min - 1e-7))
             {
                 ticks.Add(oa);
             }
-            if (ticks.Count > 5000)
+            if ((ticks.Count > 5000) || !DateTickerHelper.TryAdd(d, unit, stepCount, out d))
             {
                 break;
             }

@@ -57,6 +57,11 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 else if (xIsDate)
                 {
                     var dx = (DateTimeAxis)((object)model.XAxis);
+                    if (!DateTimeAxis.TryFromOADate(t, out var date))
+                    {
+                        continue; // outside the DateTime range: no label rather than a failed frame
+                    }
+
                     var fmt = dx.DateTimeFormatter;
                     if (fmt != null)
                     {
@@ -65,11 +70,11 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                         {
                             ad.VisibleSpanDaysHint = spanDays;
                         }
-                        lbl = fmt.Format(DateTime.FromOADate(t));
+                        lbl = fmt.Format(date);
                     }
                     else
                     {
-                        lbl = DateTime.FromOADate(t).ToString(dx.LabelFormat ?? "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        lbl = date.ToString(dx.LabelFormat ?? "yyyy-MM-dd", CultureInfo.InvariantCulture);
                     }
                 }
                 else
