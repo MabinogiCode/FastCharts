@@ -31,18 +31,8 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    
-    <!-- Release Notes -->
-    <PackageReleaseNotes>FastCharts v1.3.0 — "Finance"
-
-- Enhanced candlesticks: BullColor/BearColor, per-point Volume with bottom volume band
-- Indicators: Indicators.Sma / Ema / BollingerBands producing ready-to-add series
-  (PointD lists or OhlcSeries Close prices)
-- Cross-chart X axis sync: ChartLinkGroup (price + indicator layout)
-- AxisBase.VisibleRangeChanged event
-- Release from browser: run the 'Publish NuGet Packages' workflow manually with a version
-
-See CHANGELOG.md for details.</PackageReleaseNotes>
+    <!-- Version-agnostic on purpose: hard-coded notes went stale (1.3.0 notes shipped with 1.4.0) -->
+    <PackageReleaseNotes>See the changelog for the changes in this release: https://github.com/MabinogiCode/FastCharts/blob/main/CHANGELOG.md</PackageReleaseNotes>
   </PropertyGroup>
   
   <!-- Include README and icon in package -->

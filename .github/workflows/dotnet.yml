@@ -30,8 +30,9 @@ jobs:
       - name: Restore
         run: dotnet restore FastChartsSolution.sln
 
+      # Projects set TreatWarningsAsErrors themselves: the build must stay warning-free
       - name: Build
-        run: dotnet build FastChartsSolution.sln --configuration Release --no-restore /p:EnableWindowsTargeting=true /p:TreatWarningsAsErrors=false
+        run: dotnet build FastChartsSolution.sln --configuration Release --no-restore /p:EnableWindowsTargeting=true
 
       - name: Test
         run: dotnet test FastChartsSolution.sln --configuration Release /p:EnableWindowsTargeting=true --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
