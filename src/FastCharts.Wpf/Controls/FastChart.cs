@@ -706,6 +706,12 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaKeyDown(object sender, KeyEventArgs e)
         {
+            // Raised by the surface, then bubbled to the control: handle it only once
+            if (e.Handled)
+            {
+                return;
+            }
+
             if (e.Key == Key.Escape && Model?.InteractionState != null && Model.InteractionState.TooltipLocked)
             {
                 Model.InteractionState.TooltipLocked = false;
@@ -714,6 +720,29 @@ namespace FastCharts.Wpf.Controls
                 Model.InteractionState.TooltipText = null;
                 RequestRedraw();
                 e.Handled = true;
+                return;
+            }
+
+            // Keyboard shortcuts implemented by behaviors (e.g. F3/F4/F5 for MetricsOverlayBehavior)
+            if (surfaceElement != null)
+            {
+                var key = e.Key == Key.System ? e.SystemKey : e.Key;
+                var ev = new InteractionEvent(
+                    PointerEventType.KeyDown,
+                    PointerButton.None,
+                    BuildModifiers(),
+                    0,
+                    0,
+                    0,
+                    surfaceElement.ActualWidth,
+                    surfaceElement.ActualHeight,
+                    key.ToString());
+
+                if (RouteToBehaviors(ev))
+                {
+                    RequestRedraw();
+                    e.Handled = true;
+                }
             }
         }
 
