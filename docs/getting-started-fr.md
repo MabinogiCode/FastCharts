@@ -1,10 +1,10 @@
-# Démarrage Rapide avec FastCharts
+# DÃ©marrage rapide avec FastCharts
 
-Bienvenue dans FastCharts ! Ce guide vous aidera à créer vos premiers graphiques haute performance dans vos applications .NET.
+Bienvenue dans FastCharts ! Ce guide vous aidera Ã  crÃ©er vos premiers graphiques haute performance dans vos applications .NET.
 
-## ?? Installation
+## Installation
 
-### Pour les Applications WPF (Le Plus Courant)
+### Pour les applications WPF (le plus courant)
 
 Installez le package WPF qui inclut tout ce dont vous avez besoin :
 
@@ -12,41 +12,42 @@ Installez le package WPF qui inclut tout ce dont vous avez besoin :
 dotnet add package FastCharts.Wpf
 ```
 
-### Pour les Applications Cross-Platform
+### Pour les applications multiplateformes
 
-Installez les packages de base pour les applications console, services web, ou scénarios non-WPF :
+Installez les packages de base pour les applications console, services web ou scÃ©narios non-WPF (rendu PNG/SVG) :
 
 ```bash
 dotnet add package FastCharts.Core
 dotnet add package FastCharts.Rendering.Skia
 ```
 
-## ?? Votre Premier Graphique
+## Votre premier graphique
 
-### 1. Graphique WPF Basique
+### 1. Graphique WPF de base
 
-Créez un graphique linéaire simple dans votre application WPF :
+CrÃ©ez un graphique linÃ©aire simple dans votre application WPF :
 
-**MainWindow.xaml:**
+**MainWindow.xaml :**
 ```xml
-<Window x:Class="MonApp.MainWindow"
+<Window x:Class="MyApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:fc="clr-namespace:FastCharts.Wpf.Controls;assembly=FastCharts.Wpf"
-        Title="Mon Premier FastChart" Height="450" Width="800">
+        Title="Mon premier FastChart" Height="450" Width="800">
     <Grid>
         <fc:FastChart Model="{Binding ChartModel}" />
     </Grid>
 </Window>
 ```
 
-**MainWindow.xaml.cs:**
+**MainWindow.xaml.cs :**
 ```csharp
 using System.Windows;
 using FastCharts.Core;
+using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 
-namespace MonApp
+namespace MyApp
 {
     public partial class MainWindow : Window
     {
@@ -55,11 +56,11 @@ namespace MonApp
         public MainWindow()
         {
             InitializeComponent();
-            
-            // Créer le modèle de graphique
+
+            // CrÃ©er le modÃ¨le de graphique
             ChartModel = new ChartModel();
-            
-            // Ajouter des données d'exemple
+
+            // DonnÃ©es d'exemple
             var donnees = new[]
             {
                 new PointD(0, 10),
@@ -68,281 +69,305 @@ namespace MonApp
                 new PointD(3, 30),
                 new PointD(4, 20)
             };
-            
-            // Créer et ajouter la série
+
+            // CrÃ©er et ajouter la sÃ©rie (les couleurs viennent de la palette du thÃ¨me)
             var serie = new LineSeries(donnees)
             {
-                Title = "Données d'Exemple",
-                Color = ColorRgba.Blue,
-                StrokeWidth = 2
+                Title = "DonnÃ©es d'exemple",
+                StrokeThickness = 2
             };
-            
+
             ChartModel.AddSeries(serie);
-            
-            // Définir le contexte de données pour le binding
+
+            // Contexte de donnÃ©es pour la liaison
             DataContext = this;
         }
     }
 }
 ```
 
-### 2. Graphique Multi-Séries
+Pour un tracÃ© rapide, encore moins de code :
 
-Ajoutez plusieurs séries de données pour comparer différents jeux de données :
+```csharp
+// Tout Dictionary<double, double> (ou des valeurs Y seules) devient une courbe triÃ©e
+ChartModel.AddSeries(new Dictionary<double, double> { [0] = 10, [1] = 25, [2] = 15 }, "Mesures");
+ChartModel.AddSeries(new[] { 10.0, 25.0, 15.0 }, "Valeurs"); // X = indice
+```
+
+### 2. Graphique avec plusieurs sÃ©ries
+
+Ajoutez plusieurs sÃ©ries pour comparer diffÃ©rents jeux de donnÃ©es :
 
 ```csharp
 public MainWindow()
 {
     InitializeComponent();
-    
+
     ChartModel = new ChartModel();
-    
-    // Données des ventes
-    var donneesVentes = new[]
+
+    // Ventes
+    var ventes = new[]
     {
         new PointD(1, 100), new PointD(2, 150), new PointD(3, 120),
         new PointD(4, 180), new PointD(5, 200), new PointD(6, 175)
     };
-    
-    // Données des profits
-    var donneesProfits = new[]
+
+    // BÃ©nÃ©fices
+    var benefices = new[]
     {
         new PointD(1, 20), new PointD(2, 35), new PointD(3, 25),
         new PointD(4, 45), new PointD(5, 55), new PointD(6, 40)
     };
-    
-    // Ajouter série des ventes
-    ChartModel.AddSeries(new LineSeries(donneesVentes)
-    {
-        Title = "Ventes",
-        Color = ColorRgba.Blue,
-        StrokeWidth = 2
-    });
-    
-    // Ajouter série des profits
-    ChartModel.AddSeries(new LineSeries(donneesProfits)
-    {
-        Title = "Profits",
-        Color = ColorRgba.Green,
-        StrokeWidth = 2
-    });
-    
+
+    // Chaque sÃ©rie prend la couleur suivante de la palette ; PaletteIndex en impose une
+    ChartModel.AddSeries(new LineSeries(ventes) { Title = "Ventes", StrokeThickness = 2 });
+    ChartModel.AddSeries(new LineSeries(benefices) { Title = "BÃ©nÃ©fices", StrokeThickness = 2, PaletteIndex = 2 });
+
+    // Ã‰chelles diffÃ©rentes ? Placez une sÃ©rie sur l'axe Y secondaire (Ã  droite)
+    // ChartModel.AddSeries(new LineSeries(autres) { Title = "Marge %", YAxisIndex = 1 });
+
     DataContext = this;
 }
 ```
 
-### 3. Graphique en Temps Réel
+### 3. Graphique temps rÃ©el
 
-Créez un graphique qui se met à jour en temps réel :
+CrÃ©ez un graphique mis Ã  jour en temps rÃ©el. Le contrÃ´le `FastChart` se redessine
+automatiquement quand des points sont ajoutÃ©s â€” aucun rafraÃ®chissement manuel n'est nÃ©cessaire :
 
 ```csharp
 using System;
+using System.Windows;
 using System.Windows.Threading;
+using FastCharts.Core;
+using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 
 public partial class MainWindow : Window
 {
-    private StreamingLineSeries _serieTempsReel;
-    private DispatcherTimer _minuteur;
-    private Random _aleatoire = new();
-    private double _tempsActuel = 0;
+    private readonly StreamingLineSeries _serieTempsReel;
+    private readonly DispatcherTimer _minuteur;
+    private readonly Random _aleatoire = new();
+    private double _tempsCourant;
+
+    public ChartModel ChartModel { get; }
 
     public MainWindow()
     {
         InitializeComponent();
-        
+
         ChartModel = new ChartModel();
-        
-        // Créer série temps réel avec fenêtre glissante
-        _serieTempsReel = new StreamingLineSeries
+
+        // Conserver les 100 derniers points
+        _serieTempsReel = new StreamingLineSeries(maxPointCount: 100)
         {
-            Title = "Données Live",
-            Color = ColorRgba.Red,
-            StrokeWidth = 2,
-            MaxPointCount = 100, // Garder les 100 derniers points
-            RollingWindowDuration = TimeSpan.FromMinutes(2)
+            Title = "DonnÃ©es en direct",
+            StrokeThickness = 2
         };
-        
+
         ChartModel.AddSeries(_serieTempsReel);
-        
-        // Configurer minuteur pour mises à jour temps réel
+
+        // Minuteur de mise Ã  jour
         _minuteur = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(100)
         };
         _minuteur.Tick += MettreAJourDonnees;
         _minuteur.Start();
-        
+
         DataContext = this;
     }
-    
-    private void MettreAJourDonnees(object sender, EventArgs e)
+
+    private void MettreAJourDonnees(object? sender, EventArgs e)
     {
-        // Générer point de données aléatoire
-        var valeur = Math.Sin(_tempsActuel) * 50 + _aleatoire.NextDouble() * 10;
-        _serieTempsReel.AppendPoint(new PointD(_tempsActuel, valeur));
-        
-        _tempsActuel += 0.1;
+        // GÃ©nÃ©rer un point alÃ©atoire
+        var valeur = Math.Sin(_tempsCourant) * 50 + _aleatoire.NextDouble() * 10;
+        _serieTempsReel.AppendPoint(new PointD(_tempsCourant, valeur));
+
+        _tempsCourant += 0.1;
+
+        // Garder les points les plus rÃ©cents Ã  l'Ã©cran
+        ChartModel.AutoFitDataRange();
     }
 }
 ```
 
-## ?? Types de Graphiques
+FenÃªtres temporelles : `new StreamingLineSeries(rollingWindow: TimeSpan.FromMinutes(2))` conserve
+les deux derniÃ¨res minutes lorsque les X sont des horodatages â€” utilisez `AppendRealTimePoint(valeur)`,
+qui horodate le point avec l'heure courante (date OLE Automation), et un `DateTimeAxis`
+(`ChartModel.ReplaceXAxis(new DateTimeAxis())`) pour afficher des dates.
 
-FastCharts supporte différents types de graphiques :
+Les points peuvent aussi Ãªtre ajoutÃ©s depuis un thread d'arriÃ¨re-plan : les donnÃ©es d'une sÃ©rie sont
+protÃ©gÃ©es par `serie.SyncRoot`, et le contrÃ´le renvoie son rafraÃ®chissement sur le thread UI.
 
-### Graphiques Linéaires
+## Types de graphiques
+
+FastCharts prend en charge plusieurs types de graphiques :
+
+### Courbes
 ```csharp
-var serieLigne = new LineSeries(donnees)
+var courbe = new LineSeries(donnees)
 {
-    Title = "Graphique Linéaire",
-    Color = ColorRgba.Blue,
-    StrokeWidth = 2,
-    ShowMarkers = true
+    Title = "Courbe",
+    StrokeThickness = 2,
+    ShowMarkers = true,
+    MarkerShape = MarkerShape.Diamond,
+    Smoothing = LineSmoothing.Spline // courbe lissÃ©e passant par les points
 };
 ```
 
-### Nuages de Points
+### Nuages de points
 ```csharp
-var seriePoints = new ScatterSeries(donnees)
+var nuage = new ScatterSeries(donnees)
 {
-    Title = "Nuage de Points",
-    Color = ColorRgba.Green,
-    MarkerSize = 5
+    Title = "Nuage de points",
+    MarkerSize = 5,
+    MarkerShape = MarkerShape.Circle
 };
 ```
 
-### Graphiques en Barres
+### Histogrammes en barres
 ```csharp
-var donneesBarres = new[]
+var barres = new[]
 {
     new BarPoint(0, 10), new BarPoint(1, 15), new BarPoint(2, 8),
     new BarPoint(3, 20), new BarPoint(4, 12)
 };
 
-var serieBarres = new BarSeries(donneesBarres)
+var serieBarres = new BarSeries(barres)
 {
-    Title = "Graphique en Barres",
-    FillColor = ColorRgba.Orange,
-    Width = 0.8
+    Title = "Barres",
+    Width = 0.8,        // en unitÃ©s X ; omis = largeur dÃ©duite de l'espacement des X
+    FillOpacity = 0.85
 };
 ```
 
-### Graphiques en Aires
+### Aires
 ```csharp
-var serieAire = new AreaSeries(donnees)
+var aire = new AreaSeries(donnees)
 {
-    Title = "Graphique en Aires",
-    FillColor = ColorRgba.Blue.WithAlpha(0.3f),
-    StrokeColor = ColorRgba.Blue,
-    StrokeWidth = 2
+    Title = "Aire",
+    FillOpacity = 0.3,
+    Baseline = 0
 };
 ```
 
-## ?? Personnalisation
-
-### Styler les Séries
+### Histogrammes de distribution
 ```csharp
-var serie = new LineSeries(donnees)
+// Regroupe automatiquement les valeurs brutes en classes (rÃ¨gle de Sturges) â€” ou prÃ©cisez binCount
+ChartModel.AddHistogram(mesures, title: "Distribution");
+```
+
+## Personnalisation
+
+### ThÃ¨mes et couleurs
+```csharp
+using FastCharts.Core.Themes;
+
+ChartModel.Theme = ChartThemes.Dark; // Light, Dark, HighContrast
+
+// Palette personnalisÃ©e, Ã  partir d'un thÃ¨me intÃ©grÃ©
+ChartModel.Theme = new CustomTheme(ChartThemes.Light)
 {
-    Title = "Série Stylée",
-    Color = ColorRgba.Purple,
-    StrokeWidth = 3,
-    StrokeDashArray = new[] { 5f, 2f }, // Ligne pointillée
-    ShowMarkers = true,
-    MarkerSize = 6,
-    MarkerShape = MarkerShape.Circle
+    SeriesPalette = new[]
+    {
+        new ColorRgba(33, 150, 243),
+        new ColorRgba(76, 175, 80),
+        new ColorRgba(244, 67, 54)
+    }
 };
 ```
 
-### Configurer les Axes
+### Configuration des axes
 ```csharp
-// Personnaliser axe X
-ChartModel.XAxis.Title = "Temps (secondes)";
-ChartModel.XAxis.LabelFormat = "F1";
-ChartModel.XAxis.ShowGrid = true;
+using FastCharts.Core.Axes;
+using FastCharts.Core.Formatting;
 
-// Personnaliser axe Y
-ChartModel.YAxis.Title = "Valeur";
-ChartModel.YAxis.LabelFormat = "N0";
-ChartModel.YAxis.ShowGrid = true;
-```
-
-### Ajouter des Interactions
-```csharp
-// Activer pan et zoom
-ChartModel.AddBehavior(new PanBehavior());
-ChartModel.AddBehavior(new ZoomBehavior());
-
-// Activer réticule
-ChartModel.AddBehavior(new CrosshairBehavior());
-
-// Activer tooltips
-ChartModel.AddBehavior(new TooltipBehavior());
-
-// Activer tooltips épinglées (clic droit pour épingler)
-ChartModel.AddBehavior(new PinnedTooltipBehavior());
-```
-
-## ?? Conseils Performance
-
-### 1. Utiliser les Séries Streaming pour les Données Temps Réel
-```csharp
-var serieStream = new StreamingLineSeries
+// Format des libellÃ©s (axes numÃ©riques)
+if (ChartModel.YAxis is NumericAxis axeY)
 {
-    MaxPointCount = 1000, // Limiter usage mémoire
-    RollingWindowDuration = TimeSpan.FromMinutes(5)
+    axeY.NumberFormatter = new SuffixNumberFormatter(); // 1.5k, 2M...
+}
+
+// Axes logarithmique / date
+ChartModel.SetYAxisLogarithmic();
+ChartModel.ReplaceXAxis(new DateTimeAxis());
+
+// Afficher une fenÃªtre prÃ©cise (zoom) ou revenir Ã  l'Ã©tendue des donnÃ©es
+ChartModel.XAxis.VisibleRange = new FRange(0, 100);
+ChartModel.AutoFitDataRange();
+
+// Grille secondaire
+((AxisBase)ChartModel.XAxis).ShowMinorGrid = false;
+```
+
+### Ajouter des interactions
+
+`FastChart` installe des comportements par dÃ©faut quand le modÃ¨le n'en a aucun : dÃ©placement
+(glisser clic gauche), zoom molette, rectangle de zoom (Maj + glisser), rÃ©ticule, infobulle
+multi-sÃ©ries (clic pour la figer, Ã‰chap pour la libÃ©rer), mise en Ã©vidence du point le plus
+proche et bascule via la lÃ©gende. Pour choisir les vÃ´tres :
+
+```csharp
+using FastCharts.Core.Interaction.Behaviors;
+
+ChartModel.Behaviors.Add(new PanBehavior());
+ChartModel.Behaviors.Add(new ZoomWheelBehavior());
+ChartModel.Behaviors.Add(new ZoomRectBehavior());
+ChartModel.Behaviors.Add(new CrosshairBehavior());
+ChartModel.Behaviors.Add(new MultiSeriesTooltipBehavior());
+
+// Infobulles Ã©pinglÃ©es (clic droit pour Ã©pingler)
+ChartModel.Behaviors.Add(new PinnedTooltipBehavior());
+
+// Panneau de performances : F3 l'affiche/le masque, F4 change le niveau de dÃ©tail, F5 rÃ©initialise
+ChartModel.Behaviors.Add(new MetricsOverlayBehavior());
+```
+
+## Conseils de performance
+
+### 1. Utiliser les sÃ©ries de streaming pour le temps rÃ©el
+```csharp
+var serieStreaming = new StreamingLineSeries(maxPointCount: 1000); // Limite la mÃ©moire
+```
+
+### 2. Garder le rÃ©Ã©chantillonnage automatique pour les gros volumes
+```csharp
+var grosseSerie = new LineSeries(desMillionsDePoints)
+{
+    EnableAutoResampling = true // LTTB sur la fenÃªtre visible (par dÃ©faut)
 };
 ```
+Seule la plage X visible est dÃ©cimÃ©e (quand les X sont triÃ©s) : en zoomant, tous les points apparaissent.
 
-### 2. Activer l'Auto-Rééchantillonnage pour les Gros Jeux de Données
+### 3. Ajouter les points par lots
 ```csharp
-var grosseSerie = new LineSeries(millionsDePoints)
-{
-    EnableAutoResampling = true // Utilise algorithme LTTB
-};
+// PlutÃ´t que plusieurs appels Ã  AppendPoint
+var nouveauxPoints = GenererPoints();
+serieStreaming.AppendPoints(nouveauxPoints); // Un seul verrou, une seule demande de rafraÃ®chissement
 ```
 
-### 3. Mises à Jour par Lot pour Plusieurs Points
-```csharp
-// Au lieu de plusieurs appels AppendPoint
-var nouveauxPoints = GenererPlusieursPpints();
-serieStream.AppendPoints(nouveauxPoints); // Plus efficace
-```
+## DÃ©pannage
 
-## ?? Résolution de Problèmes
+### Le graphique ne s'affiche pas
+1. VÃ©rifiez que `FastChart.Model` est correctement liÃ©
+2. Assurez-vous que les sÃ©ries contiennent des points valides
+3. VÃ©rifiez que le `DataContext` est bien dÃ©fini
 
-### Graphique Ne S'Affiche Pas
-1. Vérifiez que `FastChart.Model` est correctement lié
-2. Assurez-vous que les séries ont des points de données valides
-3. Vérifiez que `DataContext` est défini correctement
+### Le graphique ne se met pas Ã  jour
+1. Les modifications via l'API des sÃ©ries (`AddPoint`, `AppendPoint`, `ReplacePoints`...) redessinent automatiquement
+2. AprÃ¨s une modification directe d'une liste `Data`, appelez `serie.NotifyChanged()` (ou `ChartModel.Invalidate()` depuis un ViewModel)
+3. Si vous modifiez `Data` depuis un autre thread, verrouillez `serie.SyncRoot` pendant la modification
 
-### Problèmes de Performance
-1. Activez l'auto-rééchantillonnage pour les gros jeux de données
-2. Utilisez les séries streaming pour les scénarios temps réel
-3. Limitez le nombre de points visibles
-4. Vérifiez si plusieurs séries causent une surcharge
+### ProblÃ¨mes de performance
+1. Gardez le rÃ©Ã©chantillonnage automatique activÃ© pour les gros volumes
+2. Utilisez des sÃ©ries de streaming avec une limite de points pour le temps rÃ©el
+3. PrÃ©fÃ©rez `AppendPoints` Ã  de nombreux appels Ã  `AppendPoint`
 
-### Problèmes de Binding
-1. Implémentez `INotifyPropertyChanged` dans vos ViewModels
-2. Utilisez `ObservableCollection` pour les séries dynamiques
-3. Assurez-vous du marshalling de thread approprié pour les mises à jour UI
+## Pour aller plus loin
 
-## ?? Étapes Suivantes
+- [README](../README.md) - Vue d'ensemble et autres exemples (finance, graphiques liÃ©s, export)
+- [DÃ©mos](../demos/) - Applications WPF de dÃ©monstration complÃ¨tes
+- [CHANGELOG](../CHANGELOG.md) - Les changements de chaque version
 
-- [Guide des Types de Graphiques](chart-types-fr.md) - Guide détaillé pour tous les types
-- [Guide Performance](performance-fr.md) - Optimiser les graphiques pour gros jeux de données
-- [Guide Style](styling-fr.md) - Personnaliser l'apparence et thèmes
-- [Référence API](api-reference-fr.md) - Documentation API complète
-- [Exemples](../demos/) - Exemples plus complexes et démos
-
-## ?? Conseils
-
-- Utilisez `StreamingLineSeries` pour les mises à jour temps réel
-- Activez l'auto-rééchantillonnage pour les jeux de données >10K points
-- Utilisez les behaviors pour ajouter l'interactivité (pan, zoom, tooltips)
-- Épinglez les tooltips par clic droit (avec `PinnedTooltipBehavior`)
-- Appuyez F3 pour activer/désactiver overlay métriques performance
-- Utilisez le support multi-axe pour différentes plages de valeurs
-
-Bon graphique avec FastCharts ! ??
+Bons graphiques avec FastCharts !

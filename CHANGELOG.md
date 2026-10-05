@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Automatic redraw**: `FastChart` now redraws on its own when the model changes — theme/axes/margins, series or annotations added/removed, visible ranges (programmatic zoom, linked charts) and series data. New `SeriesBase.Changed` (raised by `AppendPoint`, `AddPoints`, `ReplacePoints`, bound collections...), `SeriesBase.NotifyChanged()` for direct `Data` edits, `ChartModel.Invalidated` / `ChartModel.Invalidate()` for view models, and `FastChart.Refresh()`. Changes raised from background threads are marshalled to the UI thread (at most one pending dispatch).
 - `AxisCoordinates` (Core): shared data ↔ normalized axis mapping honoring logarithmic axes, used by the renderer and every interaction behavior.
 - `BarSeries.GetAutoWidth()` / `StackedBarSeries.GetAutoWidth()`; `InteractionState.NearestYAxisIndex`.
+- **Viewport-aware decimation**: `LineSeries.GetRenderData(width, visibleXRange)` resamples only the visible X window when data is sorted by X (binary search, one extra point per side) — zooming into a 1M-point series now reveals every point instead of a coarse whole-series LTTB. X ordering is tracked incrementally, unsorted data falls back to whole-series decimation.
+- **Thread-safe series**: `SeriesBase.SyncRoot` guards series data. `LineSeries`/`StreamingLineSeries` mutate under it and raise events after releasing it; render layers, range aggregation and behaviors read under it — points may be appended from a background thread while the chart renders.
+- `PlotLayout` / `PlotArea` (Core): one computation of the plot rectangle for the renderer, every behavior and `FastChart`.
+- `DateTimeAxis.TryFromOADate`.
+- **Metrics overlay is drawn**: `MetricsOverlayBehavior` (documented F3/F4/F5 shortcuts) was never rendered and `FastChart` never forwarded key presses to behaviors; both are wired now.
 
 ### 🛠️ **Fixed**
 
@@ -26,6 +31,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rendering performance: bars, stacked bars and candlesticks without an explicit width recomputed the automatic width for every bar (O(n²) per frame); `PixelMapper` boxed every coordinate.
 - Release workflows: pre-release tags (`v1.5.0-beta1`) also triggered the stable *Publish NuGet Packages* workflow; version/tag values are now passed through environment variables and validated as SemVer; a failed `nuget push` now fails the job instead of logging a warning.
 - README examples that did not compile (`Color = ColorRgba.Red`, `model.AddBehavior`, `ZoomBehavior`, `LineAnnotation`...) or did not work (rolling window fed with `DateTime.Ticks`).
+- **Tooltip lock flipped on every pan**: the lock toggled on each left press, which is also how panning starts. It now toggles on a real click only (press and release without moving, without Shift).
+- **Mouse-move cost on large series**: nearest-point and tooltip lookups scanned (and LINQ-sorted) every point on each move; they now binary-search the X window of line series.
+- **Data binding off the UI thread**: throttled refreshes of observable series ran on the thread pool and enumerated the bound collection concurrently with the UI; they now run on the `SynchronizationContext` captured when the series is created.
+- **Interactions offset with a secondary Y axis**: behaviors ignored the right margin widened for secondary-axis labels.
+- **Date axis zoomed out far failed to render**: the date ticker overflowed `DateTime` near year 1/9999 and labels threw in `DateTime.FromOADate`; year steps now adapt (1, 2, 5, 10...) to keep about 20 ticks.
+- LTTB's last bucket ignored the second-to-last point and averaged against the wrong point.
+- `MetricsOverlayBehavior` resampled every line series at an assumed 800 px width each frame (evicting the renderer's cache) and showed placeholder characters in its detailed text.
+- Source files and docs saved as Windows-1252 (garbled `×`, `•`, accents) converted to UTF-8; `docs/getting-started*.md` and `NUGET_README.md` rewritten against the real API (they referenced `Color`, `StrokeWidth`, `FillColor`, `StrokeDashArray`, `XAxis.Title`, `TooltipBehavior`... and missing pages).
+
+### 🗑️ **Removed**
+
+- `ChartModelEnhanced`: unused duplicate of `ChartModel` with its own bugs (auto-fit mutating the model from a thread-pool thread, mirrored secondary axis). Its `DynamicData` package reference in `FastCharts.Core` went with it (ReactiveUI still brings DynamicData transitively).
+- Unused `System.Text.Json` dependency of `FastCharts.Rendering.Skia`.
+
+### 🔧 **Tooling**
+
+- `check_one_type_per_file.py` recognized neither `sealed`, `static`, `abstract`, `readonly` nor interfaces/records, so it let most violations through; fixed, and the 8 files it then flagged were split.
+- CI builds no longer pass `/p:TreatWarningsAsErrors=false`: the projects' warnings-as-errors setting is enforced.
+- NuGet release notes now link to this changelog instead of hard-coded text (1.3.0 notes had shipped with 1.4.0).
+- `DemoApp.Net48` builds as an empty placeholder on non-Windows hosts, so the whole solution builds on Linux/macOS.
 
 ### ⚠️ **Behavior changes**
 

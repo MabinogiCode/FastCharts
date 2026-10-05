@@ -57,6 +57,8 @@ dotnet add package FastCharts.Wpf
 **C# Code — a curve from a dictionary, zero ceremony:**
 ```csharp
 using FastCharts.Core;
+using FastCharts.Core.Series;   // ChartKind, LineSmoothing
+using FastCharts.Core.Themes;   // ChartThemes
 
 var model = new ChartModel();
 
@@ -256,16 +258,13 @@ model.AddAnnotation(new AnnotationRange(90, 110, AnnotationOrientation.Horizonta
 
 ## 📖 **Documentation**
 
-- 🚀 [**Getting Started**](docs/getting-started.md) | [**Démarrage Rapide**](docs/getting-started-fr.md)
-- 📊 [**Chart Types Guide**](docs/chart-types.md) | [**Guide des Types de Graphiques**](docs/chart-types-fr.md)
-- 🎨 [**Styling & Themes**](docs/styling.md) | [**Style & Thèmes**](docs/styling-fr.md)
-- ⚡ [**Performance Guide**](docs/performance.md) | [**Guide Performance**](docs/performance-fr.md)
-- 🔌 [**API Reference**](docs/api-reference.md) | [**Référence API**](docs/api-reference-fr.md)
+- 🚀 [**Getting Started**](docs/getting-started.md) | [**Démarrage Rapide**](docs/getting-started-fr.md) — chart types, styling, axes, interactions, performance tips
 - 🧪 [**Examples & Demos**](demos/) | [**Exemples & Démos**](demos/)
+- 📝 [**Changelog**](CHANGELOG.md)
 
 ## 🤝 **Contributing**
 
-We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! See the [Development Guidelines](DEVELOPMENT_GUIDELINES.md) for coding and testing conventions.
 
 ### Development Setup
 ```bash
