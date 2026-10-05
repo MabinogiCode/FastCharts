@@ -73,13 +73,12 @@ namespace FastCharts.Rendering.Skia
             }
 
             var theme = model.Theme;
-            var m = model.PlotMargins;
-            var left = (float)m.Left;
-            var top = (float)m.Top;
-            var right = (float)RenderingHelper.CalculateEffectiveRightMargin(m.Right, model.YAxisSecondary != null);
-            var bottom = (float)m.Bottom;
-            var plotW = Math.Max(0, pixelWidth - (left + right));
-            var plotH = Math.Max(0, pixelHeight - (top + bottom));
+            // Shared with interaction behaviors so hit-testing matches what is drawn
+            var area = PlotLayout.Compute(model, pixelWidth, pixelHeight);
+            var left = (float)area.Left;
+            var top = (float)area.Top;
+            var plotW = (float)area.Width;
+            var plotH = (float)area.Height;
             var plotRect = new SKRect(left, top, left + plotW, top + plotH);
             canvas.Clear(new SKColor(theme.SurfaceBackgroundColor.R, theme.SurfaceBackgroundColor.G, theme.SurfaceBackgroundColor.B, theme.SurfaceBackgroundColor.A));
 

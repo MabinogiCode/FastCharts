@@ -1,4 +1,5 @@
 using FastCharts.Core.Axes;
+using FastCharts.Core.Helpers;
 using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -46,16 +47,9 @@ public sealed class PanBehavior : IBehavior
         var dxPx = ev.PixelX - _lastX;
         var dyPx = ev.PixelY - _lastY;
 
-        var m = model.PlotMargins;
-        var left = m.Left;
-        var top = m.Top;
-        var right = m.Right;
-        var bottom = m.Bottom;
-        var plotW = ev.SurfaceWidth - (left + right);
-        var plotH = ev.SurfaceHeight - (top + bottom);
-
-        if (plotW < 0) plotW = 0;
-        if (plotH < 0) plotH = 0;
+        var area = PlotLayout.Compute(model, ev.SurfaceWidth, ev.SurfaceHeight);
+        var plotW = area.Width;
+        var plotH = area.Height;
 
         // Shift in normalized axis space: identical to a data-space pan on linear axes,
         // and keeps a constant on-screen speed on logarithmic axes.

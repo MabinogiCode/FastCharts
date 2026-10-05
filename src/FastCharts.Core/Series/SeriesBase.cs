@@ -49,6 +49,14 @@ namespace FastCharts.Core.Series
         public abstract bool IsEmpty { get; }
 
         /// <summary>
+        /// Lock guarding the series data. Mutations made through the series API take it, and
+        /// renderers/behaviors hold it while reading, so points can be produced on a background
+        /// thread while the UI renders. Take it yourself when editing <c>Data</c> directly from
+        /// another thread (then call <see cref="NotifyChanged"/> after releasing it).
+        /// </summary>
+        public object SyncRoot { get; } = new object();
+
+        /// <summary>
         /// Raised when the series content changed and hosts should redraw (points appended,
         /// data replaced by a binding, ...). May be raised from a background thread.
         /// </summary>

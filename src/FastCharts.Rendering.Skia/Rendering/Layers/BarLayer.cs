@@ -18,56 +18,60 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 {
                     continue;
                 }
-                var c = SeriesColorResolver.ResolveSeriesColor(model, bs, palette);
-                byte alpha = (byte)(RenderMath.Clamp01(bs.FillOpacity) * c.A);
-                using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, alpha) };
-                using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, bs.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
-                int groupCount = bs.GroupCount.GetValueOrDefault(1);
-                int groupIndex2 = bs.GroupIndex.GetValueOrDefault(0);
-                if (groupCount < 1) { groupCount = 1; }
-                if (groupIndex2 < 0) { groupIndex2 = 0; }
-                if (groupIndex2 >= groupCount) { groupIndex2 = groupCount - 1; }
-                const double innerGap = 0.9;
-                double? autoWidth = null; // computed at most once per series (O(n))
-                ctx.Canvas.Save();
-                ctx.Canvas.ClipRect(pr);
-                for (int i = 0; i < bs.Data.Count; i++)
+                // The series may be fed from another thread: read it under its lock
+                lock (bs.SyncRoot)
                 {
-                    var p = bs.Data[i];
-                    double bandW;
-                    if (bs.Width.HasValue)
+                    var c = SeriesColorResolver.ResolveSeriesColor(model, bs, palette);
+                    byte alpha = (byte)(RenderMath.Clamp01(bs.FillOpacity) * c.A);
+                    using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, alpha) };
+                    using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, bs.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
+                    int groupCount = bs.GroupCount.GetValueOrDefault(1);
+                    int groupIndex2 = bs.GroupIndex.GetValueOrDefault(0);
+                    if (groupCount < 1) { groupCount = 1; }
+                    if (groupIndex2 < 0) { groupIndex2 = 0; }
+                    if (groupIndex2 >= groupCount) { groupIndex2 = groupCount - 1; }
+                    const double innerGap = 0.9;
+                    double? autoWidth = null; // computed at most once per series (O(n))
+                    ctx.Canvas.Save();
+                    ctx.Canvas.ClipRect(pr);
+                    for (int i = 0; i < bs.Data.Count; i++)
                     {
-                        bandW = bs.Width.Value;
+                        var p = bs.Data[i];
+                        double bandW;
+                        if (bs.Width.HasValue)
+                        {
+                            bandW = bs.Width.Value;
+                        }
+                        else if (p.Width.HasValue && p.Width.Value > 0)
+                        {
+                            bandW = p.Width.Value;
+                        }
+                        else
+                        {
+                            autoWidth ??= bs.GetAutoWidth();
+                            bandW = autoWidth.Value;
+                        }
+                        double slotW = bandW / groupCount;
+                        double effW = slotW * innerGap;
+                        double groupOffsetFromCenter = ((groupIndex2 + 0.5) - (groupCount * 0.5)) * slotW;
+                        float xL = PixelMapper.X(p.X + groupOffsetFromCenter - effW * 0.5, model.XAxis, pr);
+                        float xR = PixelMapper.X(p.X + groupOffsetFromCenter + effW * 0.5, model.XAxis, pr);
+                        var yAxis = (bs.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                        float y0 = PixelMapper.Y(bs.Baseline, yAxis, pr);
+                        float y1 = PixelMapper.Y(p.Y, yAxis, pr);
+                        var rect = SKRect.Create(System.Math.Min(xL, xR), System.Math.Min(y0, y1), System.Math.Abs(xR - xL), System.Math.Abs(y1 - y0));
+                        if (rect.Width <= 0 || rect.Height <= 0)
+                        {
+                            continue;
+                        }
+                        ctx.Canvas.DrawRect(rect, fillPaint);
+                        if (strokePaint.StrokeWidth > 0.5f)
+                        {
+                            ctx.Canvas.DrawRect(rect, strokePaint);
+                        }
                     }
-                    else if (p.Width.HasValue && p.Width.Value > 0)
-                    {
-                        bandW = p.Width.Value;
-                    }
-                    else
-                    {
-                        autoWidth ??= bs.GetAutoWidth();
-                        bandW = autoWidth.Value;
-                    }
-                    double slotW = bandW / groupCount;
-                    double effW = slotW * innerGap;
-                    double groupOffsetFromCenter = ((groupIndex2 + 0.5) - (groupCount * 0.5)) * slotW;
-                    float xL = PixelMapper.X(p.X + groupOffsetFromCenter - effW * 0.5, model.XAxis, pr);
-                    float xR = PixelMapper.X(p.X + groupOffsetFromCenter + effW * 0.5, model.XAxis, pr);
-                    var yAxis = (bs.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
-                    float y0 = PixelMapper.Y(bs.Baseline, yAxis, pr);
-                    float y1 = PixelMapper.Y(p.Y, yAxis, pr);
-                    var rect = SKRect.Create(System.Math.Min(xL, xR), System.Math.Min(y0, y1), System.Math.Abs(xR - xL), System.Math.Abs(y1 - y0));
-                    if (rect.Width <= 0 || rect.Height <= 0)
-                    {
-                        continue;
-                    }
-                    ctx.Canvas.DrawRect(rect, fillPaint);
-                    if (strokePaint.StrokeWidth > 0.5f)
-                    {
-                        ctx.Canvas.DrawRect(rect, strokePaint);
-                    }
+                    ctx.Canvas.Restore();
                 }
-                ctx.Canvas.Restore();
             }
         }
     }

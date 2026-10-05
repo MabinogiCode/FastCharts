@@ -77,7 +77,14 @@ internal sealed class LineLayer : ISeriesSubLayer
             var c = SeriesColorResolver.ResolveSeriesColor(model, ls, palette);
             using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)ls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
 
-            var geometry = GetOrBuildGeometry(ctx, ls, pr);
+            CachedGeometry geometry;
+            lock (ls.SyncRoot)
+            {
+                // Data may be appended from another thread: project it under the series lock.
+                // Drawing the resulting cached path below does not touch the data.
+                geometry = GetOrBuildGeometry(ctx, ls, pr);
+            }
+
             geometry.Seen = true;
 
             ctx.Canvas.Save();
@@ -123,9 +130,10 @@ internal sealed class LineLayer : ISeriesSubLayer
             return geometry;
         }
 
-        // Rebuild: project data points to pixels once; reused for path + markers
+        // Rebuild: project data points to pixels once; reused for path + markers.
+        // Only the visible X window is decimated, so zooming in reveals the full detail.
         var plotPixelWidth = (int)pr.Width;
-        var renderData = ls.GetRenderData(plotPixelWidth);
+        var renderData = ls.GetRenderData(plotPixelWidth, xr);
 
         var pixels = geometry.Pixels.Length == renderData.Count ? geometry.Pixels : new SKPoint[renderData.Count];
         for (var i = 0; i < renderData.Count; i++)

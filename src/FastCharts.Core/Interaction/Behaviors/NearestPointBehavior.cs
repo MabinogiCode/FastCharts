@@ -1,6 +1,7 @@
 using System;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Axes;
+using FastCharts.Core.Helpers;
 using FastCharts.Core.Series;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -33,18 +34,20 @@ public sealed class NearestPointBehavior : IBehavior
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;
 
-        var m = model.PlotMargins;
-        var plotW = Math.Max(0, ev.SurfaceWidth - (m.Left + m.Right));
-        var plotH = Math.Max(0, ev.SurfaceHeight - (m.Top + m.Bottom));
-
-        if (plotW <= 0 || plotH <= 0 || model.XAxis.VisibleRange.Size <= 0)
+        var area = PlotLayout.Compute(model, ev.SurfaceWidth, ev.SurfaceHeight);
+        if (area.IsEmpty || model.XAxis.VisibleRange.Size <= 0)
         {
             st.ShowNearest = false;
             return false;
         }
 
-        var plot = new PlotProjection(m.Left, m.Top, plotW, plotH, ev.PixelX, ev.PixelY);
+        var plot = new PlotProjection(area.Left, area.Top, area.Width, area.Height, ev.PixelX, ev.PixelY);
         var best = new NearestCandidate();
+
+        // Only points within MaxPixelDistance horizontally can match: on X-sorted line series
+        // this window is found by binary search instead of scanning every point.
+        var windowMinX = AxisCoordinates.FromNormalized(model.XAxis, (ev.PixelX - MaxPixelDistance - area.Left) / area.Width);
+        var windowMaxX = AxisCoordinates.FromNormalized(model.XAxis, (ev.PixelX + MaxPixelDistance - area.Left) / area.Width);
 
         foreach (var s in model.Series)
         {
@@ -62,27 +65,26 @@ public sealed class NearestPointBehavior : IBehavior
             }
 
             var axisIndex = useSecondary ? 1 : 0;
-            switch (s)
+            lock (s.SyncRoot)
             {
-                case LineSeries ls:
-                    foreach (var p in ls.Data)
-                    {
-                        best.Consider(plot.DistanceSquared(model.XAxis, yAxis, p.X, p.Y), p.X, p.Y, axisIndex);
-                    }
+                switch (s)
+                {
+                    case LineSeries ls:
+                        ProcessLineSeries(ls, model.XAxis, yAxis, plot, axisIndex, windowMinX, windowMaxX, ref best);
+                        break;
+                    case ScatterSeries ss:
+                        foreach (var p in ss.Data)
+                        {
+                            best.Consider(plot.DistanceSquared(model.XAxis, yAxis, p.X, p.Y), p.X, p.Y, axisIndex);
+                        }
 
-                    break;
-                case ScatterSeries ss:
-                    foreach (var p in ss.Data)
-                    {
-                        best.Consider(plot.DistanceSquared(model.XAxis, yAxis, p.X, p.Y), p.X, p.Y, axisIndex);
-                    }
-
-                    break;
-                case BandSeries bs:
-                    ProcessBandSeries(bs, model.XAxis, yAxis, plot, axisIndex, ref best);
-                    break;
-                default:
-                    break;
+                        break;
+                    case BandSeries bs:
+                        ProcessBandSeries(bs, model.XAxis, yAxis, plot, axisIndex, ref best);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -102,6 +104,24 @@ public sealed class NearestPointBehavior : IBehavior
         }
 
         return false;
+    }
+
+    private static void ProcessLineSeries(LineSeries ls, IAxis<double> xAxis, IAxis<double> yAxis, PlotProjection plot, int axisIndex, double windowMinX, double windowMaxX, ref NearestCandidate best)
+    {
+        var data = ls.Data;
+        var start = 0;
+        var end = data.Count;
+        if (ls.TryGetIndexRange(Math.Min(windowMinX, windowMaxX), Math.Max(windowMinX, windowMaxX), out var first, out var last))
+        {
+            start = first;
+            end = last;
+        }
+
+        for (var i = start; i < end; i++)
+        {
+            var p = data[i];
+            best.Consider(plot.DistanceSquared(xAxis, yAxis, p.X, p.Y), p.X, p.Y, axisIndex);
+        }
     }
 
     private void ProcessBandSeries(BandSeries bs, IAxis<double> xAxis, IAxis<double> yAxis, PlotProjection plot, int axisIndex, ref NearestCandidate best)

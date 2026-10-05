@@ -17,24 +17,28 @@ internal sealed class ScatterLayer : ISeriesSubLayer
             {
                 continue;
             }
-            var c = SeriesColorResolver.ResolveSeriesColor(model, ss, palette);
-            var size = (float)ss.MarkerSize;
-            if (size < 1f)
+            // The series may be fed from another thread: read it under its lock
+            lock (ss.SyncRoot)
             {
-                size = 1f;
+                var c = SeriesColorResolver.ResolveSeriesColor(model, ss, palette);
+                var size = (float)ss.MarkerSize;
+                if (size < 1f)
+                {
+                    size = 1f;
+                }
+                var half = size * 0.5f;
+                using var mp = new SKPaint { IsAntialias = size > 3, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, c.A) };
+                ctx.Canvas.Save();
+                ctx.Canvas.ClipRect(pr);
+                foreach (var p in ss.Data)
+                {
+                    var px = PixelMapper.X(p.X, model.XAxis, pr);
+                    var yAxis = (ss.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                    var py = PixelMapper.Y(p.Y, yAxis, pr);
+                    MarkerRenderer.Draw(ctx.Canvas, ss.MarkerShape, px, py, half, mp);
+                }
+                ctx.Canvas.Restore();
             }
-            var half = size * 0.5f;
-            using var mp = new SKPaint { IsAntialias = size > 3, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, c.A) };
-            ctx.Canvas.Save();
-            ctx.Canvas.ClipRect(pr);
-            foreach (var p in ss.Data)
-            {
-                var px = PixelMapper.X(p.X, model.XAxis, pr);
-                var yAxis = (ss.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
-                var py = PixelMapper.Y(p.Y, yAxis, pr);
-                MarkerRenderer.Draw(ctx.Canvas, ss.MarkerShape, px, py, half, mp);
-            }
-            ctx.Canvas.Restore();
         }
     }
 }

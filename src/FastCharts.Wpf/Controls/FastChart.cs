@@ -827,17 +827,16 @@ namespace FastCharts.Wpf.Controls
                 return;
             }
 
-            var m = Model.PlotMargins;
-            var plotW = surfaceElement.ActualWidth - (m.Left + m.Right);
-            var plotH = surfaceElement.ActualHeight - (m.Top + m.Bottom);
-
-            if (plotW <= 0 || plotH <= 0)
+            var area = PlotLayout.Compute(Model, surfaceElement.ActualWidth, surfaceElement.ActualHeight);
+            if (area.IsEmpty)
             {
                 return;
             }
 
-            var px = ClampValue(pixelX - m.Left, 0, plotW);
-            var py = ClampValue(pixelY - m.Top, 0, plotH);
+            var plotW = area.Width;
+            var plotH = area.Height;
+            var px = ClampValue(pixelX - area.Left, 0, plotW);
+            var py = ClampValue(pixelY - area.Top, 0, plotH);
             var xr = Model.XAxis.VisibleRange;
             var yr = Model.YAxis.VisibleRange;
 

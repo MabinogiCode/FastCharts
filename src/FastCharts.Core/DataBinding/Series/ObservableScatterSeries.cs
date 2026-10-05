@@ -104,10 +104,13 @@ namespace FastCharts.Core.DataBinding.Series
 
         private void ApplyPoints(IReadOnlyList<PointD> points)
         {
-            Data.Clear();
-            for (var i = 0; i < points.Count; i++)
+            lock (SyncRoot)
             {
-                Data.Add(points[i]);
+                Data.Clear();
+                for (var i = 0; i < points.Count; i++)
+                {
+                    Data.Add(points[i]);
+                }
             }
 
             NotifyChanged();

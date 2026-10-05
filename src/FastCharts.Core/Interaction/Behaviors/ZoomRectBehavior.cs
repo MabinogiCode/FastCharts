@@ -1,4 +1,5 @@
 using FastCharts.Core.Axes;
+using FastCharts.Core.Helpers;
 using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -49,14 +50,15 @@ public sealed class ZoomRectBehavior : IBehavior
                 {
                     return true;
                 }
-                var m = model.PlotMargins;
-                var left = m.Left; var top = m.Top; var right = m.Right; var bottom = m.Bottom;
-                var plotW = System.Math.Max(0, ev.SurfaceWidth - (left + right));
-                var plotH = System.Math.Max(0, ev.SurfaceHeight - (top + bottom));
-                if (plotW <= 0 || plotH <= 0)
+                var area = PlotLayout.Compute(model, ev.SurfaceWidth, ev.SurfaceHeight);
+                if (area.IsEmpty)
                 {
                     return true;
                 }
+                var left = area.Left;
+                var top = area.Top;
+                var plotW = area.Width;
+                var plotH = area.Height;
                 var px1 = x1 - left; if (px1 < 0) { px1 = 0; } else if (px1 > plotW) { px1 = plotW; }
                 var px2 = x2 - left; if (px2 < 0) { px2 = 0; } else if (px2 > plotW) { px2 = plotW; }
                 var py1 = y1 - top; if (py1 < 0) { py1 = 0; } else if (py1 > plotH) { py1 = plotH; }

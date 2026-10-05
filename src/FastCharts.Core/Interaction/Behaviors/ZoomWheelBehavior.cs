@@ -1,4 +1,5 @@
 using FastCharts.Core.Axes;
+using FastCharts.Core.Helpers;
 using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -14,17 +15,16 @@ public sealed class ZoomWheelBehavior : IBehavior
         }
         var zoomIn = ev.WheelDelta > 0;
         var scale = zoomIn ? Step : 1.0 / Step;
-        var m = model.PlotMargins;
-        var left = m.Left; var top = m.Top; var right = m.Right; var bottom = m.Bottom;
-        var plotW = ev.SurfaceWidth - (left + right);
-        var plotH = ev.SurfaceHeight - (top + bottom);
-        if (plotW <= 0 || plotH <= 0)
+        var area = PlotLayout.Compute(model, ev.SurfaceWidth, ev.SurfaceHeight);
+        if (area.IsEmpty)
         {
             return false;
         }
-        var px = ev.PixelX - left;
+        var plotW = area.Width;
+        var plotH = area.Height;
+        var px = ev.PixelX - area.Left;
         if (px < 0) { px = 0; } else if (px > plotW) { px = plotW; }
-        var py = ev.PixelY - top;
+        var py = ev.PixelY - area.Top;
         if (py < 0) { py = 0; } else if (py > plotH) { py = plotH; }
         var rx = px / plotW;
         var ry = py / plotH;

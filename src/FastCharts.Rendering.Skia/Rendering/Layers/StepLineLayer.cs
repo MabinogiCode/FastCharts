@@ -17,40 +17,44 @@ internal sealed class StepLineLayer : ISeriesSubLayer
             {
                 continue;
             }
-            var c = SeriesColorResolver.ResolveSeriesColor(model, sls, palette);
-            using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)sls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
-            using var path = new SKPath();
-            var started = false;
-            for (var i = 0; i < sls.Data.Count; i++)
+            // The series may be fed from another thread: read it under its lock
+            lock (sls.SyncRoot)
             {
-                var p = sls.Data[i];
-                var x = PixelMapper.X(p.X, model.XAxis, pr);
-                var yAxis = (sls.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
-                var y = PixelMapper.Y(p.Y, yAxis, pr);
-                if (!started)
+                var c = SeriesColorResolver.ResolveSeriesColor(model, sls, palette);
+                using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)sls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
+                using var path = new SKPath();
+                var started = false;
+                for (var i = 0; i < sls.Data.Count; i++)
                 {
-                    path.MoveTo(x, y);
-                    started = true;
-                    continue;
+                    var p = sls.Data[i];
+                    var x = PixelMapper.X(p.X, model.XAxis, pr);
+                    var yAxis = (sls.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                    var y = PixelMapper.Y(p.Y, yAxis, pr);
+                    if (!started)
+                    {
+                        path.MoveTo(x, y);
+                        started = true;
+                        continue;
+                    }
+                    var prev = sls.Data[i - 1];
+                    var xPrev = PixelMapper.X(prev.X, model.XAxis, pr);
+                    var yPrev = PixelMapper.Y(prev.Y, yAxis, pr);
+                    if (sls.Mode == StepMode.Before)
+                    {
+                        path.LineTo(x, yPrev);
+                        path.LineTo(x, y);
+                    }
+                    else
+                    {
+                        path.LineTo(xPrev, y);
+                        path.LineTo(x, y);
+                    }
                 }
-                var prev = sls.Data[i - 1];
-                var xPrev = PixelMapper.X(prev.X, model.XAxis, pr);
-                var yPrev = PixelMapper.Y(prev.Y, yAxis, pr);
-                if (sls.Mode == StepMode.Before)
-                {
-                    path.LineTo(x, yPrev);
-                    path.LineTo(x, y);
-                }
-                else
-                {
-                    path.LineTo(xPrev, y);
-                    path.LineTo(x, y);
-                }
+                ctx.Canvas.Save();
+                ctx.Canvas.ClipRect(pr);
+                ctx.Canvas.DrawPath(path, sp);
+                ctx.Canvas.Restore();
             }
-            ctx.Canvas.Save();
-            ctx.Canvas.ClipRect(pr);
-            ctx.Canvas.DrawPath(path, sp);
-            ctx.Canvas.Restore();
         }
     }
 }

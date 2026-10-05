@@ -117,17 +117,20 @@ namespace FastCharts.Core.Resampling
             for (var i = 1; i < targetCount - 1; i++)
             {
                 // Calculate bucket range
+                // Buckets are half-open [start, end); the last one may reach data.Count - 1
+                // (exclusive), so the second-to-last point remains a candidate.
                 var bucketStart = (int)Math.Floor(bucketSize * (i - 1)) + 1;
                 var bucketEnd = (int)Math.Floor(bucketSize * i) + 1;
-                if (bucketEnd >= data.Count - 1) bucketEnd = data.Count - 2;
+                if (bucketEnd > data.Count - 1) bucketEnd = data.Count - 1;
 
                 // Get the previous point (from result)
                 var prevPoint = result[result.Count - 1];
 
                 // Calculate average of next bucket for triangle calculation
+                // The "next bucket" of the last iteration is the final point itself
                 var nextBucketStart = (int)Math.Floor(bucketSize * i) + 1;
                 var nextBucketEnd = (int)Math.Floor(bucketSize * (i + 1)) + 1;
-                if (nextBucketEnd >= data.Count) nextBucketEnd = data.Count - 1;
+                if (nextBucketEnd > data.Count) nextBucketEnd = data.Count;
 
                 var avgX = 0.0;
                 var avgY = 0.0;
@@ -147,8 +150,8 @@ namespace FastCharts.Core.Resampling
                 }
                 else
                 {
-                    avgX = data[bucketEnd].X;
-                    avgY = data[bucketEnd].Y;
+                    avgX = data[data.Count - 1].X;
+                    avgY = data[data.Count - 1].Y;
                 }
 
                 // Find point in current bucket that creates largest triangle

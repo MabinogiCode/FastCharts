@@ -16,24 +16,28 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 {
                     continue;
                 }
-                var c = SeriesColorResolver.ResolveSeriesColor(model, es, palette);
-                using var pen = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, es.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
-                double cap = es.GetCapWidth() * 0.5;
-                ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);
-                foreach (var p in es.Data)
+                // The series may be fed from another thread: read it under its lock
+                lock (es.SyncRoot)
                 {
-                    double neg = p.NegativeError ?? p.PositiveError;
-                    float xC = PixelMapper.X(p.X, model.XAxis, pr);
-                    var yAxis = (es.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
-                    float yTop = PixelMapper.Y(p.Y + p.PositiveError, yAxis, pr);
-                    float yBot = PixelMapper.Y(p.Y - neg, yAxis, pr);
-                    float xL = PixelMapper.X(p.X - cap, model.XAxis, pr);
-                    float xR = PixelMapper.X(p.X + cap, model.XAxis, pr);
-                    ctx.Canvas.DrawLine(xC, yTop, xC, yBot, pen);
-                    ctx.Canvas.DrawLine(xL, yTop, xR, yTop, pen);
-                    ctx.Canvas.DrawLine(xL, yBot, xR, yBot, pen);
+                    var c = SeriesColorResolver.ResolveSeriesColor(model, es, palette);
+                    using var pen = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, es.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
+                    double cap = es.GetCapWidth() * 0.5;
+                    ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr);
+                    foreach (var p in es.Data)
+                    {
+                        double neg = p.NegativeError ?? p.PositiveError;
+                        float xC = PixelMapper.X(p.X, model.XAxis, pr);
+                        var yAxis = (es.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
+                        float yTop = PixelMapper.Y(p.Y + p.PositiveError, yAxis, pr);
+                        float yBot = PixelMapper.Y(p.Y - neg, yAxis, pr);
+                        float xL = PixelMapper.X(p.X - cap, model.XAxis, pr);
+                        float xR = PixelMapper.X(p.X + cap, model.XAxis, pr);
+                        ctx.Canvas.DrawLine(xC, yTop, xC, yBot, pen);
+                        ctx.Canvas.DrawLine(xL, yTop, xR, yTop, pen);
+                        ctx.Canvas.DrawLine(xL, yBot, xR, yBot, pen);
+                    }
+                    ctx.Canvas.Restore();
                 }
-                ctx.Canvas.Restore();
             }
         }
     }
