@@ -1,6 +1,7 @@
 using FastCharts.Core;
 using FastCharts.Core.Abstractions;
 using FastCharts.Core.Helpers;
+using FastCharts.Core.Interaction.Behaviors;
 using FastCharts.Core.Primitives;
 using FastCharts.Core.Series;
 using FastCharts.Rendering.Skia.Helpers;
@@ -73,13 +74,15 @@ namespace FastCharts.Rendering.Skia
             }
 
             var theme = model.Theme;
-            var m = model.PlotMargins;
-            var left = (float)m.Left;
-            var top = (float)m.Top;
-            var right = (float)RenderingHelper.CalculateEffectiveRightMargin(m.Right, model.YAxisSecondary != null);
-            var bottom = (float)m.Bottom;
-            var plotW = Math.Max(0, pixelWidth - (left + right));
-            var plotH = Math.Max(0, pixelHeight - (top + bottom));
+            var metricsOverlay = FindMetricsOverlay(model);
+            metricsOverlay?.BeginFrame();
+
+            // Shared with interaction behaviors so hit-testing matches what is drawn
+            var area = PlotLayout.Compute(model, pixelWidth, pixelHeight);
+            var left = (float)area.Left;
+            var top = (float)area.Top;
+            var plotW = (float)area.Width;
+            var plotH = (float)area.Height;
             var plotRect = new SKRect(left, top, left + plotW, top + plotH);
             canvas.Clear(new SKColor(theme.SurfaceBackgroundColor.R, theme.SurfaceBackgroundColor.G, theme.SurfaceBackgroundColor.B, theme.SurfaceBackgroundColor.A));
 
@@ -106,6 +109,12 @@ namespace FastCharts.Rendering.Skia
             _axesTicks.Render(ctx);
             _legend.Render(ctx);
             RenderOverlay(ctx);
+
+            if (metricsOverlay != null)
+            {
+                metricsOverlay.EndFrame(model);
+                RenderMetricsOverlay(ctx, metricsOverlay);
+            }
 
             if (needsAdjustment)
             {
@@ -252,6 +261,62 @@ namespace FastCharts.Rendering.Skia
             }, cancellationToken).ConfigureAwait(false);
         }
 
+        private static MetricsOverlayBehavior? FindMetricsOverlay(ChartModel model)
+        {
+            var behaviors = model.Behaviors;
+            for (var i = 0; i < behaviors.Count; i++)
+            {
+                if (behaviors[i] is MetricsOverlayBehavior overlay)
+                {
+                    return overlay;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Draws the <see cref="MetricsOverlayBehavior"/> panel (toggled with F3, detail level F4).
+        /// </summary>
+        private static void RenderMetricsOverlay(RenderContext ctx, MetricsOverlayBehavior overlay)
+        {
+            var text = overlay.GetDisplayText();
+            if (!overlay.IsVisible || string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            var lines = text.Split('\n');
+            using var font = new SKFont(null, (float)ctx.Model.Theme.LabelTextSize);
+            using var textPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
+            var maxWidth = 0f;
+            foreach (var line in lines)
+            {
+                maxWidth = Math.Max(maxWidth, font.MeasureText(line, textPaint));
+            }
+
+            const float pad = 6f;
+            var lineHeight = font.Size + 3;
+            var (x, y) = overlay.GetOverlayPosition(ctx.PixelWidth, ctx.PixelHeight);
+            var box = SKRect.Create((float)x, (float)y, maxWidth + (pad * 2), (lineHeight * lines.Length) + (pad * 2));
+            var bg = overlay.BackgroundColor;
+            var alpha = (byte)(Math.Max(0, Math.Min(1, overlay.BackgroundOpacity)) * bg.A);
+            using (var bgPaint = new SKPaint { Style = SKPaintStyle.Fill, Color = new SKColor(bg.R, bg.G, bg.B, alpha) })
+            {
+                ctx.Canvas.DrawRect(box, bgPaint);
+            }
+
+            var baseline = box.Top + pad + font.Size;
+            for (var i = 0; i < lines.Length; i++)
+            {
+                // The line carrying the FPS is tinted by performance status
+                var color = lines[i].Contains("FPS") ? overlay.GetPerformanceColor() : overlay.TextColor;
+                textPaint.Color = new SKColor(color.R, color.G, color.B, color.A);
+                ctx.Canvas.DrawText(lines[i], box.Left + pad, baseline, SKTextAlign.Left, font, textPaint);
+                baseline += lineHeight;
+            }
+        }
+
         private static void RenderOverlay(RenderContext ctx)
         {
             var model = ctx.Model;
@@ -283,8 +348,9 @@ namespace FastCharts.Rendering.Skia
             }
             if (st.ShowNearest)
             {
+                var nearestYAxis = (st.NearestYAxisIndex == 1 && ctx.Model.YAxisSecondary != null) ? ctx.Model.YAxisSecondary : ctx.Model.YAxis;
                 var px = PixelMapper.X(st.NearestDataX, ctx.Model.XAxis, pr);
-                var py = PixelMapper.Y(st.NearestDataY, ctx.Model.YAxis, pr);
+                var py = PixelMapper.Y(st.NearestDataY, nearestYAxis, pr);
                 using var npStroke = new SKPaint { Color = new SKColor(255, 80, 80, 220), Style = SKPaintStyle.Stroke, StrokeWidth = 2, IsAntialias = true };
                 using var npFill = new SKPaint { Color = new SKColor(255, 80, 80, 120), Style = SKPaintStyle.Fill, IsAntialias = true };
                 ctx.Canvas.Save();

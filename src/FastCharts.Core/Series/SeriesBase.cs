@@ -1,3 +1,5 @@
+using System;
+
 namespace FastCharts.Core.Series
 {
     /// <summary>
@@ -45,6 +47,29 @@ namespace FastCharts.Core.Series
         /// Series has no data to render.
         /// </summary>
         public abstract bool IsEmpty { get; }
+
+        /// <summary>
+        /// Lock guarding the series data. Mutations made through the series API take it, and
+        /// renderers/behaviors hold it while reading, so points can be produced on a background
+        /// thread while the UI renders. Take it yourself when editing <c>Data</c> directly from
+        /// another thread (then call <see cref="NotifyChanged"/> after releasing it).
+        /// </summary>
+        public object SyncRoot { get; } = new object();
+
+        /// <summary>
+        /// Raised when the series content changed and hosts should redraw (points appended,
+        /// data replaced by a binding, ...). May be raised from a background thread.
+        /// </summary>
+        public event EventHandler? Changed;
+
+        /// <summary>
+        /// Signals that the series content changed so hosting charts redraw. Mutations made
+        /// through the series API call it automatically; call it after editing <c>Data</c> directly.
+        /// </summary>
+        public void NotifyChanged()
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
 
         protected SeriesBase()
         {

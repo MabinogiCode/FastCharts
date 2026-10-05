@@ -84,7 +84,7 @@ namespace FastCharts.Core.Axes.Ticks
 
         /// <summary>
         /// Generates minor ticks between major ticks for better granularity
-        /// For base-10: generates ticks at 2, 3, 4, 5, 6, 7, 8, 9 × 10^n
+        /// For base-10: generates ticks at 2, 3, 4, 5, 6, 7, 8, 9 Ã— 10^n
         /// </summary>
         /// <param name="range">Data range</param>
         /// <param name="majorTicks">Major tick values</param>

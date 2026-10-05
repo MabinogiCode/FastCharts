@@ -43,21 +43,44 @@ namespace FastCharts.Core.Tests
         }
 
         [Fact]
-        public void SecondaryAxisVisibleRangeSyncsOnUpdateScales()
+        public void SecondaryAxisKeepsItsOwnVisibleRangeAfterAutoFitAndUpdateScales()
         {
             var m = new ChartModel();
-            var secondary = new LineSeries(new[] { new PointD(0, 50), new PointD(10, 150) }) { YAxisIndex = 1 };
-            m.AddSeries(secondary);
-            m.AutoFitDataRange();
-            Assert.NotNull(m.YAxisSecondary);
-            // Modify primary viewport then update scales
-            m.Viewport.SetVisible(m.XAxis.DataRange, new FRange(10, 20));
+            m.AddSeries(new LineSeries(new[] { new PointD(0, 0), new PointD(10, 10) }));
+            m.AddSeries(new LineSeries(new[] { new PointD(0, 100), new PointD(10, 200) }) { YAxisIndex = 1 });
+
             m.UpdateScales(400, 300);
-            Assert.Equal(new FRange(10, 20).Min, m.YAxis.VisibleRange.Min, 6);
-            Assert.Equal(new FRange(10, 20).Max, m.YAxis.VisibleRange.Max, 6);
-            // Secondary should mirror for now (shared viewport behavior)
+
+            Assert.Equal(0, m.YAxis.VisibleRange.Min, 6);
+            Assert.Equal(10, m.YAxis.VisibleRange.Max, 6);
+            Assert.Equal(100, m.YAxisSecondary!.VisibleRange.Min, 6);
+            Assert.Equal(200, m.YAxisSecondary.VisibleRange.Max, 6);
+        }
+
+        [Fact]
+        public void SecondaryAxisFollowsPrimaryZoomProportionally()
+        {
+            var m = new ChartModel();
+            m.AddSeries(new LineSeries(new[] { new PointD(0, 0), new PointD(10, 10) }));
+            m.AddSeries(new LineSeries(new[] { new PointD(0, 100), new PointD(10, 200) }) { YAxisIndex = 1 });
+
+            // Show the upper half of the primary range: the secondary shows its upper half too
+            m.Viewport.SetVisible(m.XAxis.VisibleRange, new FRange(5, 10));
+
+            Assert.Equal(150, m.YAxisSecondary!.VisibleRange.Min, 6);
+            Assert.Equal(200, m.YAxisSecondary.VisibleRange.Max, 6);
+        }
+
+        [Fact]
+        public void SecondaryAxisWithoutSeriesMirrorsPrimary()
+        {
+            var m = new ChartModel();
+            m.AddSeries(new LineSeries(new[] { new PointD(0, 0), new PointD(10, 10) }));
+
+            m.EnsureSecondaryYAxis();
+
             Assert.Equal(m.YAxis.VisibleRange.Min, m.YAxisSecondary!.VisibleRange.Min, 6);
-            Assert.Equal(m.YAxis.VisibleRange.Max, m.YAxisSecondary!.VisibleRange.Max, 6);
+            Assert.Equal(m.YAxis.VisibleRange.Max, m.YAxisSecondary.VisibleRange.Max, 6);
         }
     }
 }

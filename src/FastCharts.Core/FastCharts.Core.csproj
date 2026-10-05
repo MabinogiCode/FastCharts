@@ -31,18 +31,8 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    
-    <!-- Release Notes -->
-    <PackageReleaseNotes>FastCharts v1.3.0 — "Finance"
-
-- Enhanced candlesticks: BullColor/BearColor, per-point Volume with bottom volume band
-- Indicators: Indicators.Sma / Ema / BollingerBands producing ready-to-add series
-  (PointD lists or OhlcSeries Close prices)
-- Cross-chart X axis sync: ChartLinkGroup (price + indicator layout)
-- AxisBase.VisibleRangeChanged event
-- Release from browser: run the 'Publish NuGet Packages' workflow manually with a version
-
-See CHANGELOG.md for details.</PackageReleaseNotes>
+    <!-- Version-agnostic on purpose: hard-coded notes went stale (1.3.0 notes shipped with 1.4.0) -->
+    <PackageReleaseNotes>See the changelog for the changes in this release: https://github.com/MabinogiCode/FastCharts/blob/main/CHANGELOG.md</PackageReleaseNotes>
   </PropertyGroup>
   
   <!-- Include README and icon in package -->
@@ -62,8 +52,6 @@ See CHANGELOG.md for details.</PackageReleaseNotes>
     <!-- ReactiveUI for MVVM support -->
     <PackageReference Include="ReactiveUI" Version="22.3.1" />
     <PackageReference Include="System.Reactive" Version="6.*" />
-    <!-- DynamicData for advanced observable collections -->
-    <PackageReference Include="DynamicData" Version="9.4.1" />
     <!-- StyleCop Analyzers for strict SA1124, SA1503, SA1520 enforcement -->
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" IncludeAssets="analyzers" />
     <!-- SonarAnalyzer for strict S1244 floating point equality enforcement -->

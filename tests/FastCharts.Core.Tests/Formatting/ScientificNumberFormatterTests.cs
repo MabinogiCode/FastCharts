@@ -57,9 +57,9 @@ namespace FastCharts.Core.Tests.Formatting
             var formatter = new ScientificNumberFormatter();
 
             // Act & Assert
-            formatter.Format(2000).Should().Be("2×10^3");
-            formatter.Format(5000000).Should().Be("5×10^6");
-            formatter.Format(0.003).Should().Be("3×10^-3");
+            formatter.Format(2000).Should().Be("2Ã—10^3");
+            formatter.Format(5000000).Should().Be("5Ã—10^6");
+            formatter.Format(0.003).Should().Be("3Ã—10^-3");
         }
     }
 }

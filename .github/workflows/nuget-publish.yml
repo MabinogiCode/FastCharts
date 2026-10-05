@@ -3,7 +3,8 @@ name: Publish NuGet Packages
 on:
   push:
     tags:
-      - 'v*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+      - 'v*'     # Triggers on version tags like v1.0.0, v1.2.3, etc.
+      - '!v*-*'  # ...but not on pre-release tags (v1.0.0-beta1): nuget-prerelease.yml owns those
   workflow_dispatch:
     inputs:
       version:
@@ -31,24 +32,34 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            6.0.x
 
       - name: Extract version from tag or input
         id: get-version
+        # Untrusted values go through env vars (never ${{ }} inside the script) and the
+        # result is validated, since it is reused in later commands
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          GIT_REF: ${{ github.ref }}
         run: |
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            $version = "${{ github.event.inputs.version }}" -replace '^v', ''
+          if ($env:EVENT_NAME -eq "workflow_dispatch") {
+            $version = $env:INPUT_VERSION -replace '^v', ''
           } else {
-            $tag = "${{ github.ref }}"
-            $version = $tag -replace '^refs/tags/v', ''
+            $version = $env:GIT_REF -replace '^refs/tags/v', ''
+          }
+          if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            echo "ERROR: '$version' is not a valid SemVer version (e.g. 1.4.0)"
+            exit 1
           }
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "Extracted version: $version"
 
       - name: Create tag (browser-triggered release)
         if: github.event_name == 'workflow_dispatch'
+        env:
+          VERSION: ${{ steps.get-version.outputs.VERSION }}
         run: |
-          $version = "${{ steps.get-version.outputs.VERSION }}"
+          $version = $env:VERSION
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "v$version" -m "FastCharts v$version"
@@ -93,12 +104,19 @@ jobs:
             exit 1
           }
           
+          # --skip-duplicate already turns "version exists" into success, so any
+          # non-zero exit is a real failure (auth, validation) and must fail the job
+          $failed = @()
           foreach ($package in $packages) {
             echo "Publishing package: $package"
             dotnet nuget push "./nupkg/$package" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
             if ($LASTEXITCODE -ne 0) {
-              echo "WARNING: Failed to publish $package (might already exist)"
+              $failed += $package
             }
+          }
+          if ($failed.Count -gt 0) {
+            echo "ERROR: Failed to publish: $($failed -join ', ')"
+            exit 1
           }
 
       - name: Upload packages as artifacts
@@ -115,7 +133,7 @@ jobs:
           tag_name: v${{ steps.get-version.outputs.VERSION }}
           release_name: FastCharts ${{ steps.get-version.outputs.VERSION }}
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(steps.get-version.outputs.VERSION, '-') }}
           body: |
             ?? **FastCharts ${{ steps.get-version.outputs.VERSION }} Released!**
             

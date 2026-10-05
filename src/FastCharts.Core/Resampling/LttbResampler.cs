@@ -117,17 +117,20 @@ namespace FastCharts.Core.Resampling
             for (var i = 1; i < targetCount - 1; i++)
             {
                 // Calculate bucket range
+                // Buckets are half-open [start, end); the last one may reach data.Count - 1
+                // (exclusive), so the second-to-last point remains a candidate.
                 var bucketStart = (int)Math.Floor(bucketSize * (i - 1)) + 1;
                 var bucketEnd = (int)Math.Floor(bucketSize * i) + 1;
-                if (bucketEnd >= data.Count - 1) bucketEnd = data.Count - 2;
+                if (bucketEnd > data.Count - 1) bucketEnd = data.Count - 1;
 
                 // Get the previous point (from result)
                 var prevPoint = result[result.Count - 1];
 
                 // Calculate average of next bucket for triangle calculation
+                // The "next bucket" of the last iteration is the final point itself
                 var nextBucketStart = (int)Math.Floor(bucketSize * i) + 1;
                 var nextBucketEnd = (int)Math.Floor(bucketSize * (i + 1)) + 1;
-                if (nextBucketEnd >= data.Count) nextBucketEnd = data.Count - 1;
+                if (nextBucketEnd > data.Count) nextBucketEnd = data.Count;
 
                 var avgX = 0.0;
                 var avgY = 0.0;
@@ -147,8 +150,8 @@ namespace FastCharts.Core.Resampling
                 }
                 else
                 {
-                    avgX = data[bucketEnd].X;
-                    avgY = data[bucketEnd].Y;
+                    avgX = data[data.Count - 1].X;
+                    avgY = data[data.Count - 1].Y;
                 }
 
                 // Find point in current bucket that creates largest triangle
@@ -187,50 +190,6 @@ namespace FastCharts.Core.Resampling
             // Triangle area = |x1(y2-y3) + x2(y3-y1) + x3(y1-y2)| / 2
             // We can skip division by 2 since we only need relative areas
             return Math.Abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
-        }
-    }
-
-    /// <summary>
-    /// Statistics about a resampling operation
-    /// </summary>
-    public readonly struct ResamplingStats
-    {
-        public ResamplingStats(int originalCount, int resampledCount, double reductionRatio, double elapsedMs)
-        {
-            OriginalCount = originalCount;
-            ResampledCount = resampledCount;
-            ReductionRatio = reductionRatio;
-            ElapsedMs = elapsedMs;
-        }
-
-        /// <summary>
-        /// Original number of data points
-        /// </summary>
-        public int OriginalCount { get; }
-
-        /// <summary>
-        /// Number of points after resampling
-        /// </summary>
-        public int ResampledCount { get; }
-
-        /// <summary>
-        /// Reduction ratio (0.0 to 1.0, where 0.1 = 90% reduction)
-        /// </summary>
-        public double ReductionRatio { get; }
-
-        /// <summary>
-        /// Time taken for resampling operation in milliseconds
-        /// </summary>
-        public double ElapsedMs { get; }
-
-        /// <summary>
-        /// Percentage of data reduction (0-100%)
-        /// </summary>
-        public double ReductionPercentage => (1.0 - ReductionRatio) * 100.0;
-
-        public override string ToString()
-        {
-            return $"Resampled {OriginalCount:N0} → {ResampledCount:N0} points ({ReductionPercentage:F1}% reduction) in {ElapsedMs:F2}ms";
         }
     }
 }

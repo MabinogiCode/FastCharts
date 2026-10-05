@@ -17,12 +17,38 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
     public string NumberFormatY { get; set; } = "G";
     public string NumberFormatX { get; set; } = "G";
 
+    /// <summary>
+    /// Maximum pointer travel (in pixels) between press and release for a left click to toggle
+    /// the tooltip lock. Longer travels are drags (pan) and leave the lock untouched.
+    /// </summary>
+    public double ClickTolerance { get; set; } = 4;
+
+    private bool _clickPending;
+    private double _pressX;
+    private double _pressY;
+
     public bool OnEvent(ChartModel model, InteractionEvent ev)
     {
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;
         if (ev.Type == PointerEventType.Down && ev.Button == PointerButton.Left)
         {
+            // The lock toggles on release, once we know the press was a click and not a pan
+            // drag (left drag) or a zoom rectangle (Shift + left drag).
+            _clickPending = !ev.Modifiers.Shift;
+            _pressX = ev.PixelX;
+            _pressY = ev.PixelY;
+            return false;
+        }
+        else if (ev.Type == PointerEventType.Up && ev.Button == PointerButton.Left)
+        {
+            var isClick = _clickPending && !MovedBeyondTolerance(ev);
+            _clickPending = false;
+            if (!isClick)
+            {
+                return false;
+            }
+
             st.TooltipLocked = !st.TooltipLocked;
             if (!st.TooltipLocked)
             {
@@ -32,6 +58,7 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
         }
         else if (ev.Type == PointerEventType.Leave)
         {
+            _clickPending = false;
             if (!st.TooltipLocked)
             {
                 st.TooltipText = null;
@@ -41,6 +68,10 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
         }
         else if (ev.Type == PointerEventType.Move)
         {
+            if (_clickPending && MovedBeyondTolerance(ev))
+            {
+                _clickPending = false; // became a drag
+            }
             if (st.TooltipLocked || !st.DataX.HasValue)
             {
                 return false;
@@ -49,6 +80,13 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
             return true;
         }
         return false;
+    }
+
+    private bool MovedBeyondTolerance(InteractionEvent ev)
+    {
+        var dx = ev.PixelX - _pressX;
+        var dy = ev.PixelY - _pressY;
+        return (dx * dx) + (dy * dy) > ClickTolerance * ClickTolerance;
     }
 
     private void Build(ChartModel model, InteractionState st, double x)
@@ -80,47 +118,11 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
             {
                 continue;
             }
-            switch (s)
+
+            // Series may be fed from another thread: read them under their lock
+            lock (s.SyncRoot)
             {
-                case AreaSeries area:
-                    { AddXY(st, area.Data, x, tol, area.Title, area.PaletteIndex); break; }
-                case StepLineSeries step:
-                    { AddXY(st, step.Data, x, tol, step.Title, step.PaletteIndex); break; }
-                case LineSeries ls:
-                    { AddXY(st, ls.Data, x, tol, ls.Title, ls.PaletteIndex); break; }
-                case ScatterSeries sc:
-                    { AddXY(st, sc.Data, x, tol, sc.Title, sc.PaletteIndex); break; }
-                case BarSeries bar:
-                    {
-                        var halfW = bar.GetWidthFor(0) * 0.5;
-                        foreach (var p in bar.Data.Where(p => Math.Abs(p.X - x) <= halfW))
-                        {
-                            AddPoint(bar.Title ?? "Bar", p.X, p.Y, bar.PaletteIndex);
-                        }
-                        break;
-                    }
-                case StackedBarSeries sbar:
-                    {
-                        var halfW = sbar.GetWidthFor(0) * 0.5;
-                        foreach (var p in sbar.Data.Where(p => Math.Abs(p.X - x) <= halfW && p.Values != null))
-                        {
-                            var sum = p.Values!.Sum();
-                            AddPoint(sbar.Title ?? "Stack", p.X, sum, sbar.PaletteIndex);
-                        }
-                        break;
-                    }
-                case OhlcSeries ohlc:
-                    {
-                        ohlc.Data.Where(p => Math.Abs(p.X - x) <= tol).ToList().ForEach(p => AddPoint(ohlc.Title ?? "OHLC", p.X, p.Close, ohlc.PaletteIndex));
-                        break;
-                    }
-                case ErrorBarSeries err:
-                    {
-                        err.Data.Where(p => Math.Abs(p.X - x) <= tol).ToList().ForEach(p => AddPoint(err.Title ?? "Err", p.X, p.Y, err.PaletteIndex));
-                        break;
-                    }
-                default:
-                    { break; }
+                AddSeriesValues(st, s, x, tol, AddPoint);
             }
         }
 
@@ -145,22 +147,121 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
         st.TooltipText = sb.ToString();
     }
 
-    private static void AddXY(InteractionState st, System.Collections.Generic.IList<FastCharts.Core.Primitives.PointD> data, double x, double tol, string? title, int? paletteIndex)
+    private void AddSeriesValues(InteractionState st, SeriesBase s, double x, double tol, Action<string?, double, double, int?> addPoint)
     {
-        if (data == null || data.Count == 0)
+        switch (s)
         {
-            return;
+            case LineSeries ls:
+                {
+                    // Line, area, step and streaming series: binary search on X-sorted data
+                    var start = 0;
+                    var end = ls.Data.Count;
+                    if (ls.TryGetIndexRange(x - tol, x + tol, out var first, out var last))
+                    {
+                        start = first;
+                        end = last;
+                    }
+                    AddClosest(st, ls.Data, start, end, x, tol, ls.Title, ls.PaletteIndex);
+                    break;
+                }
+            case ScatterSeries sc:
+                { AddClosest(st, sc.Data, 0, sc.Data.Count, x, tol, sc.Title, sc.PaletteIndex); break; }
+            case BarSeries bar:
+                {
+                    var halfW = bar.GetWidthFor(0) * 0.5;
+                    foreach (var p in bar.Data)
+                    {
+                        if (Math.Abs(p.X - x) <= halfW)
+                        {
+                            addPoint(bar.Title ?? "Bar", p.X, p.Y, bar.PaletteIndex);
+                        }
+                    }
+                    break;
+                }
+            case StackedBarSeries sbar:
+                {
+                    var halfW = sbar.GetWidthFor(0) * 0.5;
+                    foreach (var p in sbar.Data)
+                    {
+                        if (Math.Abs(p.X - x) <= halfW && p.Values != null)
+                        {
+                            addPoint(sbar.Title ?? "Stack", p.X, p.Values.Sum(), sbar.PaletteIndex);
+                        }
+                    }
+                    break;
+                }
+            case OhlcSeries ohlc:
+                {
+                    foreach (var p in ohlc.Data)
+                    {
+                        if (Math.Abs(p.X - x) <= tol)
+                        {
+                            addPoint(ohlc.Title ?? "OHLC", p.X, p.Close, ohlc.PaletteIndex);
+                        }
+                    }
+                    break;
+                }
+            case ErrorBarSeries err:
+                {
+                    foreach (var p in err.Data)
+                    {
+                        if (Math.Abs(p.X - x) <= tol)
+                        {
+                            addPoint(err.Title ?? "Err", p.X, p.Y, err.PaletteIndex);
+                        }
+                    }
+                    break;
+                }
+            default:
+                { break; }
         }
-        var matches = data
-            .Where(p => Math.Abs(p.X - x) <= tol)
-            .OrderBy(p => Math.Abs(p.X - x))
-            .Take(3);
-        foreach (var p in matches)
+    }
+
+    /// <summary>
+    /// Adds up to the 3 points of data[start..end) closest to <paramref name="x"/> (within
+    /// <paramref name="tol"/>), nearest first — single pass, no sorting or allocation.
+    /// </summary>
+    private void AddClosest(InteractionState st, System.Collections.Generic.IList<FastCharts.Core.Primitives.PointD> data, int start, int end, double x, double tol, string? title, int? paletteIndex)
+    {
+        const int MaxPerSeries = 3;
+        var bestIndex = new int[MaxPerSeries];
+        var bestDistance = new double[MaxPerSeries];
+        var found = 0;
+
+        for (var i = start; i < end; i++)
         {
-            if (st.TooltipSeries.Count >= st.TooltipSeries.Capacity)
+            var d = Math.Abs(data[i].X - x);
+            if (d > tol || double.IsNaN(d))
             {
-                break;
+                continue;
             }
+
+            // Insertion into the small sorted top-k (stable: earlier points win ties)
+            var slot = found;
+            while (slot > 0 && d < bestDistance[slot - 1])
+            {
+                slot--;
+            }
+            if (slot >= MaxPerSeries)
+            {
+                continue;
+            }
+            for (var k = Math.Min(found, MaxPerSeries - 1); k > slot; k--)
+            {
+                bestIndex[k] = bestIndex[k - 1];
+                bestDistance[k] = bestDistance[k - 1];
+            }
+            bestIndex[slot] = i;
+            bestDistance[slot] = d;
+            if (found < MaxPerSeries)
+            {
+                found++;
+            }
+        }
+
+        for (var k = 0; k < found && st.TooltipSeries.Count < MaxSeries; k++)
+        {
+            var p = data[bestIndex[k]];
             st.TooltipSeries.Add(new TooltipSeriesValue { Title = title ?? "Line", X = p.X, Y = p.Y, PaletteIndex = paletteIndex });
         }
     }

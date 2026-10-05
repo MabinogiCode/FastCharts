@@ -10,6 +10,9 @@ on:
 jobs:
   publish-beta:
     runs-on: windows-latest
+
+    permissions:
+      contents: write # create the GitHub pre-release
     
     environment: nuget-prerelease
     
@@ -24,13 +27,18 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            6.0.x
 
       - name: Extract version from tag
         id: get-version
+        # The tag name goes through an env var (never ${{ }} inside the script) and is validated
+        env:
+          GIT_REF: ${{ github.ref }}
         run: |
-          $tag = "${{ github.ref }}"
-          $version = $tag -replace '^refs/tags/v', ''
+          $version = $env:GIT_REF -replace '^refs/tags/v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+-[0-9A-Za-z.-]+$') {
+            echo "ERROR: '$version' is not a valid SemVer pre-release version (e.g. 1.5.0-beta1)"
+            exit 1
+          }
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "Extracted version: $version"
 
@@ -73,12 +81,19 @@ jobs:
             exit 1
           }
           
+          # --skip-duplicate already turns "version exists" into success, so any
+          # non-zero exit is a real failure (auth, validation) and must fail the job
+          $failed = @()
           foreach ($package in $packages) {
             echo "Publishing prerelease package: $package"
             dotnet nuget push "./nupkg/$package" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
             if ($LASTEXITCODE -ne 0) {
-              echo "WARNING: Failed to publish $package (might already exist)"
+              $failed += $package
             }
+          }
+          if ($failed.Count -gt 0) {
+            echo "ERROR: Failed to publish: $($failed -join ', ')"
+            exit 1
           }
 
       - name: Upload packages as artifacts

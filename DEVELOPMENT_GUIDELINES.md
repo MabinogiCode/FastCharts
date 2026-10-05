@@ -97,7 +97,7 @@ public void MethodName_Scenario_ExpectedBehavior()
 ```
 
 ## Build Requirements
-- **Multi-target**: .NET Standard 2.0, .NET 6, .NET 8, .NET Framework 4.8
+- **Multi-target**: .NET Standard 2.0, .NET 8, .NET Framework 4.8
 - **Cross-platform**: Windows, macOS, Linux support
 - **Rendering backends**: 
   - Skia for cross-platform (SkiaSharp)

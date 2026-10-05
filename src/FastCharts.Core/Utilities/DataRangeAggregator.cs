@@ -22,7 +22,15 @@ namespace FastCharts.Core.Utilities
                 {
                     continue;
                 }
-                if (s is ISeriesRangeProvider rp && rp.TryGetRanges(out var xr, out var yr))
+                FRange xr = default;
+                FRange yr = default;
+                bool hasRanges;
+                lock (s.SyncRoot) // series may be fed from another thread
+                {
+                    hasRanges = s is ISeriesRangeProvider rp && rp.TryGetRanges(out xr, out yr);
+                }
+
+                if (hasRanges)
                 {
                     // X aggregate
                     if (!hasX)

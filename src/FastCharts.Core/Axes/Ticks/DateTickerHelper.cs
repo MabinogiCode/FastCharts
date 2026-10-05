@@ -49,7 +49,21 @@ internal static class DateTickerHelper
             return;
         }
         unit = TimeUnit.Year;
-        step = 1;
+        step = NiceYearStep(days / 365.25 / 20.0); // at most ~20 ticks even when zoomed out over centuries
+    }
+
+    private static int NiceYearStep(double approxYears)
+    {
+        int[] steps = { 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000 };
+        foreach (var candidate in steps)
+        {
+            if (candidate >= approxYears)
+            {
+                return candidate;
+            }
+        }
+
+        return steps[steps.Length - 1];
     }
 
     public static DateTime Align(DateTime t, TimeUnit unit, int step)
@@ -61,7 +75,7 @@ internal static class DateTickerHelper
             TimeUnit.Hour => new DateTime(t.Year, t.Month, t.Day, ((t.Hour / step) * step), 0, 0, DateTimeKind.Local),
             TimeUnit.Day => AlignDay(t, step),
             TimeUnit.Month => new DateTime(t.Year, (((t.Month - 1) / step) * step) + 1, 1, 0, 0, 0, DateTimeKind.Local),
-            TimeUnit.Year => new DateTime(((t.Year / step) * step), 1, 1, 0, 0, 0, DateTimeKind.Local),
+            TimeUnit.Year => new DateTime(Math.Max(1, (t.Year / step) * step), 1, 1, 0, 0, 0, DateTimeKind.Local),
             _ => t
         };
     }
@@ -78,6 +92,24 @@ internal static class DateTickerHelper
             TimeUnit.Year => t.AddYears(step),
             _ => t
         };
+    }
+
+    /// <summary>
+    /// Like <see cref="Add"/>, but returns false instead of throwing when the result would fall
+    /// outside the <see cref="DateTime"/> range (ticks near year 1 or 9999).
+    /// </summary>
+    public static bool TryAdd(DateTime t, TimeUnit unit, int step, out DateTime result)
+    {
+        try
+        {
+            result = Add(t, unit, step);
+            return result > t;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            result = t;
+            return false;
+        }
     }
 
     public static double ClampOADate(double oa)

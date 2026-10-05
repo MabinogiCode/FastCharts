@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
     <PropertyGroup>
-        <TargetFrameworks>net48;net6.0-windows10.0.19041.0;net8.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks>net48;net8.0-windows10.0.19041.0</TargetFrameworks>
         <UseWPF>true</UseWPF>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -19,7 +19,7 @@
         <Authors>FastCharts Team</Authors>
         <Company>FastCharts</Company>
         <Product>FastCharts</Product>
-        <Description>WPF controls for FastCharts charting library. Includes FastChart control with full MVVM support, interactive behaviors, and reactive UI integration. Supports .NET Framework 4.8, .NET 6, and .NET 8.</Description>
+        <Description>WPF controls for FastCharts charting library. Includes FastChart control with full MVVM support, interactive behaviors, and reactive UI integration. Supports .NET Framework 4.8 and .NET 8.</Description>
         <Summary>WPF controls and MVVM integration for FastCharts</Summary>
         <PackageTags>wpf;charts;controls;mvvm;reactive;windows;ui;visualization;interactive</PackageTags>
         <PackageProjectUrl>https://github.com/MabinogiCode/FastCharts</PackageProjectUrl>
@@ -33,14 +33,8 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         
-        <PackageReleaseNotes>FastCharts v1.4.0 — "Large volumes &amp; GPU"
-
-- Opt-in GPU backend: FastChart.UseGpu renders through an OpenGL-backed SKGLElement
-  (default false keeps the CPU raster SKElement — zero behavioral change)
-- Geometry caching in LineLayer (per-series SKPath/pixel cache keyed on DataVersion)
-- BenchmarkDotNet suite (benchmarks/FastCharts.Benchmarks)
-
-See CHANGELOG.md for details.</PackageReleaseNotes>
+        <!-- Version-agnostic on purpose: hard-coded notes went stale (1.3.0 notes shipped with 1.4.0) -->
+        <PackageReleaseNotes>See the changelog for the changes in this release: https://github.com/MabinogiCode/FastCharts/blob/main/CHANGELOG.md</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
         <LangVersion>9.0</LangVersion>
@@ -55,9 +49,7 @@ See CHANGELOG.md for details.</PackageReleaseNotes>
     <ItemGroup>
         <PackageReference Include="DynamicData" Version="9.4.1" />
         <PackageReference Include="ReactiveUI" Version="22.3.1" />
-        <!-- ReactiveUI.WPF has no net6.0-windows target (net462+/net8.0-windows only);
-             net6 consumers keep core ReactiveUI without the WPF scheduler wiring -->
-        <PackageReference Include="ReactiveUI.WPF" Version="22.3.1" Condition="'$(TargetFramework)' != 'net6.0-windows10.0.19041.0'" />
+        <PackageReference Include="ReactiveUI.WPF" Version="22.3.1" />
         <PackageReference Include="System.Reactive" Version="6.*" />
         <PackageReference Include="SkiaSharp" Version="3.119.1" />
         <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.1" />

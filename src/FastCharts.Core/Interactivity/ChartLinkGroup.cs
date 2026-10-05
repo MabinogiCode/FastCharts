@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 using FastCharts.Core.Axes;
 using FastCharts.Core.Primitives;
@@ -20,7 +19,7 @@ namespace FastCharts.Core.Interactivity
     /// </summary>
     public sealed class ChartLinkGroup : IDisposable
     {
-        private readonly List<Entry> _entries = new List<Entry>();
+        private readonly List<ChartLinkEntry> _entries = new List<ChartLinkEntry>();
         private bool _updating;
         private bool _disposed;
 
@@ -54,7 +53,7 @@ namespace FastCharts.Core.Interactivity
                 }
             }
 
-            var entry = new Entry(this, model);
+            var entry = new ChartLinkEntry(this, model);
             _entries.Add(entry);
 
             // Align the newcomer with the group's current range
@@ -84,7 +83,7 @@ namespace FastCharts.Core.Interactivity
             return false;
         }
 
-        private void OnAxisRangeChanged(ChartModel source, AxisBase axis)
+        internal void OnAxisRangeChanged(ChartModel source, AxisBase axis)
         {
             if (_updating)
             {
@@ -130,52 +129,6 @@ namespace FastCharts.Core.Interactivity
             }
 
             _entries.Clear();
-        }
-
-        /// <summary>
-        /// Tracks one linked chart: follows its current X axis, including axis replacement
-        /// (e.g. switching to a logarithmic axis re-hooks the subscription automatically).
-        /// </summary>
-        private sealed class Entry : IDisposable
-        {
-            private readonly ChartLinkGroup _group;
-
-            public Entry(ChartLinkGroup group, ChartModel model)
-            {
-                _group = group;
-                Model = model;
-                CurrentAxis = (AxisBase)model.XAxis;
-                CurrentAxis.VisibleRangeChanged += OnRangeChanged;
-                Model.PropertyChanged += OnModelPropertyChanged;
-            }
-
-            public ChartModel Model { get; }
-
-            public AxisBase CurrentAxis { get; private set; }
-
-            private void OnRangeChanged(object? sender, EventArgs e)
-            {
-                _group.OnAxisRangeChanged(Model, CurrentAxis);
-            }
-
-            private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-            {
-                if (e.PropertyName != nameof(ChartModel.XAxis))
-                {
-                    return;
-                }
-
-                // X axis instance was replaced: move the subscription
-                CurrentAxis.VisibleRangeChanged -= OnRangeChanged;
-                CurrentAxis = (AxisBase)Model.XAxis;
-                CurrentAxis.VisibleRangeChanged += OnRangeChanged;
-            }
-
-            public void Dispose()
-            {
-                CurrentAxis.VisibleRangeChanged -= OnRangeChanged;
-                Model.PropertyChanged -= OnModelPropertyChanged;
-            }
         }
     }
 }

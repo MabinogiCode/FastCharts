@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using FastCharts.Core;
 using FastCharts.Core.Primitives;
@@ -12,7 +13,9 @@ namespace FastCharts.Rendering.Skia.Helpers
     {
         /// <summary>
         /// Resolves the color for a series based on chart model, series reference, and palette.
-        /// Allocation-free: computes the per-type index in a single pass over the series list.
+        /// Single source of truth for series colors: every rendering layer, the legend and the
+        /// tooltip use it. <see cref="SeriesBase.PaletteIndex"/> wins when set.
+        /// Allocation-free: computes the per-group index in a single pass over the series list.
         /// </summary>
         /// <param name="model">The chart model containing series and theme.</param>
         /// <param name="seriesRef">The series reference to resolve color for.</param>
@@ -36,39 +39,48 @@ namespace FastCharts.Rendering.Skia.Helpers
         }
 
         /// <summary>
-        /// Returns the position of the series among the series of the same color-group
-        /// (BandSeries, ScatterSeries, or LineSeries family), matching legacy palette assignment.
+        /// Returns the position of the series among the series of the same color group (the
+        /// series rendered by the same layer). Hidden series are counted too, so toggling a
+        /// series off in the legend never shifts the colors of the others.
         /// </summary>
         private static int IndexAmongKind(ChartModel model, SeriesBase series)
         {
+            var group = ColorGroup(series);
             var count = 0;
             var seriesList = model.Series;
 
             for (var i = 0; i < seriesList.Count; i++)
             {
                 var candidate = seriesList[i];
-                var sameKind = series switch
-                {
-                    BandSeries => candidate is BandSeries,
-                    ScatterSeries => candidate is ScatterSeries,
-                    LineSeries => candidate is LineSeries,
-                    _ => false
-                };
-
-                if (!sameKind)
-                {
-                    continue;
-                }
-
                 if (ReferenceEquals(candidate, series))
                 {
                     return count;
                 }
 
-                count++;
+                if (ColorGroup(candidate) == group)
+                {
+                    count++;
+                }
             }
 
             return -1;
+        }
+
+        /// <summary>
+        /// Color group of a series: one sequence per rendering layer, so legend swatches,
+        /// tooltips and the drawn series always agree.
+        /// </summary>
+        private static Type ColorGroup(SeriesBase series)
+        {
+            return series switch
+            {
+                AreaSeries => typeof(AreaSeries),
+                StepLineSeries => typeof(StepLineSeries),
+                LineSeries => typeof(LineSeries),
+                ScatterSeries => typeof(ScatterSeries),
+                BarSeries => typeof(BarSeries),
+                _ => series.GetType()
+            };
         }
     }
 }

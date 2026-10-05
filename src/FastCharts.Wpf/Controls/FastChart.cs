@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using FastCharts.Core;
+using FastCharts.Core.Axes;
 using FastCharts.Core.Helpers;
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Interaction.Behaviors;
@@ -22,6 +26,9 @@ namespace FastCharts.Wpf.Controls
     /// Default renderer: SkiaChartRenderer (from FastCharts.Rendering.Skia)
     /// Extensibility: assign RenderOverride to plug a different renderer (OpenGL, etc.)
     /// Includes redraw throttling to coalesce rapid interaction events.
+    /// Redraws automatically when the model changes (theme, axes, series collection, annotations,
+    /// visible ranges, series data via <see cref="FastCharts.Core.Series.SeriesBase.Changed"/>, or <see cref="ChartModel.Invalidate"/>),
+    /// including changes raised from background threads.
     /// Set <see cref="UseGpu"/> to true to render through an OpenGL-backed surface
     /// (<see cref="SKGLElement"/>) instead of the default CPU surface (<see cref="SKElement"/>).
     /// </summary>
@@ -44,6 +51,12 @@ namespace FastCharts.Wpf.Controls
         private bool redrawScheduled;
         private TimeSpan minRedrawInterval = TimeSpan.FromMilliseconds(DefaultFrameTimeMs);
         private readonly SkiaChartRenderer renderer = new SkiaChartRenderer();
+        private ChartModel? attachedModel;
+        private AxisBase? attachedXAxis;
+        private AxisBase? attachedYAxis;
+        private AxisBase? attachedYAxisSecondary;
+        private bool isPainting;
+        private int crossThreadRedrawQueued;
 
         public static readonly DependencyProperty ModelProperty =
             DependencyProperty.Register(
@@ -71,6 +84,14 @@ namespace FastCharts.Wpf.Controls
             DefaultStyleKeyProperty.OverrideMetadata(
                 typeof(FastChart),
                 new FrameworkPropertyMetadata(typeof(FastChart)));
+        }
+
+        public FastChart()
+        {
+            // Model subscriptions live only while the control is in the visual tree, so a
+            // long-lived model (e.g. owned by a view model) never keeps a closed view alive.
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
         }
 
         /// <summary>
@@ -118,9 +139,15 @@ namespace FastCharts.Wpf.Controls
             this.Focusable = true;
             this.KeyDown -= OnChartKeyDown;
             this.KeyDown += OnChartKeyDown;
+        }
 
-            this.Loaded -= OnLoaded;
-            this.Loaded += OnLoaded;
+        /// <summary>
+        /// Forces a redraw, e.g. after mutating series data directly. Prefer
+        /// <see cref="ChartModel.Invalidate"/> from view models. Safe to call from any thread.
+        /// </summary>
+        public void Refresh()
+        {
+            RequestRedrawFromAnyThread();
         }
 
         /// <summary>
@@ -168,8 +195,7 @@ namespace FastCharts.Wpf.Controls
             surfaceElement.MouseLeave += OnSkiaMouseLeave;
             surfaceElement.MouseWheel += OnSkiaMouseWheel;
             surfaceElement.KeyDown += OnSkiaKeyDown;
-            surfaceElement.Focusable = true;
-            surfaceElement.Focus();
+            surfaceElement.Focusable = true; // focused on click, not on template application
         }
 
         /// <summary>
@@ -239,6 +265,12 @@ namespace FastCharts.Wpf.Controls
         {
             var chart = (FastChart)d;
             chart.userChangedView = false; // allow initial AutoFit
+            if (chart.IsLoaded)
+            {
+                chart.AttachModel(e.NewValue as ChartModel);
+                chart.InitializeChartIfNeeded();
+            }
+
             chart.RequestRedraw();
         }
 
@@ -256,8 +288,157 @@ namespace FastCharts.Wpf.Controls
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            AttachModel(Model);
             InitializeChartIfNeeded();
             RequestRedraw(forceImmediate: true);
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            DetachModel();
+            if (surfaceElement != null)
+            {
+                surfaceElement.Cursor = null;
+            }
+        }
+
+        private void AttachModel(ChartModel? model)
+        {
+            if (ReferenceEquals(attachedModel, model))
+            {
+                return;
+            }
+
+            DetachModel();
+            if (model == null)
+            {
+                return;
+            }
+
+            attachedModel = model;
+            model.PropertyChanged += OnModelPropertyChanged;
+            model.Series.CollectionChanged += OnModelContentChanged;
+            model.Annotations.CollectionChanged += OnModelContentChanged;
+            model.Invalidated += OnModelInvalidated;
+            AttachAxes();
+        }
+
+        private void DetachModel()
+        {
+            DetachAxes();
+            if (attachedModel == null)
+            {
+                return;
+            }
+
+            attachedModel.PropertyChanged -= OnModelPropertyChanged;
+            attachedModel.Series.CollectionChanged -= OnModelContentChanged;
+            attachedModel.Annotations.CollectionChanged -= OnModelContentChanged;
+            attachedModel.Invalidated -= OnModelInvalidated;
+            attachedModel = null;
+        }
+
+        /// <summary>
+        /// Visible-range changes cover programmatic zoom/pan and linked charts (ChartLinkGroup).
+        /// </summary>
+        private void AttachAxes()
+        {
+            DetachAxes();
+            if (attachedModel == null)
+            {
+                return;
+            }
+
+            attachedXAxis = attachedModel.XAxis as AxisBase;
+            attachedYAxis = attachedModel.YAxis as AxisBase;
+            attachedYAxisSecondary = attachedModel.YAxisSecondary as AxisBase;
+            foreach (var axis in new[] { attachedXAxis, attachedYAxis, attachedYAxisSecondary })
+            {
+                if (axis != null)
+                {
+                    axis.VisibleRangeChanged += OnAxisVisibleRangeChanged;
+                }
+            }
+        }
+
+        private void DetachAxes()
+        {
+            foreach (var axis in new[] { attachedXAxis, attachedYAxis, attachedYAxisSecondary })
+            {
+                if (axis != null)
+                {
+                    axis.VisibleRangeChanged -= OnAxisVisibleRangeChanged;
+                }
+            }
+
+            attachedXAxis = null;
+            attachedYAxis = null;
+            attachedYAxisSecondary = null;
+        }
+
+        private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(e.PropertyName) ||
+                e.PropertyName == nameof(ChartModel.XAxis) ||
+                e.PropertyName == nameof(ChartModel.YAxis) ||
+                e.PropertyName == nameof(ChartModel.YAxisSecondary))
+            {
+                if (Dispatcher.CheckAccess())
+                {
+                    AttachAxes();
+                }
+                else
+                {
+                    Dispatcher.BeginInvoke(new Action(AttachAxes));
+                }
+            }
+
+            RequestRedrawFromAnyThread();
+        }
+
+        private void OnModelContentChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            RequestRedrawFromAnyThread();
+        }
+
+        private void OnModelInvalidated(object? sender, EventArgs e)
+        {
+            RequestRedrawFromAnyThread();
+        }
+
+        private void OnAxisVisibleRangeChanged(object? sender, EventArgs e)
+        {
+            RequestRedrawFromAnyThread();
+        }
+
+        /// <summary>
+        /// Thread-safe redraw request: on the UI thread it goes straight to the throttled
+        /// <see cref="RequestRedraw"/>; from other threads at most one dispatcher hop is queued
+        /// at a time, so high-frequency streaming cannot flood the dispatcher.
+        /// </summary>
+        private void RequestRedrawFromAnyThread()
+        {
+            if (Dispatcher.CheckAccess())
+            {
+                // Changes made by the renderer itself while painting must not loop into new frames
+                if (!isPainting)
+                {
+                    RequestRedraw();
+                }
+
+                return;
+            }
+
+            if (Interlocked.Exchange(ref crossThreadRedrawQueued, 1) == 1)
+            {
+                return;
+            }
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                Interlocked.Exchange(ref crossThreadRedrawQueued, 0);
+                RequestRedraw();
+            }), DispatcherPriority.Background);
         }
 
         private void InitializeChartIfNeeded()
@@ -341,6 +522,9 @@ namespace FastCharts.Wpf.Controls
 
         private void PaintChart(SKSurface surface, int width, int height)
         {
+            isPainting = true;
+            var canvas = surface.Canvas;
+            var saveCount = canvas.Save();
             try
             {
                 if (Model == null)
@@ -348,7 +532,14 @@ namespace FastCharts.Wpf.Controls
                     return;
                 }
 
-                renderer.Render(Model, surface.Canvas, width, height);
+                // Surfaces are sized in device pixels while mouse input, margins and fonts are in
+                // WPF device-independent units: render in DIPs on a scaled canvas so interactions
+                // line up on high-DPI displays (and output stays crisp).
+                var logicalWidth = surfaceElement != null && surfaceElement.ActualWidth > 0 ? surfaceElement.ActualWidth : width;
+                var logicalHeight = surfaceElement != null && surfaceElement.ActualHeight > 0 ? surfaceElement.ActualHeight : height;
+                canvas.Scale((float)(width / logicalWidth), (float)(height / logicalHeight));
+
+                renderer.Render(Model, canvas, Math.Max(1, (int)Math.Round(logicalWidth)), Math.Max(1, (int)Math.Round(logicalHeight)));
             }
             catch (ArgumentException ex)
             {
@@ -362,6 +553,11 @@ namespace FastCharts.Wpf.Controls
             {
                 System.Diagnostics.Debug.WriteLine($"Unexpected chart rendering error: {ex}");
             }
+            finally
+            {
+                canvas.RestoreToCount(saveCount);
+                isPainting = false;
+            }
         }
 
         private void OnSkiaMouseDown(object sender, MouseButtonEventArgs e)
@@ -371,6 +567,7 @@ namespace FastCharts.Wpf.Controls
                 return;
             }
 
+            surfaceElement.Focus(); // keyboard shortcuts (Escape) apply to the clicked chart
             var pos = e.GetPosition(surfaceElement);
             var ev = new InteractionEvent(
                 PointerEventType.Down,
@@ -416,7 +613,8 @@ namespace FastCharts.Wpf.Controls
 
             var handled = RouteToBehaviors(ev);
             userChangedView |= handled;
-            Mouse.OverrideCursor = (Model?.InteractionState?.IsPanning == true) ? Cursors.Hand : null;
+            // Element cursor, not the application-wide Mouse.OverrideCursor the host may rely on
+            surfaceElement.Cursor = (Model?.InteractionState?.IsPanning == true) ? Cursors.Hand : null;
             RequestRedraw();
         }
 
@@ -451,7 +649,7 @@ namespace FastCharts.Wpf.Controls
 
             if (Model?.InteractionState?.IsPanning != true)
             {
-                Mouse.OverrideCursor = null;
+                surfaceElement.Cursor = null;
             }
         }
 
@@ -474,9 +672,9 @@ namespace FastCharts.Wpf.Controls
                 {
                     RequestRedraw();
                 }
-            }
 
-            Mouse.OverrideCursor = null;
+                surfaceElement.Cursor = null;
+            }
         }
 
         private void OnSkiaMouseWheel(object sender, MouseWheelEventArgs e)
@@ -508,6 +706,12 @@ namespace FastCharts.Wpf.Controls
 
         private void OnSkiaKeyDown(object sender, KeyEventArgs e)
         {
+            // Raised by the surface, then bubbled to the control: handle it only once
+            if (e.Handled)
+            {
+                return;
+            }
+
             if (e.Key == Key.Escape && Model?.InteractionState != null && Model.InteractionState.TooltipLocked)
             {
                 Model.InteractionState.TooltipLocked = false;
@@ -516,6 +720,29 @@ namespace FastCharts.Wpf.Controls
                 Model.InteractionState.TooltipText = null;
                 RequestRedraw();
                 e.Handled = true;
+                return;
+            }
+
+            // Keyboard shortcuts implemented by behaviors (e.g. F3/F4/F5 for MetricsOverlayBehavior)
+            if (surfaceElement != null)
+            {
+                var key = e.Key == Key.System ? e.SystemKey : e.Key;
+                var ev = new InteractionEvent(
+                    PointerEventType.KeyDown,
+                    PointerButton.None,
+                    BuildModifiers(),
+                    0,
+                    0,
+                    0,
+                    surfaceElement.ActualWidth,
+                    surfaceElement.ActualHeight,
+                    key.ToString());
+
+                if (RouteToBehaviors(ev))
+                {
+                    RequestRedraw();
+                    e.Handled = true;
+                }
             }
         }
 
@@ -562,7 +789,7 @@ namespace FastCharts.Wpf.Controls
                 {
                     redrawScheduled = false;
                     lastRedrawUtc = DateTime.UtcNow;
-                    surfaceElement.InvalidateVisual();
+                    surfaceElement?.InvalidateVisual(); // surface may have been rebuilt meanwhile
                 }), DispatcherPriority.Background);
             }
             else if (!redrawScheduled)
@@ -629,17 +856,16 @@ namespace FastCharts.Wpf.Controls
                 return;
             }
 
-            var m = Model.PlotMargins;
-            var plotW = surfaceElement.ActualWidth - (m.Left + m.Right);
-            var plotH = surfaceElement.ActualHeight - (m.Top + m.Bottom);
-
-            if (plotW <= 0 || plotH <= 0)
+            var area = PlotLayout.Compute(Model, surfaceElement.ActualWidth, surfaceElement.ActualHeight);
+            if (area.IsEmpty)
             {
                 return;
             }
 
-            var px = ClampValue(pixelX - m.Left, 0, plotW);
-            var py = ClampValue(pixelY - m.Top, 0, plotH);
+            var plotW = area.Width;
+            var plotH = area.Height;
+            var px = ClampValue(pixelX - area.Left, 0, plotW);
+            var py = ClampValue(pixelY - area.Top, 0, plotH);
             var xr = Model.XAxis.VisibleRange;
             var yr = Model.YAxis.VisibleRange;
 
@@ -648,8 +874,9 @@ namespace FastCharts.Wpf.Controls
                 return;
             }
 
-            var x = xr.Min + (px / plotW) * (xr.Max - xr.Min);
-            var y = yr.Max - (py / plotH) * (yr.Max - yr.Min);
+            // Same transform as the renderer (logarithmic axes included)
+            var x = AxisCoordinates.FromNormalized(Model.XAxis, px / plotW);
+            var y = AxisCoordinates.FromNormalized(Model.YAxis, 1 - (py / plotH));
 
             if (!ValidationHelper.AreValidCoordinates(x, y))
             {

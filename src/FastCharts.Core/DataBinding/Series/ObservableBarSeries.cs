@@ -145,11 +145,16 @@ namespace FastCharts.Core.DataBinding.Series
 
         private void ApplyPoints(IReadOnlyList<PointD> points)
         {
-            Data.Clear();
-            for (var i = 0; i < points.Count; i++)
+            lock (SyncRoot)
             {
-                Data.Add(new BarPoint(points[i].X, points[i].Y));
+                Data.Clear();
+                for (var i = 0; i < points.Count; i++)
+                {
+                    Data.Add(new BarPoint(points[i].X, points[i].Y));
+                }
             }
+
+            NotifyChanged();
         }
 
         /// <summary>

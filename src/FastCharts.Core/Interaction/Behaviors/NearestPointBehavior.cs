@@ -1,4 +1,7 @@
 using System;
+using FastCharts.Core.Abstractions;
+using FastCharts.Core.Axes;
+using FastCharts.Core.Helpers;
 using FastCharts.Core.Series;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -31,70 +34,66 @@ public sealed class NearestPointBehavior : IBehavior
         model.InteractionState ??= new InteractionState();
         var st = model.InteractionState;
 
-        var m = model.PlotMargins;
-        var left = m.Left;
-        var top = m.Top;
-        var right = m.Right;
-        var bottom = m.Bottom;
-        var plotW = Math.Max(0, ev.SurfaceWidth - (left + right));
-        var plotH = Math.Max(0, ev.SurfaceHeight - (top + bottom));
-
-        if (plotW <= 0 || plotH <= 0)
+        var area = PlotLayout.Compute(model, ev.SurfaceWidth, ev.SurfaceHeight);
+        if (area.IsEmpty || model.XAxis.VisibleRange.Size <= 0)
         {
             st.ShowNearest = false;
             return false;
         }
 
-        var xr = model.XAxis.VisibleRange;
-        var yr = model.YAxis.VisibleRange;
-        var spanX = xr.Max - xr.Min;
-        var spanY = yr.Max - yr.Min;
+        var plot = new PlotProjection(area.Left, area.Top, area.Width, area.Height, ev.PixelX, ev.PixelY);
+        var best = new NearestCandidate();
 
-        if (spanX <= 0 || spanY <= 0)
-        {
-            st.ShowNearest = false;
-            return false;
-        }
-
-        var cx = ev.PixelX;
-        var cy = ev.PixelY;
-        var bestD2 = double.PositiveInfinity;
-        double bestX = 0;
-        double bestY = 0;
+        // Only points within MaxPixelDistance horizontally can match: on X-sorted line series
+        // this window is found by binary search instead of scanning every point.
+        var windowMinX = AxisCoordinates.FromNormalized(model.XAxis, (ev.PixelX - MaxPixelDistance - area.Left) / area.Width);
+        var windowMaxX = AxisCoordinates.FromNormalized(model.XAxis, (ev.PixelX + MaxPixelDistance - area.Left) / area.Width);
 
         foreach (var s in model.Series)
         {
-            switch (s)
+            // Hidden series (e.g. toggled off in the legend) must not be snapped to
+            if (!s.IsVisible || s.IsEmpty)
             {
-                case LineSeries ls:
-                    ProcessLineSeries(ls, xr, yr, spanX, spanY, left, top, plotW, plotH, cx, cy, ref bestD2, ref bestX, ref bestY);
-                    break;
-                case ScatterSeries ss:
-                    ProcessScatterSeries(ss, xr, yr, spanX, spanY, left, top, plotW, plotH, cx, cy, ref bestD2, ref bestX, ref bestY);
-                    break;
-                case BandSeries bs:
-                    ProcessBandSeries(bs, xr, yr, spanX, spanY, left, top, plotW, plotH, cx, cy, ref bestD2, ref bestX, ref bestY);
-                    break;
-                default:
-                    break;
+                continue;
+            }
+
+            var useSecondary = s.YAxisIndex == 1 && model.YAxisSecondary != null;
+            var yAxis = useSecondary ? model.YAxisSecondary! : model.YAxis;
+            if (yAxis.VisibleRange.Size <= 0)
+            {
+                continue;
+            }
+
+            var axisIndex = useSecondary ? 1 : 0;
+            lock (s.SyncRoot)
+            {
+                switch (s)
+                {
+                    case LineSeries ls:
+                        ProcessLineSeries(ls, model.XAxis, yAxis, plot, axisIndex, windowMinX, windowMaxX, ref best);
+                        break;
+                    case ScatterSeries ss:
+                        foreach (var p in ss.Data)
+                        {
+                            best.Consider(plot.DistanceSquared(model.XAxis, yAxis, p.X, p.Y), p.X, p.Y, axisIndex);
+                        }
+
+                        break;
+                    case BandSeries bs:
+                        ProcessBandSeries(bs, model.XAxis, yAxis, plot, axisIndex, ref best);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
-        if (double.IsInfinity(bestD2))
-        {
-            if (st.ShowNearest)
-            {
-                st.ShowNearest = false;
-                return true;
-            }
-            return false;
-        }
-
-        if (bestD2 <= (MaxPixelDistance * MaxPixelDistance))
+        if (best.Found && best.DistanceSquared <= (MaxPixelDistance * MaxPixelDistance))
         {
             st.ShowNearest = true;
-            st.NearestDataX = bestX;
-            st.NearestDataY = bestY;
+            st.NearestDataX = best.X;
+            st.NearestDataY = best.Y;
+            st.NearestYAxisIndex = best.AxisIndex;
             return true;
         }
 
@@ -107,92 +106,57 @@ public sealed class NearestPointBehavior : IBehavior
         return false;
     }
 
-    private static void ProcessLineSeries(LineSeries ls, Primitives.FRange xr, Primitives.FRange yr,
-        double spanX, double spanY, double left, double top, double plotW, double plotH,
-        double cx, double cy, ref double bestD2, ref double bestX, ref double bestY)
+    private static void ProcessLineSeries(LineSeries ls, IAxis<double> xAxis, IAxis<double> yAxis, PlotProjection plot, int axisIndex, double windowMinX, double windowMaxX, ref NearestCandidate best)
     {
-        foreach (var p in ls.Data)
+        var data = ls.Data;
+        var start = 0;
+        var end = data.Count;
+        if (ls.TryGetIndexRange(Math.Min(windowMinX, windowMaxX), Math.Max(windowMinX, windowMaxX), out var first, out var last))
         {
-            ProcessPoint(p.X, p.Y, xr, yr, spanX, spanY, left, top, plotW, plotH, cx, cy, ref bestD2, ref bestX, ref bestY);
+            start = first;
+            end = last;
+        }
+
+        for (var i = start; i < end; i++)
+        {
+            var p = data[i];
+            best.Consider(plot.DistanceSquared(xAxis, yAxis, p.X, p.Y), p.X, p.Y, axisIndex);
         }
     }
 
-    private static void ProcessScatterSeries(ScatterSeries ss, Primitives.FRange xr, Primitives.FRange yr,
-        double spanX, double spanY, double left, double top, double plotW, double plotH,
-        double cx, double cy, ref double bestD2, ref double bestX, ref double bestY)
-    {
-        foreach (var p in ss.Data)
-        {
-            ProcessPoint(p.X, p.Y, xr, yr, spanX, spanY, left, top, plotW, plotH, cx, cy, ref bestD2, ref bestX, ref bestY);
-        }
-    }
-
-    private void ProcessBandSeries(BandSeries bs, Primitives.FRange xr, Primitives.FRange yr,
-        double spanX, double spanY, double left, double top, double plotW, double plotH,
-        double cx, double cy, ref double bestD2, ref double bestX, ref double bestY)
+    private void ProcessBandSeries(BandSeries bs, IAxis<double> xAxis, IAxis<double> yAxis, PlotProjection plot, int axisIndex, ref NearestCandidate best)
     {
         foreach (var p in bs.Data)
         {
-            var tX = Math.Max(0, Math.Min(1, (p.X - xr.Min) / spanX));
-            var px = left + (tX * plotW);
-
-            var tYh = Math.Max(0, Math.Min(1, (p.YHigh - yr.Min) / spanY));
-            var pyh = top + ((1 - tYh) * plotH);
-
-            var tYl = Math.Max(0, Math.Min(1, (p.YLow - yr.Min) / spanY));
-            var pyl = top + ((1 - tYl) * plotH);
+            if (!plot.TryProject(xAxis, yAxis, p.X, p.YHigh, out var px, out var pyh) ||
+                !plot.TryProject(xAxis, yAxis, p.X, p.YLow, out _, out var pyl))
+            {
+                continue;
+            }
 
             var minY = Math.Min(pyh, pyl);
             var maxY = Math.Max(pyh, pyl);
-            var dxAbs = Math.Abs(px - cx);
+            var dxAbs = Math.Abs(px - plot.CursorX);
 
-            if ((cy >= minY) && (cy <= maxY) && (dxAbs <= (MaxPixelDistance * 1.5)))
+            if ((plot.CursorY >= minY) && (plot.CursorY <= maxY) && (dxAbs <= (MaxPixelDistance * 1.5)))
             {
-                var dvh = Math.Abs(pyh - cy);
-                var dvl = Math.Abs(pyl - cy);
-                var d2edge = Math.Min(dvh * dvh, dvl * dvl);
-
-                if (d2edge < bestD2)
+                // Cursor inside the band: snap to the closest edge
+                var dvh = Math.Abs(pyh - plot.CursorY);
+                var dvl = Math.Abs(pyl - plot.CursorY);
+                if (dvh < dvl)
                 {
-                    bestD2 = d2edge;
-                    if (dvh < dvl)
-                    {
-                        bestX = p.X;
-                        bestY = p.YHigh;
-                    }
-                    else
-                    {
-                        bestX = p.X;
-                        bestY = p.YLow;
-                    }
+                    best.Consider(dvh * dvh, p.X, p.YHigh, axisIndex);
+                }
+                else
+                {
+                    best.Consider(dvl * dvl, p.X, p.YLow, axisIndex);
                 }
             }
             else
             {
-                // Check both high and low points
-                ProcessPoint(p.X, p.YHigh, xr, yr, spanX, spanY, left, top, plotW, plotH, cx, cy, ref bestD2, ref bestX, ref bestY);
-                ProcessPoint(p.X, p.YLow, xr, yr, spanX, spanY, left, top, plotW, plotH, cx, cy, ref bestD2, ref bestX, ref bestY);
+                best.Consider(plot.DistanceSquared(xAxis, yAxis, p.X, p.YHigh), p.X, p.YHigh, axisIndex);
+                best.Consider(plot.DistanceSquared(xAxis, yAxis, p.X, p.YLow), p.X, p.YLow, axisIndex);
             }
-        }
-    }
-
-    private static void ProcessPoint(double dataX, double dataY, Primitives.FRange xr, Primitives.FRange yr,
-        double spanX, double spanY, double left, double top, double plotW, double plotH,
-        double cx, double cy, ref double bestD2, ref double bestX, ref double bestY)
-    {
-        var tX = Math.Max(0, Math.Min(1, (dataX - xr.Min) / spanX));
-        var tY = Math.Max(0, Math.Min(1, (dataY - yr.Min) / spanY));
-        var px = left + (tX * plotW);
-        var py = top + ((1 - tY) * plotH);
-        var dx = px - cx;
-        var dy = py - cy;
-        var d2 = (dx * dx) + (dy * dy);
-
-        if (d2 < bestD2)
-        {
-            bestD2 = d2;
-            bestX = dataX;
-            bestY = dataY;
         }
     }
 }

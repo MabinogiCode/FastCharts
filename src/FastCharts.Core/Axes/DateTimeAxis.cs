@@ -41,4 +41,29 @@ public sealed class DateTimeAxis : AxisBase, IAxis<double>
         }
         VisibleRange = new FRange(minOADate, maxOADate);
     }
+
+    /// <summary>
+    /// Converts an OLE Automation date (the X unit of date axes) to a <see cref="DateTime"/>,
+    /// returning false instead of throwing for values outside the supported range — which a
+    /// date axis reaches when zoomed out far beyond year 1 or 9999.
+    /// </summary>
+    public static bool TryFromOADate(double oaDate, out DateTime result)
+    {
+        if (double.IsNaN(oaDate) || oaDate <= -657435.0 || oaDate >= 2958466.0)
+        {
+            result = default;
+            return false;
+        }
+
+        try
+        {
+            result = DateTime.FromOADate(oaDate);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            result = default;
+            return false;
+        }
+    }
 }

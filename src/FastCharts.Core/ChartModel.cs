@@ -26,6 +26,7 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     private readonly IInteractionService _interactionService;
     private readonly ILegendSyncService _legendSyncService;
     private readonly IAxisManagementService _axisManagementService;
+    private readonly List<SeriesBase> _observedSeries = new List<SeriesBase>();
 
     private ITheme _theme = new LightTheme();
     private IAxis<double> _xAxis;
@@ -67,7 +68,8 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
 
         _xAxis = new NumericAxis();
         _yAxis = new NumericAxis();
-        Viewport = new Interactivity.Viewport(new FRange(0, 1), new FRange(0, 1));
+        // The axes' VisibleRange is the single source of truth; the viewport reads and writes it.
+        Viewport = new Interactivity.AxisViewport(() => XAxis, () => YAxis, () => YAxisSecondary);
         Series = new ObservableCollection<SeriesBase>();
         _axesList = new List<AxisBase> { (AxisBase)_xAxis, (AxisBase)_yAxis };
         _axesView = new ReadOnlyCollection<AxisBase>(_axesList);
@@ -105,6 +107,23 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     /// </summary>
     public ObservableCollection<IAnnotation> Annotations { get; } = new ObservableCollection<IAnnotation>();
 
+    /// <summary>
+    /// Raised when the chart must be redrawn although no model property changed: a series'
+    /// data was mutated (see <see cref="SeriesBase.Changed"/>) or <see cref="Invalidate"/> was
+    /// called. Hosts such as the WPF FastChart control redraw on it. May be raised from a
+    /// background thread when series are fed from one.
+    /// </summary>
+    public event EventHandler? Invalidated;
+
+    /// <summary>
+    /// Requests a redraw from hosting controls, e.g. after mutating series data directly.
+    /// MVVM-friendly: view models can refresh the view without referencing it.
+    /// </summary>
+    public void Invalidate()
+    {
+        Invalidated?.Invoke(this, EventArgs.Empty);
+    }
+
     private void OnSeriesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
         if (_disposed)
@@ -113,6 +132,35 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
         }
 
         _legendSyncService.SyncLegendWithSeries(Legend, Series);
+        ObserveSeries();
+    }
+
+    /// <summary>
+    /// Re-subscribes to the Changed event of the current series (handles add/remove/reset alike).
+    /// </summary>
+    private void ObserveSeries()
+    {
+        UnobserveSeries();
+        foreach (var series in Series)
+        {
+            series.Changed += OnSeriesChanged;
+            _observedSeries.Add(series);
+        }
+    }
+
+    private void UnobserveSeries()
+    {
+        foreach (var series in _observedSeries)
+        {
+            series.Changed -= OnSeriesChanged;
+        }
+
+        _observedSeries.Clear();
+    }
+
+    private void OnSeriesChanged(object? sender, EventArgs e)
+    {
+        Invalidate();
     }
 
     /// <summary>
@@ -120,7 +168,17 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     /// </summary>
     public void EnsureSecondaryYAxis()
     {
-        YAxisSecondary = _axisManagementService.EnsureSecondaryYAxis(YAxisSecondary, _axesList);
+        if (YAxisSecondary != null)
+        {
+            return;
+        }
+
+        var secondary = _axisManagementService.EnsureSecondaryYAxis(YAxisSecondary, _axesList);
+
+        // Until series are fitted on it, a new secondary axis mirrors the primary one
+        secondary.DataRange = YAxis.DataRange;
+        secondary.VisibleRange = YAxis.VisibleRange;
+        YAxisSecondary = secondary;
     }
 
     /// <summary>
@@ -451,6 +509,12 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
         }
 
         Viewport.SetVisible(XAxis.DataRange, YAxis.DataRange);
+
+        // The secondary axis fits its own series; without any, it mirrors the primary axis
+        if (YAxisSecondary != null)
+        {
+            YAxisSecondary.VisibleRange = result.HasSecondary ? YAxisSecondary.DataRange : YAxis.VisibleRange;
+        }
     }
 
     public void Dispose()
@@ -461,6 +525,7 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
         }
 
         Series.CollectionChanged -= OnSeriesCollectionChanged;
+        UnobserveSeries();
 
         foreach (var axis in _axesList.OfType<IDisposable>())
         {

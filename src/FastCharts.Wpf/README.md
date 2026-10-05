@@ -10,7 +10,7 @@ It is designed to efficiently render large datasets in real time, with smooth vi
 - 🎨 Seamless **WPF integration** with MVVM support.
 - ⚡ Built-in **downsampling** for real-time data scenarios.
 - 🛠️ Extensible: custom styles, themes, and behaviors.
-- 🔍 Multi-target support: **.NET Framework 4.8**, **.NET 6**, **.NET 8**.
+- 🔍 Multi-target support: **.NET Framework 4.8**, **.NET 8**.
 
 ## 📦 Installation
 *(To be updated once published on NuGet)*  

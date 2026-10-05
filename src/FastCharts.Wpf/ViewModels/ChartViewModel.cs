@@ -8,7 +8,7 @@ using FastCharts.Core.Services;
 namespace FastCharts.Wpf.ViewModels
 {
     /// <summary>
-    /// ViewModel pour le contrôle FastChart, séparant la logique métier de la présentation
+    /// ViewModel pour le contrÃ´le FastChart, sÃ©parant la logique mÃ©tier de la prÃ©sentation
     /// Provides WPF-specific collections and bindings for annotations
     /// </summary>
     public class ChartViewModel : ReactiveObject
@@ -56,7 +56,7 @@ namespace FastCharts.Wpf.ViewModels
                 return;
             }
 
-            // Configuration des comportements par défaut via le service
+            // Configuration des comportements par dÃ©faut via le service
             _behaviorManager.ConfigureDefaultBehaviors(Model.Behaviors);
 
             Model.AutoFitDataRange();

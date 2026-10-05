@@ -11,6 +11,8 @@ namespace FastCharts.Core.Series
     /// Optimized for real-time applications with thousands of points per second.
     /// Data is stored in the base <see cref="LineSeries"/> list, so rendering,
     /// resampling and range calculation all see the streamed points.
+    /// Appending is thread-safe with respect to rendering (see <see cref="SeriesBase.SyncRoot"/>);
+    /// events are raised after the lock is released, on the appending thread.
     /// </summary>
     public class StreamingLineSeries : LineSeries, IStreamingSeries
     {
@@ -108,17 +110,20 @@ namespace FastCharts.Core.Series
         {
             get
             {
-                if (DataCore.Count == 0)
-                {
-                    return null;
-                }
-
                 var minX = double.PositiveInfinity;
-                for (var i = 0; i < DataCore.Count; i++)
+                lock (SyncRoot)
                 {
-                    if (DataCore[i].X < minX)
+                    if (DataCore.Count == 0)
                     {
-                        minX = DataCore[i].X;
+                        return null;
+                    }
+
+                    for (var i = 0; i < DataCore.Count; i++)
+                    {
+                        if (DataCore[i].X < minX)
+                        {
+                            minX = DataCore[i].X;
+                        }
                     }
                 }
 
@@ -143,15 +148,22 @@ namespace FastCharts.Core.Series
         /// <param name="point">Point to append</param>
         public void AppendPoint(PointD point)
         {
-            DataCore.Add(point);
-
-            var time = FromOADateSafe(point.X);
-            if (time.HasValue)
+            int count;
+            int removed;
+            lock (SyncRoot)
             {
-                _referenceTime = time.Value;
+                DataCore.Add(point);
+
+                var time = FromOADateSafe(point.X);
+                if (time.HasValue)
+                {
+                    _referenceTime = time.Value;
+                }
+
+                removed = CompleteAppendLocked(addedCount: 1, out count);
             }
 
-            FinishAppend(addedCount: 1);
+            RaiseAppended(count, addedCount: 1, removed);
         }
 
         /// <summary>
@@ -165,47 +177,64 @@ namespace FastCharts.Core.Series
                 return;
             }
 
-            var added = 0;
-            var maxX = double.NegativeInfinity;
-
-            foreach (var point in points)
-            {
-                DataCore.Add(point);
-                added++;
-                if (point.X > maxX)
-                {
-                    maxX = point.X;
-                }
-            }
-
-            if (added == 0)
+            // Materialize lazy sequences before taking the lock
+            var batch = points as IList<PointD> ?? new List<PointD>(points);
+            if (batch.Count == 0)
             {
                 return;
             }
 
-            var latestTime = FromOADateSafe(maxX);
-            if (latestTime.HasValue)
+            var maxX = double.NegativeInfinity;
+            for (var i = 0; i < batch.Count; i++)
             {
-                _referenceTime = latestTime.Value;
+                if (batch[i].X > maxX)
+                {
+                    maxX = batch[i].X;
+                }
             }
 
-            FinishAppend(added);
+            int count;
+            int removed;
+            lock (SyncRoot)
+            {
+                DataCore.AddRange(batch);
+
+                var latestTime = FromOADateSafe(maxX);
+                if (latestTime.HasValue)
+                {
+                    _referenceTime = latestTime.Value;
+                }
+
+                removed = CompleteAppendLocked(batch.Count, out count);
+            }
+
+            RaiseAppended(count, batch.Count, removed);
         }
 
-        private void FinishAppend(int addedCount)
+        /// <summary>
+        /// Post-append bookkeeping under <see cref="SeriesBase.SyncRoot"/>: ordering tracking,
+        /// window trimming and render cache invalidation. Returns the number of trimmed points.
+        /// </summary>
+        private int CompleteAppendLocked(int addedCount, out int count)
         {
-            // Apply window limits
+            TrackAppendedPoints(DataCore.Count - addedCount);
             var removedCount = TrimToWindowInternal();
+            InvalidateRenderCache();
+            count = DataCore.Count;
+            return removedCount;
+        }
 
-            // Invalidate render cache
-            InvalidateCache();
-
-            // Raise events
-            PointsAdded?.Invoke(this, new StreamingDataEventArgs(DataCore.Count, addedCount, 0));
+        /// <summary>
+        /// Raises change notifications once the lock is released (handlers may marshal to the UI).
+        /// </summary>
+        private void RaiseAppended(int count, int addedCount, int removedCount)
+        {
+            NotifyChanged();
+            PointsAdded?.Invoke(this, new StreamingDataEventArgs(count, addedCount, 0));
 
             if (removedCount > 0)
             {
-                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(DataCore.Count, 0, removedCount));
+                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(count, 0, removedCount));
             }
         }
 
@@ -214,17 +243,29 @@ namespace FastCharts.Core.Series
         /// </summary>
         public void TrimToWindow()
         {
-            var removedCount = TrimToWindowInternal();
+            int removedCount;
+            int count;
+            lock (SyncRoot)
+            {
+                removedCount = TrimToWindowInternal();
+                if (removedCount > 0)
+                {
+                    InvalidateRenderCache();
+                }
+
+                count = DataCore.Count;
+            }
 
             if (removedCount > 0)
             {
-                InvalidateCache();
-                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(DataCore.Count, 0, removedCount));
+                NotifyChanged();
+                PointsRemoved?.Invoke(this, new StreamingDataEventArgs(count, 0, removedCount));
             }
         }
 
         /// <summary>
-        /// Internal method for trimming data with return count
+        /// Internal method for trimming data with return count. Call under <see cref="SeriesBase.SyncRoot"/>;
+        /// removals keep the X ordering intact.
         /// </summary>
         private int TrimToWindowInternal()
         {
@@ -271,26 +312,33 @@ namespace FastCharts.Core.Series
                 return;
             }
 
-            var added = 0;
+            var batch = new List<PointD>();
             DateTime latest = default;
 
             foreach (var (timestamp, value) in values)
             {
-                DataCore.Add(new PointD(timestamp.ToOADate(), value));
-                added++;
+                batch.Add(new PointD(timestamp.ToOADate(), value));
                 if (timestamp > latest)
                 {
                     latest = timestamp;
                 }
             }
 
-            if (added == 0)
+            if (batch.Count == 0)
             {
                 return;
             }
 
-            _referenceTime = latest;
-            FinishAppend(added);
+            int count;
+            int removed;
+            lock (SyncRoot)
+            {
+                DataCore.AddRange(batch);
+                _referenceTime = latest;
+                removed = CompleteAppendLocked(batch.Count, out count);
+            }
+
+            RaiseAppended(count, batch.Count, removed);
         }
 
         /// <summary>

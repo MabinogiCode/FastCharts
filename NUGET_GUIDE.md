@@ -182,14 +182,17 @@ dotnet add package FastCharts.Rendering.Skia
 
 | Framework | Core | Rendering.Skia | WPF |
 |-----------|:----:|:-------------:|:---:|
-| .NET Standard 2.0 | ? | ? | ? |
-| .NET Framework 4.8 | ? | ? | ? |
-| .NET 6 | ? | ? | ? |
-| .NET 8 | ? | ? | ? |
-| **Platforms** |
-| Windows | ? | ? | ? |
-| macOS | ? | ? | ? |
-| Linux | ? | ? | ? |
+| .NET Standard 2.0 | ✅ | ✅ | ❌ |
+| .NET Framework 4.8 | ✅ | ✅ | ✅ |
+| .NET 6 | ✅ | ✅ | ❌ |
+| .NET 8 | ✅ | ✅ | ✅ |
+| **Platforms** | | | |
+| Windows | ✅ | ✅ | ✅ |
+| macOS | ✅ | ✅ | ❌ |
+| Linux | ✅ | ✅ | ❌ |
+
+Core and Rendering.Skia ship `netstandard2.0` and `net8.0` assets (usable from .NET Framework 4.8
+and .NET 6 through .NET Standard 2.0); FastCharts.Wpf targets `net48` and `net8.0-windows`.
 
 ## ?? Links
 

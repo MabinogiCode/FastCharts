@@ -1,49 +1,14 @@
 using System;
 using System.Collections.Generic;
 using FastCharts.Core.Series;
+using FastCharts.Rendering.Skia.Helpers;
 using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers;
 
 internal sealed class LineLayer : ISeriesSubLayer
 {
-    /// <summary>
-    /// Cached geometry per series (T-PERF-CACHE): projected pixels and the built SKPath
-    /// are reused across frames while the data version, visible ranges, plot rect and
-    /// smoothing mode are unchanged — the common case during tooltip/crosshair redraws.
-    /// Entries for series no longer rendered are swept and disposed each frame.
-    /// </summary>
-    private sealed class CachedGeometry : IDisposable
-    {
-        public SKPath Path { get; } = new SKPath();
-
-        public SKPoint[] Pixels { get; set; } = Array.Empty<SKPoint>();
-
-        public int DataVersion { get; set; } = -1;
-
-        public double XMin { get; set; }
-
-        public double XMax { get; set; }
-
-        public double YMin { get; set; }
-
-        public double YMax { get; set; }
-
-        public SKRect PlotRect { get; set; }
-
-        public LineSmoothing Smoothing { get; set; }
-
-        public int YAxisIndex { get; set; }
-
-        public bool Seen { get; set; }
-
-        public void Dispose()
-        {
-            Path.Dispose();
-        }
-    }
-
-    private readonly Dictionary<LineSeries, CachedGeometry> _cache = new();
+    private readonly Dictionary<LineSeries, LineGeometryCacheEntry> _cache = new();
     private readonly List<LineSeries> _sweepList = new();
 
     public void Render(RenderContext ctx)
@@ -51,8 +16,6 @@ internal sealed class LineLayer : ISeriesSubLayer
         var model = ctx.Model;
         var pr = ctx.PlotRect;
         var palette = model.Theme.SeriesPalette;
-        var paletteCount = palette?.Count ?? 0;
-        var lineIndex = 0;
 
         foreach (var s in model.Series)
         {
@@ -69,10 +32,17 @@ internal sealed class LineLayer : ISeriesSubLayer
                 continue;
             }
 
-            var c = (paletteCount > 0 && lineIndex < paletteCount && palette != null) ? palette[lineIndex] : model.Theme.PrimarySeriesColor;
+            var c = SeriesColorResolver.ResolveSeriesColor(model, ls, palette);
             using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)ls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
 
-            var geometry = GetOrBuildGeometry(ctx, ls, pr);
+            LineGeometryCacheEntry geometry;
+            lock (ls.SyncRoot)
+            {
+                // Data may be appended from another thread: project it under the series lock.
+                // Drawing the resulting cached path below does not touch the data.
+                geometry = GetOrBuildGeometry(ctx, ls, pr);
+            }
+
             geometry.Seen = true;
 
             ctx.Canvas.Save();
@@ -85,13 +55,12 @@ internal sealed class LineLayer : ISeriesSubLayer
             }
 
             ctx.Canvas.Restore();
-            lineIndex++;
         }
 
         SweepUnseen();
     }
 
-    private CachedGeometry GetOrBuildGeometry(RenderContext ctx, LineSeries ls, SKRect pr)
+    private LineGeometryCacheEntry GetOrBuildGeometry(RenderContext ctx, LineSeries ls, SKRect pr)
     {
         var model = ctx.Model;
         var yAxis = (ls.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
@@ -100,7 +69,7 @@ internal sealed class LineLayer : ISeriesSubLayer
 
         if (!_cache.TryGetValue(ls, out var geometry))
         {
-            geometry = new CachedGeometry();
+            geometry = new LineGeometryCacheEntry();
             _cache[ls] = geometry;
         }
 
@@ -108,6 +77,8 @@ internal sealed class LineLayer : ISeriesSubLayer
             geometry.DataVersion == ls.DataVersion &&
             geometry.Smoothing == ls.Smoothing &&
             geometry.YAxisIndex == ls.YAxisIndex &&
+            ReferenceEquals(geometry.XAxis, model.XAxis) &&
+            ReferenceEquals(geometry.YAxis, yAxis) &&
             geometry.PlotRect == pr &&
             AreClose(geometry.XMin, xr.Min) && AreClose(geometry.XMax, xr.Max) &&
             AreClose(geometry.YMin, yr.Min) && AreClose(geometry.YMax, yr.Max);
@@ -117,9 +88,10 @@ internal sealed class LineLayer : ISeriesSubLayer
             return geometry;
         }
 
-        // Rebuild: project data points to pixels once; reused for path + markers
+        // Rebuild: project data points to pixels once; reused for path + markers.
+        // Only the visible X window is decimated, so zooming in reveals the full detail.
         var plotPixelWidth = (int)pr.Width;
-        var renderData = ls.GetRenderData(plotPixelWidth);
+        var renderData = ls.GetRenderData(plotPixelWidth, xr);
 
         var pixels = geometry.Pixels.Length == renderData.Count ? geometry.Pixels : new SKPoint[renderData.Count];
         for (var i = 0; i < renderData.Count; i++)
@@ -143,6 +115,8 @@ internal sealed class LineLayer : ISeriesSubLayer
         geometry.DataVersion = ls.DataVersion;
         geometry.Smoothing = ls.Smoothing;
         geometry.YAxisIndex = ls.YAxisIndex;
+        geometry.XAxis = model.XAxis;
+        geometry.YAxis = yAxis;
         geometry.PlotRect = pr;
         geometry.XMin = xr.Min;
         geometry.XMax = xr.Max;

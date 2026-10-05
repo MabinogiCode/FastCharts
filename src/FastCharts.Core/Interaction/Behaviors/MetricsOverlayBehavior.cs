@@ -152,14 +152,15 @@ namespace FastCharts.Core.Interaction.Behaviors
                 var originalCount = GetSeriesPointCount(series);
                 totalPoints += originalCount;
 
-                // Check if series uses resampling
+                // Check if series uses resampling: read the stats of the last real render instead
+                // of resampling for an assumed width (which evicted the renderer's cache each frame)
                 if (series is Series.LineSeries lineSeries && lineSeries.EnableAutoResampling)
                 {
-                    var renderData = lineSeries.GetRenderData(800); // Assume 800px viewport
-                    if (renderData.Count < originalCount)
+                    var stats = lineSeries.GetLastResamplingStats();
+                    if (stats.HasValue && stats.Value.ResampledCount < originalCount)
                     {
                         resampledSeries++;
-                        totalResampledPoints += renderData.Count;
+                        totalResampledPoints += stats.Value.ResampledCount;
                     }
                 }
             }
@@ -196,11 +197,11 @@ namespace FastCharts.Core.Interaction.Behaviors
                 _ => "UNKNOWN"
             };
 
-            return $"?? RENDER METRICS\n" +
+            return "RENDER METRICS\n" +
                    $"FPS: {_metrics.CurrentFPS:F1} ({statusText})\n" +
                    $"Frame: {_metrics.LastFrameTimeMs:F1}ms (avg: {_metrics.AverageFrameTimeMs:F1}ms)\n" +
                    $"Points: {_metrics.DataPointCount:N0}" +
-                   $"{(_metrics.IsResampled ? $" ? {(_metrics.DataPointCount * _metrics.ResamplingRatio):F0} (?{(1 - _metrics.ResamplingRatio):P0})" : "")}\n" +
+                   $"{(_metrics.IsResampled ? $" -> {(_metrics.DataPointCount * _metrics.ResamplingRatio):F0} (-{(1 - _metrics.ResamplingRatio):P0})" : "")}\n" +
                    $"Series: {_metrics.SeriesCount}\n" +
                    $"Memory: {_metrics.MemoryUsageFormatted}\n" +
                    $"Uptime: {_metrics.Uptime:hh\\:mm\\:ss}\n" +

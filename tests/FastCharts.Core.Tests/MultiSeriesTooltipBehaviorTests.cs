@@ -57,14 +57,71 @@ namespace FastCharts.Core.Tests
             cross.OnEvent(m, new InteractionEvent(PointerEventType.Move, PointerButton.None, new PointerModifiers(), 200, 100, 0, 300, 200));
             multi.OnEvent(m, new InteractionEvent(PointerEventType.Move, PointerButton.None, new PointerModifiers(), 200, 100, 0, 300, 200));
             var before = st.TooltipSeries.Select(v => (v.Title, v.Y)).ToArray();
-            // Click to lock
+            // Click (press + release without moving) to lock
             multi.OnEvent(m, new InteractionEvent(PointerEventType.Down, PointerButton.Left, new PointerModifiers(), 200, 100, 0, 300, 200));
+            multi.OnEvent(m, new InteractionEvent(PointerEventType.Up, PointerButton.Left, new PointerModifiers(), 200, 100, 0, 300, 200));
             Assert.True(st.TooltipLocked);
             // Move elsewhere with different DataX - should not rebuild
             st.DataX = 0.0;
             multi.OnEvent(m, new InteractionEvent(PointerEventType.Move, PointerButton.None, new PointerModifiers(), 10, 100, 0, 300, 200));
             var after = st.TooltipSeries.Select(v => (v.Title, v.Y)).ToArray();
             Assert.Equal(before, after);
+        }
+    
+        [Fact]
+        public void DragDoesNotToggleLock()
+        {
+            var (m, st) = CreateModel();
+            var multi = new MultiSeriesTooltipBehavior();
+
+            // Left drag = pan: press, move far, release
+            multi.OnEvent(m, new InteractionEvent(PointerEventType.Down, PointerButton.Left, new PointerModifiers(), 100, 100, 0, 300, 200));
+            multi.OnEvent(m, new InteractionEvent(PointerEventType.Move, PointerButton.None, new PointerModifiers(), 160, 120, 0, 300, 200));
+            multi.OnEvent(m, new InteractionEvent(PointerEventType.Up, PointerButton.Left, new PointerModifiers(), 160, 120, 0, 300, 200));
+
+            Assert.False(st.TooltipLocked);
+        }
+
+        [Fact]
+        public void DragBackToPressPointDoesNotToggleLock()
+        {
+            var (m, st) = CreateModel();
+            var multi = new MultiSeriesTooltipBehavior();
+
+            multi.OnEvent(m, new InteractionEvent(PointerEventType.Down, PointerButton.Left, new PointerModifiers(), 100, 100, 0, 300, 200));
+            multi.OnEvent(m, new InteractionEvent(PointerEventType.Move, PointerButton.None, new PointerModifiers(), 180, 100, 0, 300, 200));
+            multi.OnEvent(m, new InteractionEvent(PointerEventType.Up, PointerButton.Left, new PointerModifiers(), 100, 100, 0, 300, 200));
+
+            Assert.False(st.TooltipLocked);
+        }
+
+        [Fact]
+        public void ShiftClickDoesNotToggleLock()
+        {
+            var (m, st) = CreateModel();
+            var multi = new MultiSeriesTooltipBehavior();
+            var shift = new PointerModifiers { Shift = true };
+
+            multi.OnEvent(m, new InteractionEvent(PointerEventType.Down, PointerButton.Left, shift, 100, 100, 0, 300, 200));
+            multi.OnEvent(m, new InteractionEvent(PointerEventType.Up, PointerButton.Left, shift, 100, 100, 0, 300, 200));
+
+            Assert.False(st.TooltipLocked);
+        }
+
+        [Fact]
+        public void SecondClickUnlocks()
+        {
+            var (m, st) = CreateModel();
+            var multi = new MultiSeriesTooltipBehavior();
+
+            for (var i = 0; i < 2; i++)
+            {
+                multi.OnEvent(m, new InteractionEvent(PointerEventType.Down, PointerButton.Left, new PointerModifiers(), 100, 100, 0, 300, 200));
+                multi.OnEvent(m, new InteractionEvent(PointerEventType.Up, PointerButton.Left, new PointerModifiers(), 101, 101, 0, 300, 200));
+            }
+
+            Assert.False(st.TooltipLocked);
+            Assert.Null(st.TooltipAnchorX);
         }
     }
 }

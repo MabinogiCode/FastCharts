@@ -9,7 +9,7 @@ namespace FastCharts.Rendering.Skia.Helpers
         /// <summary>
         /// Default margin extension for secondary Y axis labels
         /// </summary>
-        public const double DefaultSecondaryAxisMargin = 48.0;
+        public const double DefaultSecondaryAxisMargin = FastCharts.Core.Helpers.PlotLayout.SecondaryAxisMinRightMargin;
 
         /// <summary>
         /// Minimum plot dimension to prevent rendering issues
@@ -34,7 +34,7 @@ namespace FastCharts.Rendering.Skia.Helpers
         /// <returns>Effective right margin</returns>
         public static double CalculateEffectiveRightMargin(double baseMargin, bool hasSecondaryYAxis)
         {
-            return hasSecondaryYAxis ? System.Math.Max(baseMargin, DefaultSecondaryAxisMargin) : baseMargin;
+            return FastCharts.Core.Helpers.PlotLayout.EffectiveRightMargin(baseMargin, hasSecondaryYAxis);
         }
 
         /// <summary>

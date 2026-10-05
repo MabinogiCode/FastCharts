@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -25,7 +26,7 @@ namespace FastCharts.Core.DataBinding
         private readonly Subject<int> _refreshRequests = new Subject<int>();
         private readonly List<INotifyPropertyChanged> _observedItems = new List<INotifyPropertyChanged>();
 
-        private IScheduler _observableScheduler = DefaultScheduler.Instance;
+        private IScheduler _observableScheduler;
         private IEnumerable? _itemsSource;
         private string? _xPath;
         private string? _yPath;
@@ -44,6 +45,12 @@ namespace FastCharts.Core.DataBinding
         {
             _applyPoints = applyPoints ?? throw new ArgumentNullException(nameof(applyPoints));
             _getPointCount = getPointCount ?? throw new ArgumentNullException(nameof(getPointCount));
+
+            // Throttled refreshes enumerate the bound collection: deliver them on the creating
+            // thread's context (the UI thread in WPF/WinForms apps) rather than on the thread pool,
+            // where they would race with the UI thread modifying that collection.
+            var context = SynchronizationContext.Current;
+            _observableScheduler = context != null ? new SynchronizationContextScheduler(context) : DefaultScheduler.Instance;
             SetupThrottlePipeline();
         }
 
@@ -53,9 +60,9 @@ namespace FastCharts.Core.DataBinding
         public IPropertyPathResolver PropertyPathResolver { get; set; } = CachedPropertyPathResolver.Instance;
 
         /// <summary>
-        /// Scheduler used for throttled refreshes. Defaults to the platform timer scheduler;
-        /// UI hosts can supply a dispatcher scheduler so refreshes land on the UI thread.
-        /// Only used when <see cref="RefreshThrottle"/> is greater than zero.
+        /// Scheduler used for throttled refreshes. Defaults to the <see cref="SynchronizationContext"/>
+        /// captured when the binder is created (the UI thread when created from UI code), or the
+        /// thread pool when there is none. Only used when <see cref="RefreshThrottle"/> is greater than zero.
         /// </summary>
         public IScheduler ObservableScheduler
         {

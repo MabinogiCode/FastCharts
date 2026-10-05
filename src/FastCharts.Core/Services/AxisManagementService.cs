@@ -147,9 +147,10 @@ namespace FastCharts.Core.Services
             ((AxisBase)xAxis).UpdateScale(0, widthPx);
             ((AxisBase)yAxis).UpdateScale(heightPx, 0);
 
+            // The secondary axis keeps its own visible range (fitted to its series and
+            // moved proportionally by zoom/pan); only its pixel mapping is refreshed here.
             if (yAxisSecondary != null)
             {
-                yAxisSecondary.VisibleRange = yAxis.VisibleRange;
                 ((AxisBase)yAxisSecondary).UpdateScale(heightPx, 0);
             }
         }
@@ -178,6 +179,11 @@ namespace FastCharts.Core.Services
             }
 
             viewport.SetVisible(xAxis.DataRange, yAxis.DataRange);
+
+            if (yAxisSecondary != null)
+            {
+                yAxisSecondary.VisibleRange = defaultRange;
+            }
         }
 
         private static void EnsureSecondaryYAxisInList(IList<AxisBase> axesList)
