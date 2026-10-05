@@ -167,4 +167,41 @@ public class SeriesColorResolverTests
         // Assert
         result.Should().Be(model.Theme.PrimarySeriesColor);
     }
+
+    [Fact]
+    public void ResolveSeriesColorIsNotShiftedByHiddenSeries()
+    {
+        // Arrange
+        var model = new ChartModel();
+        var first = new LineSeries(new[] { new PointD(1, 1) });
+        var second = new LineSeries(new[] { new PointD(2, 2) });
+        model.AddSeries(first);
+        model.AddSeries(second);
+
+        // Act: toggling the first series off (legend click) must not recolor the second
+        first.IsVisible = false;
+        var result = SeriesColorResolver.ResolveSeriesColor(model, second, _testPalette);
+
+        // Assert
+        result.Should().Be(_testPalette[1]);
+    }
+
+    [Fact]
+    public void ResolveSeriesColorUsesOneSequencePerRenderingLayer()
+    {
+        // Arrange: a line and an area are drawn by different layers, each from palette[0]
+        var model = new ChartModel();
+        var line = new LineSeries(new[] { new PointD(1, 1) });
+        var area = new AreaSeries(new[] { new PointD(1, 1) });
+        model.AddSeries(line);
+        model.AddSeries(area);
+
+        // Act
+        var lineColor = SeriesColorResolver.ResolveSeriesColor(model, line, _testPalette);
+        var areaColor = SeriesColorResolver.ResolveSeriesColor(model, area, _testPalette);
+
+        // Assert
+        lineColor.Should().Be(_testPalette[0]);
+        areaColor.Should().Be(_testPalette[0]);
+    }
 }

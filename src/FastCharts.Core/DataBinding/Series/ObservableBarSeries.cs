@@ -150,6 +150,8 @@ namespace FastCharts.Core.DataBinding.Series
             {
                 Data.Add(new BarPoint(points[i].X, points[i].Y));
             }
+
+            NotifyChanged();
         }
 
         /// <summary>

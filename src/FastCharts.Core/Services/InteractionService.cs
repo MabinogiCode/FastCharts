@@ -1,5 +1,6 @@
 using System;
 using FastCharts.Core.Abstractions;
+using FastCharts.Core.Axes;
 using FastCharts.Core.Helpers;
 using FastCharts.Core.Interaction;
 using FastCharts.Core.Primitives;
@@ -63,13 +64,7 @@ namespace FastCharts.Core.Services
             ValidateResultingRanges(newMinX, newMaxX, newMinY, newMaxY);
 
             // Apply zoom to axes
-            xAxis.VisibleRange = new FRange(newMinX, newMaxX);
-            yAxis.VisibleRange = new FRange(newMinY, newMaxY);
-
-            if (yAxisSecondary != null)
-            {
-                yAxisSecondary.VisibleRange = yAxis.VisibleRange;
-            }
+            ApplyRanges(xAxis, yAxis, yAxisSecondary, new FRange(newMinX, newMaxX), new FRange(newMinY, newMaxY));
         }
 
         /// <summary>
@@ -102,13 +97,7 @@ namespace FastCharts.Core.Services
             ValidateResultingRanges(newMinX, newMaxX, newMinY, newMaxY);
 
             // Apply pan to axes
-            xAxis.VisibleRange = new FRange(newMinX, newMaxX);
-            yAxis.VisibleRange = new FRange(newMinY, newMaxY);
-
-            if (yAxisSecondary != null)
-            {
-                yAxisSecondary.VisibleRange = yAxis.VisibleRange;
-            }
+            ApplyRanges(xAxis, yAxis, yAxisSecondary, new FRange(newMinX, newMaxX), new FRange(newMinY, newMaxY));
         }
 
         /// <summary>
@@ -119,6 +108,27 @@ namespace FastCharts.Core.Services
         {
             // This is a placeholder for more complex interaction state management
             // In the future, this could handle state persistence, validation, or events
+        }
+
+        /// <summary>
+        /// Applies the new primary ranges; the secondary Y axis (if any) follows the primary Y
+        /// change proportionally so it keeps its own scale instead of copying the primary range.
+        /// </summary>
+        private static void ApplyRanges(
+            IAxis<double> xAxis,
+            IAxis<double> yAxis,
+            IAxis<double>? yAxisSecondary,
+            FRange newX,
+            FRange newY)
+        {
+            var oldY = yAxis.VisibleRange;
+            xAxis.VisibleRange = newX;
+            yAxis.VisibleRange = newY;
+
+            if (yAxisSecondary != null)
+            {
+                AxisCoordinates.FollowRelative(yAxis, oldY, newY, yAxisSecondary);
+            }
         }
 
         private static void ValidateZoomParameters(double factorX, double factorY, double centerDataX, double centerDataY)

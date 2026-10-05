@@ -1,3 +1,4 @@
+using FastCharts.Core.Axes;
 using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -25,14 +26,10 @@ public sealed class ZoomWheelBehavior : IBehavior
         if (px < 0) { px = 0; } else if (px > plotW) { px = plotW; }
         var py = ev.PixelY - top;
         if (py < 0) { py = 0; } else if (py > plotH) { py = plotH; }
-        var vx = model.XAxis.VisibleRange;
-        var vy = model.YAxis.VisibleRange;
-        var spanX = vx.Max - vx.Min;
-        var spanY = vy.Max - vy.Min;
-        var rx = plotW > 0 ? px / plotW : 0.0;
-        var ry = plotH > 0 ? py / plotH : 0.0;
-        var anchorX = vx.Min + (rx * spanX);
-        var anchorY = vy.Max - (ry * spanY);
+        var rx = px / plotW;
+        var ry = py / plotH;
+        var anchorX = AxisCoordinates.FromNormalized(model.XAxis, rx);
+        var anchorY = AxisCoordinates.FromNormalized(model.YAxis, 1 - ry);
         model.Viewport.Zoom(scale, scale, new PointD(anchorX, anchorY));
         return true;
     }

@@ -1,5 +1,5 @@
-using FastCharts.Core.Primitives;
 using FastCharts.Core.Axes;
+using FastCharts.Core.Primitives;
 
 namespace FastCharts.Core.Interaction.Behaviors;
 
@@ -61,14 +61,11 @@ public sealed class ZoomRectBehavior : IBehavior
                 var px2 = x2 - left; if (px2 < 0) { px2 = 0; } else if (px2 > plotW) { px2 = plotW; }
                 var py1 = y1 - top; if (py1 < 0) { py1 = 0; } else if (py1 > plotH) { py1 = plotH; }
                 var py2 = y2 - top; if (py2 < 0) { py2 = 0; } else if (py2 > plotH) { py2 = plotH; }
-                var xr = model.XAxis.VisibleRange;
-                var yr = model.YAxis.VisibleRange;
-                var dx1 = xr.Min + (px1 / plotW) * (xr.Max - xr.Min);
-                var dx2 = xr.Min + (px2 / plotW) * (xr.Max - xr.Min);
-                var dy1 = yr.Max - (py2 / plotH) * (yr.Max - yr.Min);
-                var dy2 = yr.Max - (py1 / plotH) * (yr.Max - yr.Min);
-                model.XAxis.VisibleRange = new FRange(dx1, dx2);
-                model.YAxis.VisibleRange = new FRange(dy1, dy2);
+                // Go through the viewport so the secondary Y axis follows; normalized
+                // coordinates keep the selection exact on logarithmic axes too.
+                var newX = AxisCoordinates.SubRange(model.XAxis, model.XAxis.VisibleRange, px1 / plotW, px2 / plotW);
+                var newY = AxisCoordinates.SubRange(model.YAxis, model.YAxis.VisibleRange, 1 - (py2 / plotH), 1 - (py1 / plotH));
+                model.Viewport.SetVisible(newX, newY);
                 return true;
             }
             return false;

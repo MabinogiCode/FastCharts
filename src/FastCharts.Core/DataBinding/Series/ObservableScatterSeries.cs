@@ -109,6 +109,8 @@ namespace FastCharts.Core.DataBinding.Series
             {
                 Data.Add(points[i]);
             }
+
+            NotifyChanged();
         }
 
         /// <summary>

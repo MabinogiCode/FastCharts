@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### ✨ **Added — "Analytics" (v1.5, in progress)**
 
 - **Histogram with auto-binning** (P2-HISTOGRAM): `model.AddHistogram(values)` bins raw values into contiguous bars in one line. Bin count is chosen automatically (Sturges' rule) or can be fixed via `binCount`. NaN/infinities are ignored; all-identical values collapse to a single bar. The pure, unit-tested `HistogramBuilder.Build(values, binCount?)` returns a ready-to-add `BarSeries` (bars centered on each bin, width = bin width, Y = count).
+- **Automatic redraw**: `FastChart` now redraws on its own when the model changes — theme/axes/margins, series or annotations added/removed, visible ranges (programmatic zoom, linked charts) and series data. New `SeriesBase.Changed` (raised by `AppendPoint`, `AddPoints`, `ReplacePoints`, bound collections...), `SeriesBase.NotifyChanged()` for direct `Data` edits, `ChartModel.Invalidated` / `ChartModel.Invalidate()` for view models, and `FastChart.Refresh()`. Changes raised from background threads are marshalled to the UI thread (at most one pending dispatch).
+- `AxisCoordinates` (Core): shared data ↔ normalized axis mapping honoring logarithmic axes, used by the renderer and every interaction behavior.
+- `BarSeries.GetAutoWidth()` / `StackedBarSeries.GetAutoWidth()`; `InteractionState.NearestYAxisIndex`.
+
+### 🛠️ **Fixed**
+
+- **Zoom/pan were undone at the next frame**: the model kept the visible window twice (a `Viewport` and each axis' `VisibleRange`) and every render copied the viewport back onto the axes. Shift+drag zoom rectangle, `ChartModel.ZoomAt`/`Pan`, explicit `axis.VisibleRange` / `SetVisibleRange` and `ChartLinkGroup` sync were all reverted by the next render (linked charts could even ping-pong). `ChartModel.Viewport` is now a view over the axes: one source of truth.
+- **Secondary Y axis mirrored the primary one**: series on `YAxisIndex = 1` were drawn with the primary range and the right axis showed primary values. The secondary axis now fits its own series and follows zoom/pan proportionally (it still mirrors the primary axis when it has no series).
+- **Logarithmic axes were rendered linearly**: the renderer ignored the axis transform. Data, grid, ticks, tooltips, nearest-point and zoom/pan/rectangle interactions now honor `LogNumericAxis`/`LogarithmicAxis`. The line geometry cache is also keyed on axis identity (switching linear → log with the same range no longer reuses stale geometry).
+- **Series colors**: every layer now resolves colors like the legend and tooltip do — `PaletteIndex` is honored for all series kinds, and hiding a series via the legend no longer shifts the colors of the following ones.
+- **High-DPI**: on Windows display scaling ≠ 100%, the crosshair, selection rectangle, tooltip and zoom anchor were offset from the mouse (surface rendered in device pixels, input in DIPs). The chart now renders in DIPs on a scaled canvas (still crisp); text and strokes follow the system scaling.
+- `FastChart` no longer overwrites the application-wide `Mouse.OverrideCursor` (uses its own `Cursor`), no longer steals keyboard focus when its template is applied (focuses on click instead), and detaches from the model on `Unloaded` (no leak of closed views by long-lived models).
+- Nearest-point highlight ignored series visibility, snapped to points outside the visible area (clamped onto the border) and used the primary axis for secondary-axis series.
+- Rendering performance: bars, stacked bars and candlesticks without an explicit width recomputed the automatic width for every bar (O(n²) per frame); `PixelMapper` boxed every coordinate.
+- Release workflows: pre-release tags (`v1.5.0-beta1`) also triggered the stable *Publish NuGet Packages* workflow; version/tag values are now passed through environment variables and validated as SemVer; a failed `nuget push` now fails the job instead of logging a warning.
+- README examples that did not compile (`Color = ColorRgba.Red`, `model.AddBehavior`, `ZoomBehavior`, `LineAnnotation`...) or did not work (rolling window fed with `DateTime.Ticks`).
+
+### ⚠️ **Behavior changes**
+
+- `ReplaceXAxis`/`ReplaceYAxis`/`ReplaceSecondaryYAxis` keep the visible range configured on the new axis (it used to be silently replaced at render time); call `AutoFitDataRange()` to refit.
+- `AxisManagementService.UpdateScales` and `InteractionService.ZoomAt`/`Pan` no longer copy the primary Y range onto the secondary axis (proportional follow instead).
+- Legend/tooltip swatches of `AreaSeries` and `StepLineSeries` now match their rendered color (each kind has its own palette sequence, as the layers always did).
 
 ## [1.4.0] - 2026-07-08
 

@@ -54,4 +54,19 @@ public class BarSeriesTests
         yr.Min.Should().BeLessThanOrEqualTo(-3);
         yr.Max.Should().BeGreaterThanOrEqualTo(2);
     }
+
+    [Fact]
+    public void GetAutoWidthMatchesInferredWidthAndIgnoresPointWidths()
+    {
+        var s = new BarSeries(new[]
+        {
+            new BarPoint(0, 1),
+            new BarPoint(2, 2) { Width = 5 },
+            new BarPoint(3, 3),
+        });
+
+        s.GetAutoWidth().Should().BeApproximately(0.8, 1e-12);
+        s.GetWidthFor(0).Should().BeApproximately(0.8, 1e-12);
+        s.GetWidthFor(1).Should().Be(5);
+    }
 }

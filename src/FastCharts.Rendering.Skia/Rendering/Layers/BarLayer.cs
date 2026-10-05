@@ -1,4 +1,5 @@
 using FastCharts.Core.Series;
+using FastCharts.Rendering.Skia.Helpers;
 
 using SkiaSharp;
 
@@ -11,15 +12,13 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             var model = ctx.Model;
             var pr = ctx.PlotRect;
             var palette = model.Theme.SeriesPalette;
-            int paletteCount = palette?.Count ?? 0;
-            int barIndex = 0;
             foreach (var s in model.Series)
             {
                 if (s is not BarSeries bs || bs.IsEmpty || !bs.IsVisible)
                 {
                     continue;
                 }
-                var c = (paletteCount > 0 && barIndex < paletteCount && palette != null) ? palette[barIndex] : model.Theme.PrimarySeriesColor;
+                var c = SeriesColorResolver.ResolveSeriesColor(model, bs, palette);
                 byte alpha = (byte)(RenderMath.Clamp01(bs.FillOpacity) * c.A);
                 using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(c.R, c.G, c.B, alpha) };
                 using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)System.Math.Max(1.0, bs.StrokeThickness), Color = new SKColor(c.R, c.G, c.B, c.A) };
@@ -29,12 +28,26 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 if (groupIndex2 < 0) { groupIndex2 = 0; }
                 if (groupIndex2 >= groupCount) { groupIndex2 = groupCount - 1; }
                 const double innerGap = 0.9;
+                double? autoWidth = null; // computed at most once per series (O(n))
                 ctx.Canvas.Save();
                 ctx.Canvas.ClipRect(pr);
                 for (int i = 0; i < bs.Data.Count; i++)
                 {
                     var p = bs.Data[i];
-                    double bandW = bs.GetWidthFor(i);
+                    double bandW;
+                    if (bs.Width.HasValue)
+                    {
+                        bandW = bs.Width.Value;
+                    }
+                    else if (p.Width.HasValue && p.Width.Value > 0)
+                    {
+                        bandW = p.Width.Value;
+                    }
+                    else
+                    {
+                        autoWidth ??= bs.GetAutoWidth();
+                        bandW = autoWidth.Value;
+                    }
                     double slotW = bandW / groupCount;
                     double effW = slotW * innerGap;
                     double groupOffsetFromCenter = ((groupIndex2 + 0.5) - (groupCount * 0.5)) * slotW;
@@ -55,7 +68,6 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     }
                 }
                 ctx.Canvas.Restore();
-                barIndex++;
             }
         }
     }

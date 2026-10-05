@@ -1,3 +1,4 @@
+using FastCharts.Core.Axes;
 using FastCharts.Core.Utilities;
 
 namespace FastCharts.Core.Interaction.Behaviors;
@@ -56,17 +57,16 @@ public sealed class PanBehavior : IBehavior
         if (plotW < 0) plotW = 0;
         if (plotH < 0) plotH = 0;
 
-        var vx = model.XAxis.VisibleRange;
-        var vy = model.YAxis.VisibleRange;
-        var spanX = vx.Max - vx.Min;
-        var spanY = vy.Max - vy.Min;
+        // Shift in normalized axis space: identical to a data-space pan on linear axes,
+        // and keeps a constant on-screen speed on logarithmic axes.
+        var dxNorm = plotW > 0 ? -dxPx / plotW : 0.0;
+        var dyNorm = plotH > 0 ? dyPx / plotH : 0.0;
 
-        var dxData = plotW > 0 ? -dxPx / plotW * spanX : 0.0;
-        var dyData = plotH > 0 ? dyPx / plotH * spanY : 0.0;
-
-        if (DoubleUtils.IsNotZero(dxData) || DoubleUtils.IsNotZero(dyData))
+        if (DoubleUtils.IsNotZero(dxNorm) || DoubleUtils.IsNotZero(dyNorm))
         {
-            model.Viewport.Pan(dxData, dyData);
+            var newX = AxisCoordinates.SubRange(model.XAxis, model.XAxis.VisibleRange, dxNorm, 1 + dxNorm);
+            var newY = AxisCoordinates.SubRange(model.YAxis, model.YAxis.VisibleRange, dyNorm, 1 + dyNorm);
+            model.Viewport.SetVisible(newX, newY);
         }
 
         _lastX = ev.PixelX;

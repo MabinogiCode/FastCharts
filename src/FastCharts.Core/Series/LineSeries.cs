@@ -214,6 +214,7 @@ namespace FastCharts.Core.Series
             _lastViewportPixelWidth = -1;
             _lastResampledCount = -1;
             DataVersion++;
+            NotifyChanged();
         }
 
         /// <summary>

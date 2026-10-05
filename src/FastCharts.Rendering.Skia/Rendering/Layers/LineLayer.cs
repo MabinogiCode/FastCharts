@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FastCharts.Core.Series;
+using FastCharts.Rendering.Skia.Helpers;
 using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers;
@@ -35,6 +36,12 @@ internal sealed class LineLayer : ISeriesSubLayer
 
         public int YAxisIndex { get; set; }
 
+        // Axis instances the pixels were projected with: replacing an axis (e.g. linear -> log)
+        // with the same visible range must still rebuild the geometry.
+        public object? XAxis { get; set; }
+
+        public object? YAxis { get; set; }
+
         public bool Seen { get; set; }
 
         public void Dispose()
@@ -51,8 +58,6 @@ internal sealed class LineLayer : ISeriesSubLayer
         var model = ctx.Model;
         var pr = ctx.PlotRect;
         var palette = model.Theme.SeriesPalette;
-        var paletteCount = palette?.Count ?? 0;
-        var lineIndex = 0;
 
         foreach (var s in model.Series)
         {
@@ -69,7 +74,7 @@ internal sealed class LineLayer : ISeriesSubLayer
                 continue;
             }
 
-            var c = (paletteCount > 0 && lineIndex < paletteCount && palette != null) ? palette[lineIndex] : model.Theme.PrimarySeriesColor;
+            var c = SeriesColorResolver.ResolveSeriesColor(model, ls, palette);
             using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)ls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
 
             var geometry = GetOrBuildGeometry(ctx, ls, pr);
@@ -85,7 +90,6 @@ internal sealed class LineLayer : ISeriesSubLayer
             }
 
             ctx.Canvas.Restore();
-            lineIndex++;
         }
 
         SweepUnseen();
@@ -108,6 +112,8 @@ internal sealed class LineLayer : ISeriesSubLayer
             geometry.DataVersion == ls.DataVersion &&
             geometry.Smoothing == ls.Smoothing &&
             geometry.YAxisIndex == ls.YAxisIndex &&
+            ReferenceEquals(geometry.XAxis, model.XAxis) &&
+            ReferenceEquals(geometry.YAxis, yAxis) &&
             geometry.PlotRect == pr &&
             AreClose(geometry.XMin, xr.Min) && AreClose(geometry.XMax, xr.Max) &&
             AreClose(geometry.YMin, yr.Min) && AreClose(geometry.YMax, yr.Max);
@@ -143,6 +149,8 @@ internal sealed class LineLayer : ISeriesSubLayer
         geometry.DataVersion = ls.DataVersion;
         geometry.Smoothing = ls.Smoothing;
         geometry.YAxisIndex = ls.YAxisIndex;
+        geometry.XAxis = model.XAxis;
+        geometry.YAxis = yAxis;
         geometry.PlotRect = pr;
         geometry.XMin = xr.Min;
         geometry.XMax = xr.Max;

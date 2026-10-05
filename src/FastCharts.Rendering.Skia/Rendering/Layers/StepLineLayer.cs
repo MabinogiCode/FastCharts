@@ -1,4 +1,5 @@
 using FastCharts.Core.Series;
+using FastCharts.Rendering.Skia.Helpers;
 using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers;
@@ -10,15 +11,13 @@ internal sealed class StepLineLayer : ISeriesSubLayer
         var model = ctx.Model;
         var pr = ctx.PlotRect;
         var palette = model.Theme.SeriesPalette;
-        var paletteCount = palette?.Count ?? 0;
-        var stepIndex = 0;
         foreach (var s in model.Series)
         {
             if (s is not StepLineSeries sls || sls.IsEmpty || !sls.IsVisible)
             {
                 continue;
             }
-            var c = (paletteCount > 0 && stepIndex < paletteCount && palette != null) ? palette[stepIndex] : model.Theme.PrimarySeriesColor;
+            var c = SeriesColorResolver.ResolveSeriesColor(model, sls, palette);
             using var sp = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)sls.StrokeThickness, Color = new SKColor(c.R, c.G, c.B, c.A) };
             using var path = new SKPath();
             var started = false;
@@ -52,7 +51,6 @@ internal sealed class StepLineLayer : ISeriesSubLayer
             ctx.Canvas.ClipRect(pr);
             ctx.Canvas.DrawPath(path, sp);
             ctx.Canvas.Restore();
-            stepIndex++;
         }
     }
 }

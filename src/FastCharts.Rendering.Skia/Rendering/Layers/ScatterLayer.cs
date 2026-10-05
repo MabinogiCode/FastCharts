@@ -1,4 +1,5 @@
 using FastCharts.Core.Series;
+using FastCharts.Rendering.Skia.Helpers;
 using SkiaSharp;
 
 namespace FastCharts.Rendering.Skia.Rendering.Layers;
@@ -10,15 +11,13 @@ internal sealed class ScatterLayer : ISeriesSubLayer
         var model = ctx.Model;
         var pr = ctx.PlotRect;
         var palette = model.Theme.SeriesPalette;
-        var paletteCount = palette?.Count ?? 0;
-        var scatterIndex = 0;
         foreach (var s in model.Series)
         {
             if (s is not ScatterSeries ss || ss.IsEmpty || !ss.IsVisible)
             {
                 continue;
             }
-            var c = (paletteCount > 0 && scatterIndex < paletteCount && palette != null) ? palette[scatterIndex] : model.Theme.PrimarySeriesColor;
+            var c = SeriesColorResolver.ResolveSeriesColor(model, ss, palette);
             var size = (float)ss.MarkerSize;
             if (size < 1f)
             {
@@ -36,7 +35,6 @@ internal sealed class ScatterLayer : ISeriesSubLayer
                 MarkerRenderer.Draw(ctx.Canvas, ss.MarkerShape, px, py, half, mp);
             }
             ctx.Canvas.Restore();
-            scatterIndex++;
         }
     }
 }

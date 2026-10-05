@@ -102,7 +102,7 @@ namespace FastCharts.Core.Tests.Services
             var service = new AxisManagementService();
             var xAxis = new NumericAxis();
             var yAxis = new NumericAxis();
-            var yAxisSecondary = new NumericAxis();
+            var yAxisSecondary = new NumericAxis { VisibleRange = new FRange(100, 200) };
             var viewport = new Viewport(new FRange(0, 10), new FRange(5, 15));
 
             // Act
@@ -111,7 +111,11 @@ namespace FastCharts.Core.Tests.Services
             // Assert
             Assert.Equal(viewport.X, xAxis.VisibleRange);
             Assert.Equal(viewport.Y, yAxis.VisibleRange);
-            Assert.Equal(yAxis.VisibleRange, yAxisSecondary.VisibleRange);
+
+            // The secondary axis keeps its own range; only its pixel mapping is refreshed
+            Assert.Equal(new FRange(100, 200), yAxisSecondary.VisibleRange);
+            Assert.Equal(600, yAxisSecondary.Scale.ToPixels(100), 6);
+            Assert.Equal(0, yAxisSecondary.Scale.ToPixels(200), 6);
         }
 
         [Fact]

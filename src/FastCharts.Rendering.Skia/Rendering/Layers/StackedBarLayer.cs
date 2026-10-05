@@ -26,10 +26,24 @@ internal sealed class StackedBarLayer : ISeriesSubLayer
             const double innerGap = 0.9;
             ctx.Canvas.Save();
             ctx.Canvas.ClipRect(pr);
+            double? autoWidth = null; // computed at most once per series (O(n))
             for (var i = 0; i < sbs.Data.Count; i++)
             {
                 var p = sbs.Data[i];
-                var bandW = sbs.GetWidthFor(i);
+                double bandW;
+                if (sbs.Width.HasValue)
+                {
+                    bandW = sbs.Width.Value;
+                }
+                else if (p.Width.HasValue && p.Width.Value > 0)
+                {
+                    bandW = p.Width.Value;
+                }
+                else
+                {
+                    autoWidth ??= sbs.GetAutoWidth();
+                    bandW = autoWidth.Value;
+                }
                 var slotW = bandW / groupCount;
                 var effW = slotW * innerGap;
                 var groupOffset = ((groupIndex + 0.5) - (groupCount * 0.5)) * slotW;

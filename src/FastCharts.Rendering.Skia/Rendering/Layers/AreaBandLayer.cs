@@ -1,4 +1,5 @@
 using FastCharts.Core.Series;
+using FastCharts.Rendering.Skia.Helpers;
 
 using SkiaSharp;
 
@@ -11,8 +12,6 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             var model = ctx.Model;
             var pr = ctx.PlotRect;
             var palette = model.Theme.SeriesPalette;
-            int paletteCount = palette?.Count ?? 0;
-            int areaIndex = 0;
             // First pass: area series
             foreach (var s in model.Series)
             {
@@ -20,8 +19,7 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                 {
                     continue;
                 }
-                int idx = area.PaletteIndex ?? areaIndex;
-                var chosen = (paletteCount > 0 && idx < paletteCount && palette != null) ? palette[idx] : model.Theme.PrimarySeriesColor;
+                var chosen = SeriesColorResolver.ResolveSeriesColor(model, area, palette);
                 using var path = new SKPath();
                 bool started = false;
                 var yAxis = (area.YAxisIndex == 1 && model.YAxisSecondary != null) ? model.YAxisSecondary : model.YAxis;
@@ -53,17 +51,15 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     ctx.Canvas.DrawPath(path, fill);
                     ctx.Canvas.Restore();
                 }
-                areaIndex++;
             }
             // Band series
-            int bandIndex = 0;
             foreach (var s in model.Series)
             {
                 if (s is not BandSeries bs || bs.IsEmpty || !bs.IsVisible)
                 {
                     continue;
                 }
-                var col = (paletteCount > 0 && bandIndex < paletteCount && palette != null) ? palette[bandIndex] : model.Theme.PrimarySeriesColor;
+                var col = SeriesColorResolver.ResolveSeriesColor(model, bs, palette);
                 byte alpha2 = (byte)(RenderMath.Clamp01(bs.FillOpacity) * col.A);
                 using var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = new SKColor(col.R, col.G, col.B, alpha2) };
                 using var strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)bs.StrokeThickness, Color = new SKColor(col.R, col.G, col.B, col.A) };
@@ -89,7 +85,6 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
                     pathHigh.Close();
                     ctx.Canvas.Save(); ctx.Canvas.ClipRect(pr); ctx.Canvas.DrawPath(pathHigh, fillPaint); ctx.Canvas.Restore();
                 }
-                bandIndex++;
             }
         }
     }

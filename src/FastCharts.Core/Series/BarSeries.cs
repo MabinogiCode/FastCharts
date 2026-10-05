@@ -44,6 +44,15 @@ public class BarSeries : SeriesBase, ISeriesRangeProvider
                 return w.Value;
             }
         }
+        return GetAutoWidth();
+    }
+
+    /// <summary>
+    /// Default bar width used when neither <see cref="Width"/> nor the point's own width is set:
+    /// 80% of the smallest X spacing. O(n) — renderers compute it once per frame, not per bar.
+    /// </summary>
+    public double GetAutoWidth()
+    {
         if (Data.Count >= 2)
         {
             var minDx = double.PositiveInfinity;

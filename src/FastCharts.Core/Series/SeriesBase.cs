@@ -1,3 +1,5 @@
+using System;
+
 namespace FastCharts.Core.Series
 {
     /// <summary>
@@ -45,6 +47,21 @@ namespace FastCharts.Core.Series
         /// Series has no data to render.
         /// </summary>
         public abstract bool IsEmpty { get; }
+
+        /// <summary>
+        /// Raised when the series content changed and hosts should redraw (points appended,
+        /// data replaced by a binding, ...). May be raised from a background thread.
+        /// </summary>
+        public event EventHandler? Changed;
+
+        /// <summary>
+        /// Signals that the series content changed so hosting charts redraw. Mutations made
+        /// through the series API call it automatically; call it after editing <c>Data</c> directly.
+        /// </summary>
+        public void NotifyChanged()
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
 
         protected SeriesBase()
         {

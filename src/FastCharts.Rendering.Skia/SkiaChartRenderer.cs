@@ -283,8 +283,9 @@ namespace FastCharts.Rendering.Skia
             }
             if (st.ShowNearest)
             {
+                var nearestYAxis = (st.NearestYAxisIndex == 1 && ctx.Model.YAxisSecondary != null) ? ctx.Model.YAxisSecondary : ctx.Model.YAxis;
                 var px = PixelMapper.X(st.NearestDataX, ctx.Model.XAxis, pr);
-                var py = PixelMapper.Y(st.NearestDataY, ctx.Model.YAxis, pr);
+                var py = PixelMapper.Y(st.NearestDataY, nearestYAxis, pr);
                 using var npStroke = new SKPaint { Color = new SKColor(255, 80, 80, 220), Style = SKPaintStyle.Stroke, StrokeWidth = 2, IsAntialias = true };
                 using var npFill = new SKPaint { Color = new SKColor(255, 80, 80, 120), Style = SKPaintStyle.Fill, IsAntialias = true };
                 ctx.Canvas.Save();

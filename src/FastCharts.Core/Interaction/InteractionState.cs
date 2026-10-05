@@ -23,6 +23,7 @@ public sealed class InteractionState : ReactiveObject
     private bool _showNearest;
     private double _nearestDataX;
     private double _nearestDataY;
+    private int _nearestYAxisIndex;
     private bool _isPanning;
 
     public InteractionState()
@@ -126,6 +127,16 @@ public sealed class InteractionState : ReactiveObject
     {
         get => _nearestDataY;
         set => this.RaiseAndSetIfChanged(ref _nearestDataY, value);
+    }
+
+    /// <summary>
+    /// Y axis the nearest point belongs to (0 = primary, 1 = secondary), so the highlight
+    /// is drawn against the right scale.
+    /// </summary>
+    public int NearestYAxisIndex
+    {
+        get => _nearestYAxisIndex;
+        set => this.RaiseAndSetIfChanged(ref _nearestYAxisIndex, value);
     }
 
     public System.Collections.Generic.List<LegendHit> LegendHits { get; set; } = new();

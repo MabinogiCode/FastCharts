@@ -29,10 +29,10 @@ internal sealed class OhlcLayer : ISeriesSubLayer
             {
                 RenderVolume(ctx, os, cUp, cDown);
             }
+            var w = os.GetWidthFor(0); // same for every candle; O(n) so hoisted out of the loop
             for (var i = 0; i < os.Data.Count; i++)
             {
                 var p = os.Data[i];
-                var w = os.GetWidthFor(i);
                 var half = w * 0.5;
                 var xC = PixelMapper.X(p.X, model.XAxis, pr);
                 var xL = PixelMapper.X(p.X - half * 0.7, model.XAxis, pr);
@@ -103,6 +103,7 @@ internal sealed class OhlcLayer : ISeriesSubLayer
         using var upPaint = new SKPaint { IsAntialias = false, Style = SKPaintStyle.Fill, Color = new SKColor(cUp.R, cUp.G, cUp.B, alpha) };
         using var downPaint = new SKPaint { IsAntialias = false, Style = SKPaintStyle.Fill, Color = new SKColor(cDown.R, cDown.G, cDown.B, alpha) };
 
+        var half = os.GetWidthFor(0) * 0.5; // same for every candle; O(n) so hoisted out of the loop
         for (var i = 0; i < os.Data.Count; i++)
         {
             var p = os.Data[i];
@@ -111,8 +112,6 @@ internal sealed class OhlcLayer : ISeriesSubLayer
                 continue;
             }
 
-            var w = os.GetWidthFor(i);
-            var half = w * 0.5;
             var xL = PixelMapper.X(p.X - half * 0.7, model.XAxis, pr);
             var xR = PixelMapper.X(p.X + half * 0.7, model.XAxis, pr);
             var h = (float)(p.Volume.Value / maxVolume) * paneHeight;
