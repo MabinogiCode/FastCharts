@@ -94,18 +94,21 @@ model.AddSeries(new LineSeries(new[] { new PointD(0, 10), new PointD(1, 20) })
 
 ### Real-Time Streaming Example
 ```csharp
-// Create streaming series with rolling window
-var streamingSeries = new StreamingLineSeries {
-    Title = "Live Data",
-    MaxPointCount = 1000, // Keep last 1000 points
-    RollingWindowDuration = TimeSpan.FromMinutes(5)
+// Rolling window: keep the last 1000 points and/or the last 5 minutes
+var streamingSeries = new StreamingLineSeries(maxPointCount: 1000, rollingWindow: TimeSpan.FromMinutes(5))
+{
+    Title = "Live Data"
 };
-
-// Add real-time data
-streamingSeries.AppendPoint(new PointD(DateTime.Now.Ticks, sensorValue));
-
 model.AddSeries(streamingSeries);
+
+// e.g. from a DispatcherTimer tick: X is the timestamp (OLE Automation date)
+streamingSeries.AppendRealTimePoint(sensorValue);
 ```
+
+The `FastChart` control redraws by itself when the model changes: theme, axes, zoom/pan,
+series added or removed, and series data mutated through the series API (`AppendPoint`,
+`AddPoints`, `ReplacePoints`...). After editing a `Data` list directly, call
+`series.NotifyChanged()` (or `model.Invalidate()` from a view model).
 
 ### Multi-Axis Example
 ```csharp
@@ -116,14 +119,14 @@ var model = new ChartModel();
 model.AddSeries(new LineSeries(temperatureData) {
     Title = "Temperature (°C)",
     YAxisIndex = 0, // Left Y axis
-    Color = ColorRgba.Red
+    PaletteIndex = 0 // Color from the theme palette
 });
 
-// Add right axis series (pressure) 
+// Add right axis series (pressure): the secondary axis fits its own range
 model.AddSeries(new LineSeries(pressureData) {
-    Title = "Pressure (hPa)", 
+    Title = "Pressure (hPa)",
     YAxisIndex = 1, // Right Y axis
-    Color = ColorRgba.Blue
+    PaletteIndex = 1
 });
 ```
 
@@ -158,7 +161,7 @@ var largeSeries = new LineSeries(millionsOfPoints) {
 
 ### Performance Metrics Overlay
 ```csharp
-model.AddBehavior(new MetricsOverlayBehavior {
+model.Behaviors.Add(new MetricsOverlayBehavior {
     ShowDetailed = true,
     Position = MetricsPosition.TopLeft
 });
@@ -202,29 +205,28 @@ link.Add(indicatorModel);
 
 ### Interactive Behaviors
 ```csharp
-model.AddBehavior(new PanBehavior());
-model.AddBehavior(new ZoomBehavior());
-model.AddBehavior(new CrosshairBehavior());
-model.AddBehavior(new PinnedTooltipBehavior()); // Right-click to pin tooltips
+// FastChart installs sensible defaults (pan, wheel zoom, Shift+drag zoom rectangle,
+// crosshair, tooltips, legend toggle) when the model has no behaviors. To customize:
+model.Behaviors.Add(new PanBehavior());
+model.Behaviors.Add(new ZoomWheelBehavior());
+model.Behaviors.Add(new CrosshairBehavior());
+model.Behaviors.Add(new PinnedTooltipBehavior()); // Right-click to pin tooltips
 ```
 
 ### Annotations
 ```csharp
-// Add horizontal line annotation
-model.AddAnnotation(new LineAnnotation {
-    Type = LineAnnotationType.Horizontal,
-    Value = 100,
-    Label = "Target Value",
-    Color = ColorRgba.Green
+using FastCharts.Core.Annotations;
+
+// Horizontal line annotation
+model.AddAnnotation(new AnnotationLine(100, AnnotationOrientation.Horizontal, "Target Value")
+{
+    Color = new ColorRgba(0, 160, 0)
 });
 
-// Add range highlight
-model.AddAnnotation(new RangeAnnotation {
-    Type = RangeAnnotationType.Horizontal, 
-    StartValue = 90,
-    EndValue = 110,
-    FillColor = ColorRgba.Green.WithAlpha(0.2f),
-    Label = "Acceptable Range"
+// Range highlight
+model.AddAnnotation(new AnnotationRange(90, 110, AnnotationOrientation.Horizontal, "Acceptable Range")
+{
+    FillColor = new ColorRgba(0, 160, 0, 50)
 });
 ```
 
