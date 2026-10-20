@@ -258,6 +258,18 @@ var aire = new AreaSeries(donnees)
 ChartModel.AddHistogram(mesures, title: "Distribution");
 ```
 
+### Cartes de chaleur (heatmaps)
+```csharp
+using FastCharts.Core.Themes;
+
+// valeurs[ligne, colonne], ligne 0 en bas ; chaque cellule fait une unité sauf plages précisées
+var carte = ChartModel.AddHeatmap(grille, new FRange(0, 10), new FRange(0, 5), "Température");
+carte.ColorAxis.ColorMap = ColorMaps.BlueWhiteRed; // Viridis (défaut), Plasma, Grayscale, BlueWhiteRed
+carte.ColorAxis.Minimum = -20;                     // échelle fixe ; null = ajustée aux données
+carte.ColorAxis.Maximum = 20;
+carte.ColorAxis.Title = "°C";                      // affiché au-dessus de la barre de couleurs
+```
+
 ## Personnalisation
 
 ### Thèmes et couleurs

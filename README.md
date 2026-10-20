@@ -18,7 +18,7 @@ FastCharts is a **high-performance .NET charting library** designed for real-tim
 
 - 🚀 **Real-time Performance**: 60 FPS rendering with LTTB decimation + per-series geometry cache
 - ⚡ **Opt-in GPU backend**: `FastChart.UseGpu` renders through OpenGL (`SKGLElement`); default stays CPU raster
-- 📊 **Rich Chart Types**: Line, Scatter, Bar, Stacked Bar, Area, Band, OHLC (candlesticks + volume), ErrorBar, Step
+- 📊 **Rich Chart Types**: Line, Scatter, Bar, Stacked Bar, Area, Band, OHLC (candlesticks + volume), ErrorBar, Step, Histogram, Heatmap (with color bar)
 - 📉 **Financial toolkit**: SMA / EMA / Bollinger Bands indicators, bull/bear candlesticks, linked-axis charts
 - 🎯 **Multi-Axis Support**: Independent left/right Y axes, cross-chart X sync (`ChartLinkGroup`)
 - 📈 **Advanced Axes**: Linear, Logarithmic, Category with custom bases  
@@ -184,6 +184,22 @@ var series = new ObservableLineSeries(readings, nameof(SensorReading.Time), name
 model.AddSeries(series);          // renders like any other series
 readings.Add(new SensorReading()); // chart updates automatically
 ```
+
+### Heatmaps & Color Axis
+```csharp
+// values[row, column]: row 0 at the bottom; NaN cells stay empty
+var heatmap = model.AddHeatmap(values, xRange: new FRange(-3, 3), yRange: new FRange(-2, 2), title: "Field");
+
+// Color axis: Viridis by default, fitted to the data, drawn as a color bar
+heatmap.ColorAxis.ColorMap = ColorMaps.Plasma;   // or Viridis, Grayscale, BlueWhiteRed
+heatmap.ColorAxis.Minimum = 0;                   // fixed bounds (null = data range)
+heatmap.ColorAxis.Title = "Intensity";
+
+// Update in place, then refresh the cached image
+heatmap.Values[3, 7] = 42;
+heatmap.Invalidate();
+```
+The tooltip shows the value of the cell under the cursor.
 
 ### Finance: Candlesticks, Volume & Indicators
 ```csharp

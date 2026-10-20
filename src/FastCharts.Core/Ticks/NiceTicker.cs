@@ -28,8 +28,15 @@ public sealed class NiceTicker : ITicker<double>
         {
             list.Capacity = (int)est;
         }
-        for (var v = start; v <= end; v += step)
+        // Multiply instead of accumulating the step, so float error does not build up
+        // (e.g. -0.6 + 3 * 0.2 must label as 0, not "-0" from -1.1e-16)
+        for (var i = 0; start + (i * step) <= end; i++)
         {
+            var v = start + (i * step);
+            if (Math.Abs(v) < step * 1e-9)
+            {
+                v = 0;
+            }
             if (v >= (range.Min - (step * 0.25)) && v <= (range.Max + (step * 0.25)))
             {
                 list.Add(v);

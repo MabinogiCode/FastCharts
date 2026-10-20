@@ -195,7 +195,7 @@ Long-term target: feature parity with premium WPF charting (SciChart).
 - [x] Geometry caching (T-PERF-CACHE) — per-series SKPath/pixel cache keyed on DataVersion + ranges + plot rect; dirty rectangles remain open
 
 ### v1.5 — "Analytics" (in progress)
-- Heatmap + color axis (P2-HEATMAP, P1-AX-COLOR)
+- [x] Heatmap + color axis (P2-HEATMAP, P1-AX-COLOR): `model.AddHeatmap(values)` — `ColorAxis` with Viridis/Plasma/Grayscale/BlueWhiteRed maps, color bar, cached image rendering, cell-value tooltip
 - [x] Histogram with auto-binning (P2-HISTOGRAM): `model.AddHistogram(values)` — Sturges auto-bins, contiguous bars, `HistogramBuilder` unit-tested
 - Draggable text/shape annotations (P2-ANNOT-TEXT/SHAPE)
 

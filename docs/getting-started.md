@@ -258,6 +258,18 @@ var areaSeries = new AreaSeries(data)
 ChartModel.AddHistogram(measurements, title: "Distribution");
 ```
 
+### Heatmaps
+```csharp
+using FastCharts.Core.Themes;
+
+// values[row, column] with row 0 at the bottom; each cell spans one unit unless ranges are given
+var heatmap = ChartModel.AddHeatmap(grid, new FRange(0, 10), new FRange(0, 5), "Temperature");
+heatmap.ColorAxis.ColorMap = ColorMaps.BlueWhiteRed; // Viridis (default), Plasma, Grayscale, BlueWhiteRed
+heatmap.ColorAxis.Minimum = -20;                     // fixed scale; null = fitted to the data
+heatmap.ColorAxis.Maximum = 20;
+heatmap.ColorAxis.Title = "°C";                      // shown above the color bar
+```
+
 ## Customization
 
 ### Themes and Colors

@@ -166,6 +166,7 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
         Charts.Add(BuildLogarithmicAxisDemo()); // 8 - P1-AX-LOG
         Charts.Add(BuildLttbPerformanceDemo()); // 9 - P1-RESAMPLE-LTTB
         Charts.Add(BuildHistogramDemo());       // 10 - P2-HISTOGRAM (v1.5)
+        Charts.Add(BuildHeatmapDemo());         // 11 - P2-HEATMAP + P1-AX-COLOR (v1.5)
     }
 
     private void ToggleTheme()
@@ -534,6 +535,35 @@ public sealed class MainViewModel : ReactiveObject, IDisposable
     /// <summary>
     /// P1-AX-LOG: Build a demo chart showcasing the LogarithmicAxis functionality
     /// </summary>
+    private static ChartModel BuildHeatmapDemo()
+    {
+        var model = new ChartModel
+        {
+            Title = "Heatmap + color axis — model.AddHeatmap(values)"
+        };
+
+        // Two peaks and a valley on a 120 x 80 grid spanning [-3, 3] x [-2, 2]
+        const int columns = 120;
+        const int rows = 80;
+        var values = new double[rows, columns];
+        for (var row = 0; row < rows; row++)
+        {
+            var y = -2.0 + (4.0 * (row + 0.5) / rows);
+            for (var column = 0; column < columns; column++)
+            {
+                var x = -3.0 + (6.0 * (column + 0.5) / columns);
+                values[row, column] = Math.Exp(-((x + 1) * (x + 1)) - ((y - 0.5) * (y - 0.5)))
+                    + (0.8 * Math.Exp(-((x - 1.5) * (x - 1.5)) - (2 * (y + 0.8) * (y + 0.8))))
+                    - (0.5 * Math.Exp(-(2 * x * x) - (4 * (y + 1.5) * (y + 1.5))));
+            }
+        }
+
+        // One line: Viridis color axis with a color bar, the view fits the grid
+        var heatmap = model.AddHeatmap(values, new FRange(-3, 3), new FRange(-2, 2), "Field");
+        heatmap.ColorAxis.Title = "Intensity";
+        return model;
+    }
+
     private static ChartModel BuildHistogramDemo()
     {
         var model = new ChartModel

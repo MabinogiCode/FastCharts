@@ -22,6 +22,7 @@ namespace FastCharts.Rendering.Skia
         private readonly SeriesLayer _series = new();
         private readonly AnnotationLayer _annotations = new();
         private readonly AxesTicksLayer _axesTicks = new();
+        private readonly ColorBarLayer _colorBar = new();
         private readonly LegendLayer _legend = new();
 
         public void Render(ChartModel model, SKCanvas canvas, int pixelWidth, int pixelHeight)
@@ -107,6 +108,7 @@ namespace FastCharts.Rendering.Skia
             _series.Render(ctx);
             _annotations.Render(ctx);
             _axesTicks.Render(ctx);
+            _colorBar.Render(ctx);
             _legend.Render(ctx);
             RenderOverlay(ctx);
 

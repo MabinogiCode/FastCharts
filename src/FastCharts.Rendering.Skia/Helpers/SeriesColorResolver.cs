@@ -24,6 +24,13 @@ namespace FastCharts.Rendering.Skia.Helpers
         public static ColorRgba ResolveSeriesColor(ChartModel model, object seriesRef, IReadOnlyList<ColorRgba> palette)
         {
             var primary = model.Theme.PrimarySeriesColor;
+
+            // A heatmap is colored by its color axis: its swatch shows the middle of the gradient
+            if (seriesRef is HeatmapSeries heatmap)
+            {
+                return heatmap.ColorAxis.ColorMap.Map(0.5);
+            }
+
             if (palette == null || palette.Count == 0)
             {
                 return primary;

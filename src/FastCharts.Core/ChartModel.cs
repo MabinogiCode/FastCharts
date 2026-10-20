@@ -10,6 +10,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace FastCharts.Core;
@@ -390,6 +391,24 @@ public sealed class ChartModel : ReactiveObject, IChartModel, IDisposable
     {
         var series = HistogramBuilder.Build(values, binCount);
         series.Title = title;
+        AddSeries(series);
+        return series;
+    }
+
+    /// <summary>
+    /// One-liner: plots a grid of values as a heatmap colored by a Viridis color axis (with a
+    /// color bar). <c>values[row, column]</c>, row 0 at the bottom; without explicit ranges each
+    /// cell spans one unit. The view auto-fits the grid.
+    /// </summary>
+    /// <param name="values">Grid values (NaN = empty cell)</param>
+    /// <param name="xRange">Outer X edges of the grid (default 0..ColumnCount)</param>
+    /// <param name="yRange">Outer Y edges of the grid (default 0..RowCount)</param>
+    /// <param name="title">Optional legend title</param>
+    /// <returns>The created heatmap series, for further customization (e.g. its ColorAxis)</returns>
+    [SuppressMessage("Major Code Smell", "S2368:Public methods should not have multidimensional array parameters", Justification = "A heatmap is a 2D grid; double[,] is the idiomatic .NET representation (as in OxyPlot and ScottPlot).")]
+    public HeatmapSeries AddHeatmap(double[,] values, FRange? xRange = null, FRange? yRange = null, string? title = null)
+    {
+        var series = new HeatmapSeries(values, xRange, yRange) { Title = title };
         AddSeries(series);
         return series;
     }

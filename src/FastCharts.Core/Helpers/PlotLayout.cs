@@ -1,5 +1,6 @@
 using System;
 using FastCharts.Core.Primitives;
+using FastCharts.Core.Series;
 
 namespace FastCharts.Core.Helpers
 {
@@ -14,6 +15,12 @@ namespace FastCharts.Core.Helpers
         /// Minimum right margin reserved for secondary Y axis labels.
         /// </summary>
         public const double SecondaryAxisMinRightMargin = 48.0;
+
+        /// <summary>
+        /// Width reserved at the right edge of the surface for a heatmap color bar
+        /// (gradient, ticks and labels), outside the plot margins.
+        /// </summary>
+        public const double ColorBarReservedWidth = 72.0;
 
         /// <summary>
         /// Right margin actually used, widened when a secondary Y axis needs room for its labels.
@@ -46,7 +53,31 @@ namespace FastCharts.Core.Helpers
                 throw new ArgumentNullException(nameof(model));
             }
 
-            return Compute(model.PlotMargins, model.YAxisSecondary != null, surfaceWidth, surfaceHeight);
+            // A color bar takes a strip at the far right; the plot is laid out in what remains
+            var available = surfaceWidth - (FindColorBarSeries(model) != null ? ColorBarReservedWidth : 0);
+            return Compute(model.PlotMargins, model.YAxisSecondary != null, available, surfaceHeight);
+        }
+
+        /// <summary>
+        /// Heatmap whose color axis is drawn as the chart's color bar: the first visible, non-empty
+        /// heatmap with <see cref="Axes.ColorAxis.ShowColorBar"/> set, or null.
+        /// </summary>
+        public static HeatmapSeries? FindColorBarSeries(ChartModel model)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+
+            foreach (var series in model.Series)
+            {
+                if (series is HeatmapSeries heatmap && heatmap.IsVisible && !heatmap.IsEmpty && heatmap.ColorAxis.ShowColorBar)
+                {
+                    return heatmap;
+                }
+            }
+
+            return null;
         }
     }
 }

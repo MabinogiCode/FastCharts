@@ -1,4 +1,5 @@
 #pragma warning disable S3267
+using FastCharts.Core.Axes;
 using FastCharts.Core.Series;
 using System;
 using System.Globalization;
@@ -76,7 +77,7 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
             {
                 return false;
             }
-            Build(model, st, st.DataX.Value);
+            Build(model, st, st.DataX.Value, st.DataY);
             return true;
         }
         return false;
@@ -89,7 +90,7 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
         return (dx * dx) + (dy * dy) > ClickTolerance * ClickTolerance;
     }
 
-    private void Build(ChartModel model, InteractionState st, double x)
+    private void Build(ChartModel model, InteractionState st, double x, double? y)
     {
         var xr = model.XAxis.VisibleRange;
         var tol = xr.Size * XSnapToleranceFraction;
@@ -122,7 +123,14 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
             // Series may be fed from another thread: read them under their lock
             lock (s.SyncRoot)
             {
-                AddSeriesValues(st, s, x, tol, AddPoint);
+                if (s is HeatmapSeries heatmap)
+                {
+                    AddHeatmapValue(model, heatmap, x, y, AddPoint);
+                }
+                else
+                {
+                    AddSeriesValues(st, s, x, tol, AddPoint);
+                }
             }
         }
 
@@ -145,6 +153,29 @@ public sealed class MultiSeriesTooltipBehavior : IBehavior
             sb.AppendFormat(ci, LineFormat, v.Title ?? "?", val);
         }
         st.TooltipText = sb.ToString();
+    }
+
+    /// <summary>
+    /// Heatmaps report the value of the cell under the cursor (both X and Y are needed).
+    /// </summary>
+    private static void AddHeatmapValue(ChartModel model, HeatmapSeries heatmap, double x, double? y, Action<string?, double, double, int?> addPoint)
+    {
+        if (!y.HasValue)
+        {
+            return;
+        }
+
+        // The cursor's Y is expressed on the primary axis; convert it for a secondary-axis heatmap
+        var cellY = y.Value;
+        if (heatmap.YAxisIndex == 1 && model.YAxisSecondary != null)
+        {
+            cellY = AxisCoordinates.FromNormalized(model.YAxisSecondary, AxisCoordinates.ToNormalized(model.YAxis, cellY));
+        }
+
+        if (heatmap.TryGetValueAt(x, cellY, out var value))
+        {
+            addPoint(heatmap.Title ?? "Heatmap", x, value, heatmap.PaletteIndex);
+        }
     }
 
     private void AddSeriesValues(InteractionState st, SeriesBase s, double x, double tol, Action<string?, double, double, int?> addPoint)

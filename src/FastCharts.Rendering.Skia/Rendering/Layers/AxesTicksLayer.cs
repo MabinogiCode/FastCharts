@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using FastCharts.Core.Axes;
@@ -34,7 +35,14 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
             double approxYStepData = 50.0 * yDataPerPx;
             var xTicks = model.XAxis.Ticker.GetTicks(xr, approxXStepData);
             var yTicks = model.YAxis.Ticker.GetTicks(yr, approxYStepData);
-            var y2Ticks = model.YAxisSecondary != null ? model.YAxisSecondary.Ticker.GetTicks(model.YAxisSecondary.VisibleRange, approxYStepData) : null;
+            // The secondary axis has its own range: derive its step from that range, not the primary's
+            IReadOnlyList<double>? y2Ticks = null;
+            if (model.YAxisSecondary != null)
+            {
+                var y2r = model.YAxisSecondary.VisibleRange;
+                var approxY2StepData = 50.0 * (y2r.Size / System.Math.Max(1.0, pr.Height));
+                y2Ticks = model.YAxisSecondary.Ticker.GetTicks(y2r, approxY2StepData);
+            }
             float tickLen = (float)theme.TickLength;
             bool xIsDate = model.XAxis is DateTimeAxis;
             bool xIsCategory = model.XAxis is CategoryAxis;

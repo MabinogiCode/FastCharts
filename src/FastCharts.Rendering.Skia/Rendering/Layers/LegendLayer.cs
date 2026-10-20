@@ -1,4 +1,5 @@
 using System.Linq;
+using FastCharts.Core.Helpers;
 using FastCharts.Rendering.Skia.Helpers;
 using SkiaSharp;
 
@@ -39,7 +40,9 @@ internal sealed class LegendLayer : IRenderLayer
         }
         var boxW = padding * 2 + swatch + gap + maxText;
         var boxH = padding * 2 + lineH * model.Legend.Items.Count;
-        var bx = ctx.PixelWidth - boxW - 8f;
+        // Keep clear of the color bar strip when a heatmap shows one
+        var rightEdge = ctx.PixelWidth - (PlotLayout.FindColorBarSeries(model) != null ? (float)PlotLayout.ColorBarReservedWidth : 0f);
+        var bx = rightEdge - boxW - 8f;
         var by = 8f;
         var rect = new SKRect(bx, by, bx + boxW, by + boxH);
         var bg = lum > 0.55 ? new SKColor(20, 20, 20, 210) : new SKColor(255, 255, 255, 210);

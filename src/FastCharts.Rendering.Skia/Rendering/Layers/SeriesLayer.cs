@@ -5,7 +5,8 @@ namespace FastCharts.Rendering.Skia.Rendering.Layers
         // Ordered sublayers (back-to-front) to preserve expected overlap semantics
         private readonly ISeriesSubLayer[] _layers =
         {
-            new AreaBandLayer(),   // fills first
+            new HeatmapLayer(),    // grids behind everything else
+            new AreaBandLayer(),   // fills
             new BarLayer(),        // grouped bars
             new StackedBarLayer(), // stacked bars
             new OhlcLayer(),       // candles
